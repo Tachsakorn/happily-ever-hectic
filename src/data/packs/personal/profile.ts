@@ -11,15 +11,13 @@ export const personal = {
   /** ✏️ Who the player is (the wedding planner character). */
   plannerName: 'Planner',
   partnerA: {
-    /** ✏️ */
-    name: 'Partner A',
+    name: 'Goji',
     outfit: 'suit' as 'suit' | 'dress',
     outfitColor: 0x3d4f73,
     hairColor: 0x2b1d14,
   },
   partnerB: {
-    /** ✏️ */
-    name: 'Partner B',
+    name: 'Tanya',
     outfit: 'dress' as 'suit' | 'dress',
     outfitColor: 0xffffff,
     hairColor: 0x2b1d14,
@@ -28,13 +26,13 @@ export const personal = {
   lovesTags: ['flowers', 'lights'],
   /** ✏️ Intro before the final wedding. */
   introLines: [
-    { speaker: 'Partner A', text: 'Everyone we love, in one room. Are you ready?' },
-    { speaker: 'Partner B', text: 'With you? Always.' },
+    { speaker: 'Goji', text: 'Everyone we love, in one room. Are you ready?' },
+    { speaker: 'Tanya', text: 'With you? Always.' },
   ],
   /** ✏️ The special ending, shown after completing the final wedding. */
   endingLines: [
-    { speaker: 'Partner A', text: 'Every wedding you planned was practice for this one.' },
-    { speaker: 'Partner B', text: 'And this is the only one that was ours.' },
-    { speaker: 'Partner A', text: 'Happily ever after — hectic parts included.' },
+    { speaker: 'Goji', text: 'Every wedding you planned was practice for this one.' },
+    { speaker: 'Tanya', text: 'And this is the only one that was ours.' },
+    { speaker: 'Goji', text: 'Happily ever after — hectic parts included.' },
   ],
 };

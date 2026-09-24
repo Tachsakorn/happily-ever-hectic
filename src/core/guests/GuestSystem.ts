@@ -52,8 +52,8 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
     if (g.tableId) refreshTableMoods(ctx, g.tableId);
     if (g.bringsGift && g.seatId) {
       const { seat, table } = ctx.venue.seat(g.seatId);
-      // Gift is set down on the table edge in front of the guest.
-      const pos = { x: seat.pos.x + (table.pos.x - seat.pos.x) * 0.35, y: seat.pos.y + (table.pos.y - seat.pos.y) * 0.35 };
+      // Gift is set down on the table in front of the guest, clear of the guest's own tap area.
+      const pos = { x: seat.pos.x + (table.pos.x - seat.pos.x) * 0.6, y: seat.pos.y + (table.pos.y - seat.pos.y) * 0.6 };
       ctx.state.gifts.push({ id: ctx.nextId(), guestKey: g.key, pos, state: 'waiting', age: 0 });
     }
   },

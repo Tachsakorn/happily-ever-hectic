@@ -187,7 +187,9 @@ export class ReceptionScene extends Phaser.Scene {
     const moodAnchor = { x: 250, y: 150 };
     switch (e.type) {
       case 'moodChanged':
-        this.floating.mood(e.pos ?? moodAnchor, e.delta, e.cause);
+        // Ongoing drains are already shown by the disaster ring; popping them every
+        // second would bury the one-off changes the player needs to notice.
+        if (!e.ongoing) this.floating.mood(e.pos ?? moodAnchor, e.delta, e.cause);
         this.hud.pushCause(e.delta, e.cause);
         break;
       case 'scoreChanged':

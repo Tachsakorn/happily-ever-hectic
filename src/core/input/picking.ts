@@ -10,10 +10,14 @@ import { DisasterPhase, GuestState, type TargetRef } from '../sim/state';
  * with a thumb must forgive near-misses. When things overlap, the most urgent
  * kind wins (disasters, then people, then things).
  */
+/** Characters are drawn standing on their position; touches land on their body, about this far above. */
+const BODY_OFFSET_Y = 38;
+const body = (p: Vec2): Vec2 => ({ x: p.x, y: p.y - BODY_OFFSET_Y });
+
 const RADIUS = {
   disaster: 70,
   guest: 52,
-  gift: 38,
+  gift: 46,
   passSlot: 42,
   couple: 80,
 } as const;
@@ -34,11 +38,12 @@ export function pickTarget(ctx: SimContext, p: Vec2): TargetRef | null {
   }
   for (const g of ctx.state.guests) {
     if (!isPresent(g) || g.state === GuestState.UPSET) continue;
-    consider({ kind: 'guest', id: g.key }, g.pos, RADIUS.guest, 1);
+    consider({ kind: 'guest', id: g.key }, body(g.pos), RADIUS.guest, 1);
   }
   consider({ kind: 'couple' }, ctx.venue.def.couplePos, RADIUS.couple, 1);
   for (const gift of ctx.state.gifts) {
-    if (gift.state === 'waiting') consider({ kind: 'gift', id: gift.id }, gift.pos, RADIUS.gift, 2);
+    // Same priority as guests: gifts sit next to their owner, so the nearer one must win.
+    if (gift.state === 'waiting') consider({ kind: 'gift', id: gift.id }, gift.pos, RADIUS.gift, 1);
   }
   ctx.venue.def.passSlots.forEach((pos, index) => {
     if (ctx.state.kitchen.pass[index]) consider({ kind: 'passSlot', index }, pos, RADIUS.passSlot, 2);
@@ -69,7 +74,7 @@ export function pickWaitingGuest(ctx: SimContext, p: Vec2): string | null {
   let best: { key: string; d: number } | null = null;
   for (const g of ctx.state.guests) {
     if (g.state !== GuestState.WAITING_TO_BE_SEATED && g.state !== GuestState.ARRIVING) continue;
-    const d = distance(p, g.pos);
+    const d = distance(p, body(g.pos));
     if (d <= RADIUS.guest + 8 && (!best || d < best.d)) best = { key: g.key, d };
   }
   return best?.key ?? null;

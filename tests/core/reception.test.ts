@@ -172,3 +172,16 @@ describe('gifts', () => {
     expect(sim.state.moodLedger.get('A gift went missing')).toBeLessThan(0);
   });
 });
+
+describe('touch picking', () => {
+  it('a tap on a gift picks the gift, not the guest sitting behind it', () => {
+    const { sim } = makeSim({ guests: [guest('g', 'G', 'grandparent', 'friends', 0, { bringsGift: true })] });
+    runFor(sim, 0.2);
+    sim.command({ type: 'seatGuest', guestKey: 'g', seatId: 'table-1-n' });
+    runUntil(sim, () => sim.state.gifts.length === 1, 20);
+    const gift = sim.state.gifts[0]!;
+    expect(sim.pickTarget(gift.pos)).toEqual({ kind: 'gift', id: gift.id });
+    const feet = guestByKey(sim, 'g').pos;
+    expect(sim.pickTarget({ x: feet.x, y: feet.y - 40 })).toEqual({ kind: 'guest', id: 'g' });
+  });
+});

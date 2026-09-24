@@ -1,7 +1,7 @@
 import type { DecorDef, DialogueDef, ScoringRules, TuningDef, UpgradeDef } from '../../../content/types';
 
 export const tuning: TuningDef = {
-  plannerSpeed: 360,
+  plannerSpeed: 400,
   guestWalkSpeed: 150,
   maxQueuedActions: 6,
   hands: 2,
@@ -23,8 +23,8 @@ export const tuning: TuningDef = {
     coupleRequestServed: 4,
     coupleRequestExpired: 8,
   },
-  giftLostAfterSeconds: 45,
-  coupleRequestPatienceSeconds: 28,
+  giftLostAfterSeconds: 60,
+  coupleRequestPatienceSeconds: 35,
   decorMatchBonus: { startMood: 10, scoreBonus: 0.1 },
 };
 
@@ -73,7 +73,7 @@ export const dialogues: DialogueDef[] = [
     id: 'intro-level-2',
     lines: [
       { speaker: 'Priya', text: 'My family always brings gifts. Lots of gifts. Please don’t let any go missing!' },
-      { speaker: 'Sam', text: 'And we’re cutting the cake this time. It weighs a ton — carry it carefully.' },
+      { speaker: 'Sam', text: 'Gifts go to the gift table by the entrance. You can carry two at a time!' },
     ],
   },
   {
@@ -83,24 +83,35 @@ export const dialogues: DialogueDef[] = [
   {
     id: 'intro-level-3',
     lines: [
-      { speaker: 'Lina', text: 'Small problem: Nonna Rosa and Uncle Vito haven’t spoken in eleven years.' },
-      { speaker: 'Marco', text: 'Keep them at different tables. And my boss hates noisy kids.' },
-      { speaker: 'Planner', text: 'Hold a guest before seating them — I’ll show you who they get along with.' },
+      { speaker: 'Mei', text: 'Our cake has four tiers. Jonah insisted.' },
+      { speaker: 'Jonah', text: 'It’s heavy, so carry it with both hands when it’s time to cut it. And watch out for spills!' },
     ],
   },
   {
     id: 'outro-level-3',
-    lines: [{ speaker: 'Marco', text: 'Nonna and Vito actually danced together. You’re a miracle worker.' }],
+    lines: [{ speaker: 'Mei', text: 'Not a single crumb on the floor. Well… almost.' }],
   },
   {
     id: 'intro-level-4',
+    lines: [
+      { speaker: 'Lina', text: 'Small problem: Nonna Rosa and Uncle Vito haven’t spoken in eleven years.' },
+      { speaker: 'Marco', text: 'Keep them at different tables. And my boss hates noisy kids.' },
+      { speaker: 'Planner', text: 'While you drag a guest, the tables glow: green means friends, red means trouble.' },
+    ],
+  },
+  {
+    id: 'outro-level-4',
+    lines: [{ speaker: 'Marco', text: 'Nonna and Vito actually danced together. You’re a miracle worker.' }],
+  },
+  {
+    id: 'intro-level-5',
     lines: [
       { speaker: 'June', text: 'We invited everyone. The dog is the ring bearer. The DJ is my cousin.' },
       { speaker: 'Theo', text: 'What could possibly go wrong?' },
     ],
   },
   {
-    id: 'outro-level-4',
+    id: 'outro-level-5',
     lines: [{ speaker: 'June', text: 'Chaos, cake and a very good boy. Best day ever!' }],
   },
 ];

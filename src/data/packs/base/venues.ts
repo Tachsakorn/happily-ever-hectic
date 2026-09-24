@@ -22,24 +22,32 @@ function roundTable(id: string, x: number, y: number): TableDef {
   return { id, pos: { x, y }, radius: TABLE_RADIUS, seats };
 }
 
+/*
+ * Compact layout: like the classic Dash games, everything is a short walk
+ * away. The long walks of the first layout made one planner feel hopeless
+ * against a full room (playtest feedback, day 1).
+ */
 const tables = [
-  roundTable('table-1', 500, 470),
-  roundTable('table-2', 870, 470),
-  roundTable('table-3', 500, 780),
-  roundTable('table-4', 870, 780),
+  roundTable('table-1', 520, 440),
+  roundTable('table-2', 830, 440),
+  roundTable('table-3', 520, 700),
+  roundTable('table-4', 830, 700),
 ];
 
+const KITCHEN_X = 1180;
+const SERVICE_X = 1092;
+
 const stations: StationDef[] = [
-  { id: 'entrance', kind: 'entrance', name: 'Entrance', pos: { x: 70, y: 935 }, interactPos: { x: 150, y: 930 }, hitRadius: 0 },
-  { id: 'gift-table', kind: 'giftTable', name: 'Gift Table', pos: { x: 115, y: 250 }, interactPos: { x: 200, y: 300 }, hitRadius: 80 },
-  { id: 'dj-booth', kind: 'djBooth', name: 'DJ Booth', pos: { x: 330, y: 185 }, interactPos: { x: 330, y: 262 }, hitRadius: 72 },
-  { id: 'couple-table', kind: 'coupleTable', name: 'Sweetheart Table', pos: { x: 700, y: 200 }, interactPos: { x: 700, y: 290 }, hitRadius: 100 },
+  { id: 'entrance', kind: 'entrance', name: 'Entrance', pos: { x: 120, y: 950 }, interactPos: { x: 180, y: 930 }, hitRadius: 0 },
+  { id: 'gift-table', kind: 'giftTable', name: 'Gift Table', pos: { x: 200, y: 270 }, interactPos: { x: 285, y: 320 }, hitRadius: 85 },
+  { id: 'dj-booth', kind: 'djBooth', name: 'DJ Booth', pos: { x: 400, y: 190 }, interactPos: { x: 400, y: 262 }, hitRadius: 72 },
+  { id: 'couple-table', kind: 'coupleTable', name: 'Sweetheart Table', pos: { x: 675, y: 200 }, interactPos: { x: 675, y: 290 }, hitRadius: 100 },
   {
     id: 'cake-table',
     kind: 'cakeTable',
     name: 'Cake Table',
-    pos: { x: 930, y: 200 },
-    interactPos: { x: 930, y: 285 },
+    pos: { x: 905, y: 200 },
+    interactPos: { x: 905, y: 285 },
     providesItemId: 'wedding-cake',
     hitRadius: 68,
   },
@@ -47,18 +55,18 @@ const stations: StationDef[] = [
     id: 'dessert-table',
     kind: 'dessertTable',
     name: 'Dessert Table',
-    pos: { x: 1100, y: 205 },
-    interactPos: { x: 1100, y: 285 },
+    pos: { x: 1070, y: 205 },
+    interactPos: { x: 1070, y: 285 },
     providesItemId: 'cake-slice',
     hitRadius: 66,
   },
-  { id: 'kitchen', kind: 'kitchenPass', name: 'Kitchen', pos: { x: 1305, y: 455 }, interactPos: { x: 1205, y: 455 }, hitRadius: 90 },
+  { id: 'kitchen', kind: 'kitchenPass', name: 'Kitchen', pos: { x: KITCHEN_X, y: 455 }, interactPos: { x: SERVICE_X, y: 455 }, hitRadius: 90 },
   {
     id: 'tap-champagne',
     kind: 'drinkTap',
     name: 'Champagne',
-    pos: { x: 1305, y: 700 },
-    interactPos: { x: 1205, y: 700 },
+    pos: { x: KITCHEN_X, y: 660 },
+    interactPos: { x: SERVICE_X, y: 660 },
     providesItemId: 'champagne',
     hitRadius: 58,
   },
@@ -66,16 +74,16 @@ const stations: StationDef[] = [
     id: 'tap-lemonade',
     kind: 'drinkTap',
     name: 'Pink Lemonade',
-    pos: { x: 1305, y: 810 },
-    interactPos: { x: 1205, y: 810 },
+    pos: { x: KITCHEN_X, y: 765 },
+    interactPos: { x: SERVICE_X, y: 765 },
     providesItemId: 'lemonade',
     hitRadius: 58,
   },
-  { id: 'bin', kind: 'bin', name: 'Bin', pos: { x: 1310, y: 935 }, interactPos: { x: 1215, y: 930 }, hitRadius: 48 },
+  { id: 'bin', kind: 'bin', name: 'Bin', pos: { x: KITCHEN_X, y: 880 }, interactPos: { x: SERVICE_X, y: 875 }, hitRadius: 48 },
 ];
 
-const aisleX = [250, 685, 1060, 1180];
-const aisleY = [320, 625, 930];
+const aisleX = [330, 675, 985, 1060];
+const aisleY = [300, 570, 850];
 
 export const gardenHall: VenueDef = {
   id: 'garden-hall',
@@ -84,29 +92,29 @@ export const gardenHall: VenueDef = {
   stations,
   tables,
   waitingSlots: [
-    { x: 105, y: 800 },
-    { x: 105, y: 690 },
-    { x: 105, y: 580 },
-    { x: 105, y: 470 },
+    { x: 185, y: 770 },
+    { x: 185, y: 665 },
+    { x: 185, y: 560 },
+    { x: 185, y: 455 },
   ],
-  doorPos: { x: 60, y: 985 },
-  plannerStart: { x: 685, y: 625 },
-  couplePos: { x: 700, y: 170 },
+  doorPos: { x: 120, y: 990 },
+  plannerStart: { x: 675, y: 570 },
+  couplePos: { x: 675, y: 170 },
   passSlots: [
-    { x: 1300, y: 355 },
-    { x: 1300, y: 422 },
-    { x: 1300, y: 489 },
-    { x: 1300, y: 556 },
+    { x: KITCHEN_X, y: 355 },
+    { x: KITCHEN_X, y: 422 },
+    { x: KITCHEN_X, y: 489 },
+    { x: KITCHEN_X, y: 556 },
   ],
   obstacles: [
     ...tables.map((t) => ({ kind: 'circle' as const, center: t.pos, radius: t.radius })),
-    { kind: 'rect', x: 590, y: 170, w: 220, h: 60 },
-    { kind: 'circle', center: { x: 930, y: 200 }, radius: 42 },
-    { kind: 'rect', x: 1045, y: 180, w: 110, h: 50 },
-    { kind: 'rect', x: 1270, y: 320, w: 70, h: 270 },
-    { kind: 'rect', x: 1270, y: 660, w: 70, h: 190 },
-    { kind: 'rect', x: 55, y: 215, w: 120, h: 70 },
-    { kind: 'rect', x: 275, y: 150, w: 110, h: 65 },
+    { kind: 'rect', x: 565, y: 170, w: 220, h: 60 },
+    { kind: 'circle', center: { x: 905, y: 200 }, radius: 42 },
+    { kind: 'rect', x: 1015, y: 180, w: 110, h: 50 },
+    { kind: 'rect', x: KITCHEN_X - 35, y: 320, w: 70, h: 270 },
+    { kind: 'rect', x: KITCHEN_X - 35, y: 625, w: 70, h: 180 },
+    { kind: 'rect', x: 140, y: 235, w: 120, h: 70 },
+    { kind: 'rect', x: 345, y: 155, w: 110, h: 65 },
   ],
   waypoints: aisleX.flatMap((x) => aisleY.map((y) => ({ x, y }))),
   floorColor: 0xf6e6da,

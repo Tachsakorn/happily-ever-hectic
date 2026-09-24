@@ -22,7 +22,7 @@ export class Hud {
   private readonly scoreText: Phaser.GameObjects.Text;
   private readonly heart: Phaser.GameObjects.Image;
   private readonly ticker: Phaser.GameObjects.Text[] = [];
-  private readonly tickerLines: { text: string; color: string }[] = [];
+  private readonly tickerLines: { cause: string; amount: number; text: string; color: string }[] = [];
   private readonly stars: Phaser.GameObjects.Image[] = [];
   private shownMood = -1;
   private shownScore = -1;
@@ -68,15 +68,24 @@ export class Hud {
 
   /** Called for every mood change so the player always sees the latest reasons. */
   pushCause(delta: number, cause: string): void {
-    const rounded = Math.round(delta);
+    // Repeated causes (a disaster draining every second) accumulate on one line.
+    const top = this.tickerLines[0];
+    const total = top && top.cause === cause ? top.amount + delta : delta;
+    if (top && top.cause === cause) this.tickerLines.shift();
+    const rounded = Math.round(total);
     if (rounded === 0) return;
-    this.tickerLines.unshift({ text: `${rounded > 0 ? '+' : '−'}${Math.abs(rounded)} ${cause}`, color: rounded > 0 ? Colors.goodCss : Colors.badCss });
+    this.tickerLines.unshift({
+      cause,
+      amount: total,
+      text: `${rounded > 0 ? '+' : '−'}${Math.abs(rounded)} ${cause}`,
+      color: rounded > 0 ? Colors.goodCss : Colors.badCss,
+    });
     this.tickerLines.length = Math.min(this.tickerLines.length, TICKER_LINES);
     this.ticker.forEach((t, i) => {
       const line = this.tickerLines[i];
       t.setText(line?.text ?? '').setColor(line?.color ?? Colors.inkCss).setAlpha(i === 0 ? 1 : 0.6);
     });
-    if (rounded < 0) this.scene.tweens.add({ targets: this.heart, angle: { from: -12, to: 0 }, duration: 260, ease: 'Back.easeOut' });
+    if (delta <= -1) this.scene.tweens.add({ targets: this.heart, angle: { from: -12, to: 0 }, duration: 260, ease: 'Back.easeOut' });
   }
 
   sync(): void {

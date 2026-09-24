@@ -31,7 +31,8 @@ export type DomainEvent =
   | { type: 'momentFailed'; momentId: Id }
   | { type: 'coupleRequested'; itemId: Id; momentId: Id | null }
   | { type: 'coupleRequestExpired'; itemId: Id; momentId: Id | null }
-  | { type: 'moodChanged'; delta: number; mood: number; cause: string; pos: Vec2 | null }
+  /** `ongoing`: aggregated drain from something still happening (reported once per second). */
+  | { type: 'moodChanged'; delta: number; mood: number; cause: string; pos: Vec2 | null; ongoing: boolean }
   | { type: 'scoreChanged'; delta: number; total: number; reason: string; pos: Vec2 | null }
   | { type: 'receptionEnded'; outcome: 'COMPLETE' | 'FAILED' };
 

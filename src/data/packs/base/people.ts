@@ -34,7 +34,7 @@ export const guestTypes: GuestTypeDef[] = [
   {
     id: 'regular',
     name: 'Guest',
-    patienceSeconds: 55,
+    patienceSeconds: 70,
     eatSeconds: 9,
     requestIntervalSeconds: [26, 42],
     requestPool: [
@@ -48,7 +48,7 @@ export const guestTypes: GuestTypeDef[] = [
   {
     id: 'grandparent',
     name: 'Grandparent',
-    patienceSeconds: 70,
+    patienceSeconds: 90,
     eatSeconds: 13,
     requestIntervalSeconds: [32, 48],
     requestPool: [
@@ -61,7 +61,7 @@ export const guestTypes: GuestTypeDef[] = [
   {
     id: 'party-animal',
     name: 'Party Animal',
-    patienceSeconds: 42,
+    patienceSeconds: 55,
     eatSeconds: 7,
     requestIntervalSeconds: [18, 30],
     requestPool: [
@@ -74,7 +74,7 @@ export const guestTypes: GuestTypeDef[] = [
   {
     id: 'foodie',
     name: 'Foodie',
-    patienceSeconds: 48,
+    patienceSeconds: 60,
     eatSeconds: 12,
     requestIntervalSeconds: [22, 36],
     requestPool: [
@@ -88,7 +88,7 @@ export const guestTypes: GuestTypeDef[] = [
   {
     id: 'kid',
     name: 'Kid',
-    patienceSeconds: 38,
+    patienceSeconds: 50,
     eatSeconds: 8,
     requestIntervalSeconds: [18, 30],
     requestPool: [
@@ -101,7 +101,7 @@ export const guestTypes: GuestTypeDef[] = [
   {
     id: 'boss',
     name: 'The Boss',
-    patienceSeconds: 50,
+    patienceSeconds: 62,
     eatSeconds: 10,
     requestIntervalSeconds: [22, 36],
     requestPool: [

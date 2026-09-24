@@ -82,8 +82,8 @@ function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, d
   switch (s.kind) {
     case 'entrance': {
       c.fillStyle = hex(0xc9a27a);
-      c.fillRect(20, 950, 90, 50);
-      label(c, 'Entrance', 85, 915, 15);
+      c.fillRect(x - 55, y, 110, v.size.height - y);
+      label(c, 'Entrance', x, y - 22, 15);
       break;
     }
     case 'giftTable': {
@@ -170,9 +170,20 @@ function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, d
       break;
     }
     case 'kitchenPass': {
+      // Back-of-house: tiled kitchen floor behind the pass, to the edge of the venue.
+      const top = Math.min(...v.passSlots.map((p) => p.y)) - 37;
+      const bottom = Math.max(...v.passSlots.map((p) => p.y)) + 36;
       c.fillStyle = hex(0xe9e1d8);
-      c.fillRect(1340, 300, 60, 310);
-      roundRect(c, 1268, 318, 74, 274, 10);
+      c.fillRect(x + 30, 110, v.size.width - x - 30, v.size.height - 110);
+      c.strokeStyle = hex(0xd6ccc2);
+      c.lineWidth = 2;
+      for (let ty = 110; ty < v.size.height; ty += 40) {
+        c.beginPath();
+        c.moveTo(x + 30, ty);
+        c.lineTo(v.size.width, ty);
+        c.stroke();
+      }
+      roundRect(c, x - 32, top, 64, bottom - top, 10);
       c.fillStyle = hex(0xd8d2cc);
       c.fill();
       c.lineWidth = 2.5;
@@ -184,7 +195,7 @@ function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, d
         c.fillStyle = 'rgba(255,255,255,0.55)';
         c.fill();
       }
-      label(c, 'Kitchen', 1300, 290);
+      label(c, 'Kitchen', x, top - 26);
       break;
     }
     case 'drinkTap': {
@@ -238,8 +249,11 @@ export function paintVenue(v: VenueDef, decor: DecorLook): Painter {
     c.fillStyle = hex(0xb9d3a8);
     c.fillRect(0, 0, width, 110);
     for (let x = 20; x < width; x += 70) flowers(c, x, 96, x % 140 ? 0xffffff : 0xf2a7b8, 5);
-    // Waiting rug
-    roundRect(c, 40, 410, 130, 440, 24);
+    // Waiting rug around the waiting spots
+    const wx = v.waitingSlots.map((p) => p.x);
+    const wy = v.waitingSlots.map((p) => p.y);
+    const rug = { x: Math.min(...wx) - 65, y: Math.min(...wy) - 60, w: Math.max(...wx) - Math.min(...wx) + 130, h: Math.max(...wy) - Math.min(...wy) + 120 };
+    roundRect(c, rug.x, rug.y, rug.w, rug.h, 24);
     c.fillStyle = hex(0xeac2c9, 0.7);
     c.fill();
     c.setLineDash([8, 8]);
@@ -247,10 +261,10 @@ export function paintVenue(v: VenueDef, decor: DecorLook): Painter {
     c.strokeStyle = hex(0xe07a95, 0.7);
     c.stroke();
     c.setLineDash([]);
-    label(c, 'Waiting', 105, 392, 15);
+    label(c, 'Waiting', rug.x + rug.w / 2, rug.y - 16, 15);
     // Aisle runner towards the couple
     c.fillStyle = 'rgba(255,255,255,0.35)';
-    c.fillRect(655, 250, 60, 750);
+    c.fillRect(v.couplePos.x - 30, 250, 60, v.size.height - 250);
 
     for (const s of v.stations) paintStation(c, s, v, decor);
     for (const t of v.tables) paintTable(c, t, decor);

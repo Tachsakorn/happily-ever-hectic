@@ -58,8 +58,9 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
    (use the `guest(key, name, type, group, arriveAt, { bringsGift, likes, dislikes })` helper),
    disasters, moments (`toast`, `cake-cutting`), kitchen, star scores, coins, unlock chain, dialogue ids.
 3. Add intro/outro lines to `dialogues` in `meta.ts`.
-4. Run `pnpm vitest run tests/balance.test.ts --silent=false` and set `starScores` to roughly
-   45% / 70% / 90% of the autoplayer's median score.
+4. Run `pnpm vitest run tests/balance.test.ts --silent=false` and copy the printed `suggested`
+   thresholds (≈ 55% / 80% / 95% of what the *casual* autoplayer scores) into `starScores`.
+   Introduce at most one new mechanic per wedding — players need room to learn it.
 
 ## A new venue
 

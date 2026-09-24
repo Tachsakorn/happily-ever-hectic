@@ -36,7 +36,7 @@ export class MoodLedger {
    */
   change(delta: number, cause: string, pos: Vec2 | null = null, ledgerCause: string = cause): void {
     const applied = this.apply(delta, ledgerCause);
-    if (applied !== 0) this.events.emit({ type: 'moodChanged', delta: applied, mood: this.mood, cause, pos });
+    if (applied !== 0) this.events.emit({ type: 'moodChanged', delta: applied, mood: this.mood, cause, pos, ongoing: false });
   }
 
   /** Continuous change; reported in aggregate once per second. */
@@ -57,7 +57,7 @@ export class MoodLedger {
   flush(): void {
     this.sinceFlush = 0;
     for (const [cause, { amount, pos }] of this.pending) {
-      this.events.emit({ type: 'moodChanged', delta: amount, mood: this.mood, cause, pos });
+      this.events.emit({ type: 'moodChanged', delta: amount, mood: this.mood, cause, pos, ongoing: true });
     }
     this.pending.clear();
   }

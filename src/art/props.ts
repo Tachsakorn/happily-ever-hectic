@@ -1,4 +1,4 @@
-import { disc, flat, hex, INK, LINE, outline, oval, rrect, shade, toon, type Painter } from './canvas';
+import { disc, flat, FONT_DISPLAY, hex, INK, LINE, outline, oval, rrect, shade, toon, type Painter } from './canvas';
 import { heartPath } from './items';
 
 /** Speech bubble, 64×64, tail pointing down at the speaker. */
@@ -147,6 +147,76 @@ export function paintDisasterIcon(icon: string, color: number): Painter {
         c.beginPath();
         c.moveTo(-16, -16);
         c.lineTo(16, 16);
+        c.stroke();
+        break;
+      }
+      case 'rings': {
+        toon(c, disc(0, 0, 25), 0xfffaf0, { x: -25, y: -25, w: 50, h: 50 }, { line: 2.6 });
+        for (const [dx, tone] of [
+          [-7, 0xf2b84b],
+          [7, 0xe6e2de],
+        ] as const) {
+          c.lineWidth = 8;
+          c.strokeStyle = hex(INK);
+          c.beginPath();
+          c.arc(dx, 3, 9, 0, Math.PI * 2);
+          c.stroke();
+          c.lineWidth = 4.5;
+          c.strokeStyle = hex(tone);
+          c.stroke();
+        }
+        const gem = new Path2D();
+        gem.moveTo(-7, -12);
+        gem.lineTo(-2, -7);
+        gem.lineTo(-7, -2);
+        gem.lineTo(-12, -7);
+        gem.closePath();
+        flat(c, gem, 0x8fd0e8, 1.8);
+        c.fillStyle = hex(INK);
+        c.font = `20px ${FONT_DISPLAY}`;
+        c.textAlign = 'center';
+        c.fillText('?', 17, -10);
+        break;
+      }
+      case 'gifts-fallen': {
+        const boxes: [number, number, number, number, number][] = [
+          [-14, 8, 22, 18, -0.35],
+          [12, 10, 20, 16, 0.4],
+          [0, -12, 18, 16, -0.15],
+        ];
+        boxes.forEach(([x, y, w, h, rot], i) => {
+          c.save();
+          c.translate(x, y);
+          c.rotate(rot);
+          toon(c, rrect(-w / 2, -h / 2, w, h, 3), i === 1 ? 0xf7b7c6 : color, { x: -w / 2, y: -h / 2, w, h }, { line: 2.4 });
+          c.fillStyle = hex(0xe86f8e);
+          c.fillRect(-2, -h / 2, 4, h);
+          c.restore();
+        });
+        c.strokeStyle = hex(INK);
+        c.lineWidth = 2.4;
+        c.beginPath();
+        c.moveTo(-24, -16);
+        c.quadraticCurveTo(-20, -22, -14, -24);
+        c.moveTo(22, -12);
+        c.quadraticCurveTo(24, -18, 20, -24);
+        c.stroke();
+        break;
+      }
+      case 'camera': {
+        const body = rrect(-24, -12, 48, 32, 7);
+        toon(c, body, color, { x: -24, y: -12, w: 48, h: 32 }, { line: 2.6 });
+        flat(c, rrect(-10, -19, 20, 9, 3), shade(color, -0.2), 2.2);
+        flat(c, disc(0, 4, 11), 0xfffaf0, 2.4);
+        flat(c, disc(0, 4, 6), 0x8fd0e8, 2);
+        flat(c, disc(15, -5, 3.5), 0xf2b84b, 1.6);
+        c.strokeStyle = hex(0xf2b84b);
+        c.lineWidth = 3;
+        c.beginPath();
+        for (const a of [-2.2, -1.6, -1.0]) {
+          c.moveTo(18 + Math.cos(a) * 12, -14 + Math.sin(a) * 12);
+          c.lineTo(18 + Math.cos(a) * 19, -14 + Math.sin(a) * 19);
+        }
         c.stroke();
         break;
       }

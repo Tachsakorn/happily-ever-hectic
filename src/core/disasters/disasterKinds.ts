@@ -88,9 +88,15 @@ const targets: { [K in DisasterTarget['kind']]: TargetFn<K> } = {
   },
 };
 
+/** The level's own trigger for this disaster if it choreographs one, else the disaster's default. */
+export function triggerFor(def: DisasterDef, ctx: SimContext): DisasterTrigger {
+  return ctx.level.disasterTriggers?.[def.id] ?? def.trigger;
+}
+
 export function shouldTrigger(def: DisasterDef, tc: TriggerContext): boolean {
-  const fn = triggers[def.trigger.kind] as TriggerFn<typeof def.trigger.kind>;
-  return fn(def.trigger as never, tc);
+  const trigger = triggerFor(def, tc.ctx);
+  const fn = triggers[trigger.kind] as TriggerFn<typeof trigger.kind>;
+  return fn(trigger as never, tc);
 }
 
 export function pickTarget(def: DisasterDef, ctx: SimContext): TargetSpot | null {

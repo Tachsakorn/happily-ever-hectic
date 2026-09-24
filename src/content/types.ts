@@ -275,6 +275,12 @@ export interface LevelDef {
   readonly durationSeconds: number;
   readonly guests: readonly LevelGuestSpec[];
   readonly disasterIds: readonly Id[];
+  /**
+   * Optional per-level choreography: replaces a disaster's default trigger in
+   * this level only, so a level can pace its surprises (one kind at a time)
+   * instead of letting them pile up.
+   */
+  readonly disasterTriggers?: Readonly<Record<Id, DisasterTrigger>>;
   readonly moments: readonly { readonly momentId: Id; readonly at: number }[];
   readonly kitchen: { readonly burners: number; readonly cookSeconds: number };
   /** Score needed for 1, 2 and 3 stars. */

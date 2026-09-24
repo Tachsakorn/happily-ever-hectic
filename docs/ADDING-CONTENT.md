@@ -62,6 +62,12 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
    thresholds (≈ 55% / 80% / 95% of what the *casual* autoplayer scores) into `starScores`.
    Introduce at most one new mechanic per wedding — players need room to learn it.
 
+### Pacing a level's surprises
+
+A level can override when each of its disasters may fire with `disasterTriggers`
+(`{ 'missing-rings': { kind: 'scheduled', at: 88 } }`). Use it to make a level hard through
+variety — one new kind of surprise at a time — instead of piling on guests. The finale does this.
+
 ## A new venue
 
 Add a `VenueDef` (stations, tables, waiting spots, pass slots, obstacles, aisle waypoints) and a

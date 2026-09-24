@@ -63,6 +63,12 @@ export function validateContent(content: ContentRegistry): string[] {
     check(content.weddings.has(level.weddingId), `${where}: unknown wedding ${level.weddingId}`);
     check(content.venues.has(level.venueId), `${where}: unknown venue ${level.venueId}`);
     for (const d of level.disasterIds) check(content.disasters.has(d), `${where}: unknown disaster ${d}`);
+    for (const [d, t] of Object.entries(level.disasterTriggers ?? {})) {
+      check(level.disasterIds.includes(d), `${where}: trigger set for disaster ${d}, which the level does not use`);
+      const start = t.kind === 'scheduled' ? t.at : t.kind === 'random' ? t.from : (t.from ?? 0);
+      check(start < level.durationSeconds, `${where}: disaster ${d} is scheduled after the reception ends`);
+      if (t.kind === 'random') check(t.from < t.to, `${where}: disaster ${d} has an empty time window`);
+    }
     for (const m of level.moments) {
       check(content.moments.has(m.momentId), `${where}: unknown moment ${m.momentId}`);
       check(m.at < level.durationSeconds, `${where}: moment ${m.momentId} happens after the reception ends`);

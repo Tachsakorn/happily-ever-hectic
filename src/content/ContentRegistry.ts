@@ -1,4 +1,5 @@
 import type {
+  AchievementDef,
   ContentPack,
   DecorDef,
   DialogueDef,
@@ -11,6 +12,7 @@ import type {
   LevelDef,
   MomentDef,
   ScoringRules,
+  SecretEventDef,
   TuningDef,
   TraitDef,
   UpgradeDef,
@@ -64,6 +66,8 @@ export class ContentRegistry {
   readonly decor = new Catalog<DecorDef>('decor');
   readonly upgrades = new Catalog<UpgradeDef>('upgrade');
   readonly dialogues = new Catalog<DialogueDef>('dialogue');
+  readonly secretEvents = new Catalog<SecretEventDef>('secret event');
+  readonly achievements = new Catalog<AchievementDef>('achievement');
   private infoValue: GameInfo | null = null;
   private scoringValue: ScoringRules | null = null;
   private tuningValue: TuningDef | null = null;
@@ -111,5 +115,7 @@ export class ContentRegistry {
     add(this.decor, pack.decor);
     add(this.upgrades, pack.upgrades);
     add(this.dialogues, pack.dialogues);
+    add(this.secretEvents, pack.secretEvents);
+    add(this.achievements, pack.achievements);
   }
 }

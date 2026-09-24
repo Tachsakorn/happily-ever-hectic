@@ -17,6 +17,22 @@ export interface Settings {
   readonly testTools: boolean;
 }
 
+/** Running totals across every reception played; they drive counting achievements. */
+export interface LifetimeStats {
+  readonly weddingsCompleted: number;
+  readonly dances: number;
+  readonly giftsDelivered: number;
+  readonly disastersFixed: number;
+  readonly happyGoodbyes: number;
+  readonly guestsServed: number;
+}
+
+const LIFETIME_KEYS = ['weddingsCompleted', 'dances', 'giftsDelivered', 'disastersFixed', 'happyGoodbyes', 'guestsServed'] as const;
+
+export function emptyLifetime(): LifetimeStats {
+  return { weddingsCompleted: 0, dances: 0, giftsDelivered: 0, disastersFixed: 0, happyGoodbyes: 0, guestsServed: 0 };
+}
+
 export interface SaveData {
   readonly version: typeof SAVE_VERSION;
   readonly coins: number;
@@ -24,6 +40,11 @@ export interface SaveData {
   readonly upgrades: readonly string[];
   readonly settings: Settings;
   readonly seenEnding: boolean;
+  /** Achievement id → when it was unlocked (ms since epoch). */
+  readonly achievements: Readonly<Record<string, number>>;
+  readonly lifetime: LifetimeStats;
+  /** Secret event ids ever found. */
+  readonly secretsFound: readonly string[];
 }
 
 export function newSave(): SaveData {
@@ -34,6 +55,9 @@ export function newSave(): SaveData {
     upgrades: [],
     settings: { music: true, sfx: true, testTools: false },
     seenEnding: false,
+    achievements: {},
+    lifetime: emptyLifetime(),
+    secretsFound: [],
   };
 }
 
@@ -58,6 +82,14 @@ export function migrate(raw: unknown): SaveData {
     }
   }
   const settings = isRecord(raw.settings) ? raw.settings : {};
+  // Achievements, lifetime stats and secrets arrived after version 1 shipped;
+  // older saves simply start them empty.
+  const achievements: Record<string, number> = {};
+  if (isRecord(raw.achievements)) {
+    for (const [id, at] of Object.entries(raw.achievements)) if (typeof at === 'number' && Number.isFinite(at)) achievements[id] = at;
+  }
+  const rawLifetime = isRecord(raw.lifetime) ? raw.lifetime : {};
+  const lifetime = Object.fromEntries(LIFETIME_KEYS.map((k) => [k, Math.max(0, Math.floor(num(rawLifetime[k], 0)))])) as unknown as LifetimeStats;
   return {
     version: SAVE_VERSION,
     coins: Math.max(0, Math.floor(num(raw.coins, 0))),
@@ -69,5 +101,8 @@ export function migrate(raw: unknown): SaveData {
       testTools: bool(settings.testTools, base.settings.testTools),
     },
     seenEnding: bool(raw.seenEnding, false),
+    achievements,
+    lifetime,
+    secretsFound: Array.isArray(raw.secretsFound) ? [...new Set(raw.secretsFound.filter((u): u is string => typeof u === 'string'))] : [],
   };
 }

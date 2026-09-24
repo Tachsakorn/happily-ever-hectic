@@ -10,7 +10,7 @@ export interface SettingsVM {
 }
 
 /** Sounds a screen may ask for; the app maps them onto the audio service. */
-export type UiCue = 'star' | 'coin' | 'pop' | 'whoosh' | 'cheer';
+export type UiCue = 'star' | 'coin' | 'pop' | 'whoosh' | 'cheer' | 'achievement';
 
 /** The title, two lines, last word in rose, letters dropping in one after another. */
 export function logo(title: string, idle = false): HTMLElement {

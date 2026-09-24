@@ -12,6 +12,7 @@ import { ReceptionInput } from '../input/ReceptionInput';
 import { PhaserHost } from '../PhaserHost';
 import { Colors, Depth } from '../ui/text';
 import { DisasterLayer } from '../views/DisasterLayer';
+import { SecretLayer } from '../views/SecretLayer';
 import { FloatingTextLayer } from '../views/FloatingTextLayer';
 import { GuestView } from '../views/GuestView';
 import { Banner, Hud } from '../views/Hud';
@@ -50,6 +51,7 @@ export class ReceptionScene extends Phaser.Scene {
   private props!: PropsView;
   private kitchen!: KitchenView;
   private disasters!: DisasterLayer;
+  private secrets!: SecretLayer;
   private floating!: FloatingTextLayer;
   private hud!: Hud;
   private banner!: Banner;
@@ -99,6 +101,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.couple = new CoupleView(this, this.art, this.tex, sim, ctx.wedding, this.fx);
     this.planner = new PlannerView(this, this.art, this.tex, sim, renderScale, (t) => this.positionOf(t), this.fx);
     this.disasters = new DisasterLayer(this, this.art, this.tex, sim);
+    this.secrets = new SecretLayer(this, this.art, this.tex, this.fx, sim);
     this.floating = new FloatingTextLayer(this, renderScale);
     this.hud = new Hud(this, this.art, this.tex, sim, renderScale, ctx.level, ctx.wedding, this.fx);
     this.banner = new Banner(this, this.tex, this.art, renderScale);
@@ -134,6 +137,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.props.sync(time);
     this.kitchen.sync(dt);
     this.disasters.sync(time);
+    this.secrets.sync(session.paused ? 0 : dt);
     this.hud.sync(dt);
     // Announcements wait while paused (e.g. during the intro dialogue) so none are missed.
     if (!session.paused) this.banner.update(time);
@@ -197,6 +201,8 @@ export class ReceptionScene extends Phaser.Scene {
         return sim.state.gifts.find((g) => g.id === t.id)?.pos ?? null;
       case 'disaster':
         return sim.state.disasters.find((d) => d.id === t.id)?.pos ?? null;
+      case 'secret':
+        return sim.state.secrets.find((s) => s.id === t.id)?.pos ?? null;
     }
   }
 
@@ -247,6 +253,21 @@ export class ReceptionScene extends Phaser.Scene {
       case 'disasterFailed':
         this.fx.puff(e.pos, 5, 'steam');
         this.cameras.main.shake(260, 0.006);
+        break;
+      case 'secretAppeared':
+        this.banner.show(`✨ ${ctx.content.secretEvents.get(e.defId).appearText}`, 'secret', 4.5, true);
+        break;
+      case 'secretFound': {
+        const def = ctx.content.secretEvents.get(e.defId);
+        this.banner.show(`Secret found: ${def.name}! ${def.foundText}`, 'secret', 5, true);
+        this.fx.confetti({ x: e.pos.x, y: e.pos.y - 40 }, 36, 200);
+        this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 40 }, 14, 90, 0xfff3c4);
+        this.planner.cheer();
+        break;
+      }
+      case 'secretVanished':
+        this.fx.puff({ x: e.pos.x, y: e.pos.y - 20 }, 4);
+        this.floating.show({ x: e.pos.x, y: e.pos.y - 90 }, 'It vanished…', '#8a7688', 18);
         break;
       case 'guestSeated':
         if (e.neighbourScore > 0.25) {
@@ -321,6 +342,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.props?.destroy();
     this.kitchen?.destroy();
     this.disasters?.destroy();
+    this.secrets?.destroy();
     this.overlay?.destroy();
     this.hud?.destroy();
     this.fx?.destroy();

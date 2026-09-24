@@ -9,6 +9,7 @@ import { DisasterPhase, GuestState, MAX_HAPPINESS, type Disaster, type TargetRef
 import { resolveDisaster } from '../disasters/DisasterSystem';
 import { serveCouple } from '../couple/CoupleSystem';
 import { stationItem } from '../sim/items';
+import { findSecret, liveSecret } from '../secrets/SecretSystem';
 
 /**
  * What happens when the planner reaches a tapped target. Resolution happens on
@@ -68,6 +69,8 @@ export function targetPosition(ctx: SimContext, target: TargetRef): Vec2 | null 
     }
     case 'disaster':
       return liveDisaster(ctx, target.id)?.interactPos ?? null;
+    case 'secret':
+      return liveSecret(ctx, target.id)?.pos ?? null;
   }
 }
 
@@ -271,6 +274,16 @@ export function resolveInteraction(ctx: SimContext, target: TargetRef): Resoluti
     case 'disaster': {
       const d = liveDisaster(ctx, target.id);
       return d ? resolveDisasterWork(ctx, d) : { skip: 'Already handled' };
+    }
+    case 'secret': {
+      const secret = liveSecret(ctx, target.id);
+      if (!secret) return { skip: 'It vanished…' };
+      return {
+        work: ctx.tuning.secretWorkSeconds,
+        perform: () => {
+          if (liveSecret(ctx, secret.id)) findSecret(ctx, secret);
+        },
+      };
     }
   }
 }

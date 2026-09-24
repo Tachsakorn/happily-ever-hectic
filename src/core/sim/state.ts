@@ -70,7 +70,8 @@ export type TargetRef =
   | { readonly kind: 'station'; readonly id: Id }
   | { readonly kind: 'passSlot'; readonly index: number }
   | { readonly kind: 'gift'; readonly id: number }
-  | { readonly kind: 'disaster'; readonly id: number };
+  | { readonly kind: 'disaster'; readonly id: number }
+  | { readonly kind: 'secret'; readonly id: number };
 
 export interface QueuedAction {
   readonly id: number;
@@ -129,6 +130,16 @@ export interface Disaster {
   readonly involvedGuestKeys: readonly string[];
 }
 
+/** A secret event currently on the floor (or already found or gone). */
+export interface Secret {
+  readonly id: number;
+  readonly defId: Id;
+  readonly pos: Vec2;
+  state: 'active' | 'found' | 'vanished';
+  timeLeft: number;
+  readonly total: number;
+}
+
 export interface CoupleRequest {
   readonly itemId: Id;
   readonly momentId: Id | null;
@@ -153,6 +164,7 @@ export interface ReceptionState {
   readonly kitchen: { orders: KitchenOrder[]; pass: (Id | null)[] };
   readonly gifts: Gift[];
   readonly disasters: Disaster[];
+  readonly secrets: Secret[];
   readonly couple: Couple;
   readonly flags: Set<string>;
   score: number;

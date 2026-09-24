@@ -14,6 +14,7 @@ import { NavGraph } from '../nav/NavGraph';
 import { clearQueue, PlannerSystem, queueAction } from '../planner/PlannerSystem';
 import { buildResult, endBonus, type ReceptionResult } from '../scoring/results';
 import { ScoreKeeper } from '../scoring/ScoreKeeper';
+import { createSecretSystem, type SecretSystem } from '../secrets/SecretSystem';
 import { createTimelineSystem } from '../timeline/TimelineSystem';
 import { CHEAT_CAUSE, type Cheat } from './cheats';
 import { fail, type Command, type CommandResult } from './commands';
@@ -43,6 +44,7 @@ export const SIM_STEP_SECONDS = 1 / 60;
 export class ReceptionSimulation {
   private readonly ctx: SimContext;
   private readonly systems: readonly System[];
+  private readonly secrets: SecretSystem;
 
   constructor(setup: ReceptionSetup) {
     const { content } = setup;
@@ -62,6 +64,7 @@ export class ReceptionSimulation {
       kitchen: { orders: [], pass: venueDef.passSlots.map(() => null) },
       gifts: [],
       disasters: [],
+      secrets: [],
       couple: { mood: Math.min(100, tuning.mood.start + modifiers.startMood), request: null, nextRequestIn: 0 },
       flags: new Set(),
       score: 0,
@@ -108,6 +111,7 @@ export class ReceptionSimulation {
     // Order matters: the timeline spawns, disasters set this tick's drain
     // multipliers before guests consume them, the planner acts before guests
     // update so a dish served this tick stops the drain immediately.
+    this.secrets = createSecretSystem(setup.seed);
     this.systems = [
       createTimelineSystem(level),
       createDisasterSystem(),
@@ -115,6 +119,7 @@ export class ReceptionSimulation {
       GuestSystem,
       KitchenSystem,
       GiftSystem,
+      this.secrets,
       createCoupleSystem(),
     ];
   }
@@ -190,6 +195,9 @@ export class ReceptionSimulation {
       }
       case 'fillMood':
         mood.change(100 - state.couple.mood, CHEAT_CAUSE);
+        break;
+      case 'spawnSecret':
+        this.secrets.forceSpawn(this.ctx);
         break;
     }
   }

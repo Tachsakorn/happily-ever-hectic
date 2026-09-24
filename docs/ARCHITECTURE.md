@@ -47,6 +47,7 @@ touch ──► ReceptionInput ──► Command ──► ReceptionSimulation �
 | Guests | Per-state behaviour handlers + validated transition table, patience, seating mood |
 | Kitchen | Burners, cook time, pass slots |
 | Gifts | Gifts left too long go missing |
+| Secrets | Rare surprises: armed by chance, appear when their conditions hold, found by tapping (own random stream) |
 | Couple | Couple requests, moment timers, calm recovery |
 
 All side effects flow through three services: `EventBus`, `MoodLedger` (every mood change has a
@@ -87,7 +88,9 @@ small handler per state. Transitions requested while listeners run are queued.
 `SaveService` interface (`platform/save`) with `LocalStorageSaveService` (guarded against private
 mode, quota and eviction errors) and `InMemorySaveService` (tests). Save data is versioned and
 always passes through `migrate()`, which repairs corrupted fields instead of crashing.
-Progression rules (unlocks, coins, shop, decor bonus) are pure functions in `core/progression`.
+Progression rules (unlocks, coins, shop, decor bonus, achievements) are pure functions in
+`core/progression`. The save also holds unlocked achievements (id → time), lifetime totals and
+secrets found; saves from before these existed load with them empty (no version bump needed).
 
 ## Input
 

@@ -21,6 +21,7 @@ import {
   type PersonStyle,
   type UiIcon,
 } from '../../art/painters';
+import { paintSecretIcon, SECRET_SIZE } from '../../art/secrets';
 
 const GUEST_HAIR_STYLES: HairStyle[] = ['short', 'bob', 'long', 'curly', 'side', 'bun'];
 
@@ -90,6 +91,11 @@ export class ArtKit {
   /** Interface icons (48×48) for use inside the world, such as a guest's music-note wish. */
   uiIcon(icon: UiIcon, color = 0xe86f8e): string {
     return this.tex.ensure(`ui:${icon}:${color}`, 48, 48, paintUiIcon(icon, color));
+  }
+
+  secret(defId: Id): string {
+    const def = this.content.secretEvents.get(defId);
+    return this.tex.ensure(`secret:${defId}`, SECRET_SIZE, SECRET_SIZE, paintSecretIcon(def.visual.icon, def.visual.color));
   }
 
   bubble(tail: 'down' | 'downLeft' = 'down'): string {

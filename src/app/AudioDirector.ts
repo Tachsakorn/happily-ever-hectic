@@ -64,6 +64,12 @@ export class AudioDirector {
           this.audio.play('failed');
           disastersChanged = true;
           break;
+        case 'secretAppeared':
+          this.audio.play('secret');
+          break;
+        case 'secretFound':
+          this.audio.play('achievement');
+          break;
         case 'actionSkipped':
           this.audio.play('nope');
           break;

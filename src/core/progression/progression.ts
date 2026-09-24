@@ -1,7 +1,8 @@
 import type { ContentRegistry } from '../../content/ContentRegistry';
 import type { Id, LevelDef, Modifiers } from '../../content/types';
 import type { ReceptionResult } from '../scoring/results';
-import { newSave, type LevelProgress, type SaveData } from './saveData';
+import { unlockAchievements } from './achievements';
+import { newSave, type LevelProgress, type LifetimeStats, type SaveData } from './saveData';
 
 /** Pure progression rules: unlocks, rewards, the shop and which modifiers apply to a reception. */
 
@@ -14,13 +15,25 @@ export interface ResultOutcome {
   readonly coinsEarned: number;
   readonly newBest: boolean;
   readonly newlyUnlocked: readonly Id[];
+  readonly newAchievements: readonly Id[];
+}
+
+function addLifetime(l: LifetimeStats, r: ReceptionResult): LifetimeStats {
+  return {
+    weddingsCompleted: l.weddingsCompleted + (r.outcome === 'COMPLETE' ? 1 : 0),
+    dances: l.dances + r.stats.dances,
+    giftsDelivered: l.giftsDelivered + r.stats.giftsDelivered,
+    disastersFixed: l.disastersFixed + r.stats.disastersResolved,
+    happyGoodbyes: l.happyGoodbyes + r.stats.guestsLeftHappy,
+    guestsServed: l.guestsServed + r.stats.guestsServed,
+  };
 }
 
 /**
  * Coins reward stars, and replaying only pays for improvement: the full reward
  * for the first clear, then a share for each extra star earned later.
  */
-export function applyResult(content: ContentRegistry, save: SaveData, result: ReceptionResult): ResultOutcome {
+export function applyResult(content: ContentRegistry, save: SaveData, result: ReceptionResult, now: Date = new Date()): ResultOutcome {
   const level = content.levels.get(result.levelId);
   const before = save.levels[level.id];
   const completed = result.outcome === 'COMPLETE' && result.stars > 0;
@@ -35,12 +48,20 @@ export function applyResult(content: ContentRegistry, save: SaveData, result: Re
     stars: Math.max(previousStars, result.stars) as LevelProgress['stars'],
     completed: (before?.completed ?? false) || completed,
   };
-  const next: SaveData = { ...save, coins: save.coins + coinsEarned, levels: { ...save.levels, [level.id]: progress } };
+  // Effort counts even when a wedding is lost: lifetime totals and secrets are always kept.
+  const progressed: SaveData = {
+    ...save,
+    coins: save.coins + coinsEarned,
+    levels: { ...save.levels, [level.id]: progress },
+    lifetime: addLifetime(save.lifetime, result),
+    secretsFound: [...new Set([...save.secretsFound, ...result.secretsFound])],
+  };
+  const { save: next, unlocked: newAchievements } = unlockAchievements(content, progressed, { result, now });
   const newlyUnlocked = content
     .orderedLevels()
     .filter((l) => !isUnlocked(save, l) && isUnlocked(next, l))
     .map((l) => l.id);
-  return { save: next, coinsEarned, newBest: result.score > (before?.bestScore ?? 0), newlyUnlocked };
+  return { save: next, coinsEarned, newBest: result.score > (before?.bestScore ?? 0), newlyUnlocked, newAchievements };
 }
 
 export function buyUpgrade(content: ContentRegistry, save: SaveData, upgradeId: Id): SaveData | { error: string } {

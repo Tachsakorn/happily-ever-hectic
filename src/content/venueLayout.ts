@@ -1,4 +1,9 @@
-import type { VenueDef } from './types';
+import type { Vec2, VenueDef, VenueTheme } from './types';
+
+/** A venue's theme; venues that do not say are gardens. */
+export function venueTheme(v: VenueDef): VenueTheme {
+  return v.theme ?? 'garden';
+}
 
 export interface FloorRect {
   readonly x: number;
@@ -25,4 +30,10 @@ export function danceFloorBounds(v: VenueDef): FloorRect | null {
   const x = Math.min(...xs) - PAD_X;
   const y = Math.min(...ys) - PAD_TOP;
   return { x, y, w: Math.max(...xs) + PAD_X - x, h: Math.max(...ys) + PAD_BOTTOM - y };
+}
+
+/** The middle of the dance floor, or null when the venue has none. */
+export function danceFloorCenter(v: VenueDef): Vec2 | null {
+  const r = danceFloorBounds(v);
+  return r ? { x: r.x + r.w / 2, y: r.y + r.h * 0.6 } : null;
 }

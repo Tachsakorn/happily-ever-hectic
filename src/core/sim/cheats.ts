@@ -11,6 +11,8 @@ export type Cheat =
   /** Jump ahead in time, running the simulation normally. */
   | { readonly type: 'skipTime'; readonly seconds: number }
   /** Top the couple's mood up to full. */
-  | { readonly type: 'fillMood' };
+  | { readonly type: 'fillMood' }
+  /** Make a secret event this venue can have appear right now, ignoring its odds. */
+  | { readonly type: 'spawnSecret' };
 
 export const CHEAT_CAUSE = 'Test shortcut';

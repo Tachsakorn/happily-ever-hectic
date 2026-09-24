@@ -26,6 +26,7 @@ export const tuning: TuningDef = {
   giftLostAfterSeconds: 60,
   danceSeconds: 7,
   danceHappinessPerSecond: 6,
+  secretWorkSeconds: 0.4,
   coupleRequestPatienceSeconds: 35,
   decorMatchBonus: { startMood: 10, scoreBonus: 0.1 },
 };

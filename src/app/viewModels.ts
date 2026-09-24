@@ -13,6 +13,8 @@ import type { MainMenuVM } from '../ui/screens/MainMenuScreen';
 import type { LevelCardVM, ShopItemVM } from '../ui/screens/LevelSelectScreen';
 import type { PrepVM } from '../ui/screens/PrepScreen';
 import type { ResultsVM } from '../ui/screens/InPlayScreens';
+import type { AchievementVM } from '../ui/screens/AchievementsPanel';
+import { achievementProgress } from '../core/progression/achievements';
 
 /** Pure builders: content + save → what screens display. Screens never read content or saves directly. */
 
@@ -109,6 +111,10 @@ export function resultsVM(content: ContentRegistry, result: ReceptionResult, out
     unlocked: outcome.newlyUnlocked.map((id) => content.levels.get(id).name),
     hasNext,
     firstStarScore: content.levels.get(result.levelId).starScores[0],
+    achievements: outcome.newAchievements.map((id) => {
+      const a = content.achievements.get(id);
+      return { name: a.name, icon: a.icon, color: a.color };
+    }),
   };
 }
 
@@ -156,4 +162,25 @@ export function dialogueVM(content: ContentRegistry, lines: readonly DialogueLin
     }
     return { speaker: line.speaker, text: line.text, side: sides.get(line.speaker)!, look: looks.get(line.speaker) };
   });
+}
+
+/** The trophy cabinet: visible achievements first, then secrets; unlocked ones always show in full. */
+export function achievementsVM(content: ContentRegistry, save: SaveData): { items: AchievementVM[]; unlocked: number; total: number } {
+  const all = content.achievements.all();
+  const ordered = [...all.filter((a) => !a.secret), ...all.filter((a) => a.secret)];
+  const items = ordered.map((a): AchievementVM => {
+    const at = save.achievements[a.id];
+    const hidden = a.secret === true && at === undefined;
+    return {
+      id: a.id,
+      name: hidden ? '???' : a.name,
+      description: hidden ? (a.hint ?? 'A secret.') : a.description,
+      icon: a.icon,
+      color: a.color,
+      state: at !== undefined ? 'unlocked' : hidden ? 'secret' : 'locked',
+      progress: at === undefined && !hidden ? achievementProgress(content, save, a) : null,
+      unlockedOn: at !== undefined ? new Date(at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
+    };
+  });
+  return { items, unlocked: items.filter((i) => i.state === 'unlocked').length, total: items.length };
 }

@@ -27,6 +27,9 @@ export type DomainEvent =
   | { type: 'disasterPhaseChanged'; disasterId: number; defId: Id; phase: DisasterPhaseId; pos: Vec2 }
   | { type: 'disasterResolved'; disasterId: number; defId: Id; early: boolean; pos: Vec2 }
   | { type: 'disasterFailed'; disasterId: number; defId: Id; pos: Vec2 }
+  | { type: 'secretAppeared'; secretId: number; defId: Id; pos: Vec2 }
+  | { type: 'secretFound'; secretId: number; defId: Id; pos: Vec2 }
+  | { type: 'secretVanished'; secretId: number; defId: Id; pos: Vec2 }
   | { type: 'momentStarted'; momentId: Id }
   | { type: 'momentCompleted'; momentId: Id }
   | { type: 'momentFailed'; momentId: Id }

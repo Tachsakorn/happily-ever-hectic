@@ -408,6 +408,8 @@ export interface TuningDef {
   readonly giftLostAfterSeconds: number;
   readonly danceSeconds: number;
   readonly danceHappinessPerSecond: number;
+  /** How long the planner takes to pick up a secret. */
+  readonly secretWorkSeconds: number;
   readonly coupleRequestPatienceSeconds: number;
   /** Bonus when the chosen decor matches something the couple loves. */
   readonly decorMatchBonus: Modifiers;
@@ -424,6 +426,76 @@ export interface GameInfo {
 }
 
 /** One data pack. Packs are merged into a registry; later packs may add but not silently replace. */
+// ---------------------------------------------------------------- secrets
+
+export type SecretIcon = 'golden-bouquet' | 'shooting-star' | 'bottle' | 'clover' | 'cat' | 'disco';
+
+/** Extra conditions a secret event waits for (all must hold) once it is armed. */
+export type SecretRequirement =
+  | { readonly kind: 'theme'; readonly themes: readonly VenueTheme[] }
+  | { readonly kind: 'minMood'; readonly value: number }
+  | { readonly kind: 'dancersAtOnce'; readonly count: number };
+
+/**
+ * A rare surprise during a reception. At the start it is armed with
+ * `chance`; while armed, inside `window`, once every requirement holds, it
+ * appears at one of `spots` for `staySeconds`. Tapping it (the planner walks
+ * over) finds it; otherwise it vanishes. Found secrets unlock achievements.
+ */
+export interface SecretEventDef {
+  readonly id: Id;
+  readonly name: string;
+  readonly chance: number;
+  /** Seconds into the reception. */
+  readonly window: readonly [number, number];
+  readonly requires: readonly SecretRequirement[];
+  /** Where it may appear; 'danceFloor' = the middle of the venue's dance floor. */
+  readonly spots: readonly Vec2[] | 'danceFloor';
+  readonly staySeconds: number;
+  readonly appearText: string;
+  readonly foundText: string;
+  readonly reward: { readonly score: number; readonly mood: number };
+  readonly visual: { readonly icon: SecretIcon; readonly color: number };
+}
+
+// ---------------------------------------------------------------- achievements
+
+/** Running totals across every reception played (kept in the save). */
+export type LifetimeStat = 'dances' | 'giftsDelivered' | 'disastersFixed' | 'happyGoodbyes' | 'guestsServed';
+
+export type AchievementCondition =
+  | { readonly kind: 'weddingsCompleted'; readonly count: number }
+  | { readonly kind: 'threeStarLevels'; readonly count: number | 'all' }
+  | { readonly kind: 'finalLevelCompleted' }
+  | { readonly kind: 'lifetime'; readonly stat: LifetimeStat; readonly count: number }
+  /** One completed reception meeting every given bound. */
+  | {
+      readonly kind: 'reception';
+      readonly minGuests?: number;
+      readonly maxUpset?: number;
+      readonly maxFinalMood?: number;
+      readonly minStars?: number;
+    }
+  | { readonly kind: 'secretFound'; readonly secretId: Id }
+  | { readonly kind: 'allSecretsFound' }
+  | { readonly kind: 'allUpgradesOwned' }
+  /** A wedding completed while the device clock reads between these hours (local, [from, to)). */
+  | { readonly kind: 'completedDuringHours'; readonly from: number; readonly to: number };
+
+export type AchievementIcon = 'heart' | 'star' | 'trophy' | 'music' | 'gift' | 'wrench' | 'guests' | 'shop' | 'sparkle' | 'moon' | 'clock';
+
+export interface AchievementDef {
+  readonly id: Id;
+  readonly name: string;
+  readonly description: string;
+  /** Hidden as "???" until unlocked; `hint` is the only clue shown. */
+  readonly secret?: boolean;
+  readonly hint?: string;
+  readonly icon: AchievementIcon;
+  readonly color: number;
+  readonly condition: AchievementCondition;
+}
+
 export interface ContentPack {
   readonly id: Id;
   readonly info?: GameInfo;
@@ -441,4 +513,6 @@ export interface ContentPack {
   readonly decor?: readonly DecorDef[];
   readonly upgrades?: readonly UpgradeDef[];
   readonly dialogues?: readonly DialogueDef[];
+  readonly secretEvents?: readonly SecretEventDef[];
+  readonly achievements?: readonly AchievementDef[];
 }

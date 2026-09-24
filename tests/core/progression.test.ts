@@ -26,6 +26,7 @@ const result = (levelId: string, score: number, stars: 0 | 1 | 2 | 3, outcome: '
     momentsFailed: 0,
   },
   moodBreakdown: [],
+  secretsFound: [],
 });
 
 describe('progression', () => {

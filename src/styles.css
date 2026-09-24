@@ -1252,6 +1252,144 @@ body {
   line-height: 1.2;
 }
 
+/* ---------- Achievements ---------- */
+
+.trophies {
+  width: min(760px, calc(94 * var(--vw)));
+  max-height: calc(88 * var(--vh));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 34px 22px 22px;
+}
+
+.trophy-list {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  touch-action: pan-y;
+  padding: 4px 4px 12px;
+}
+
+.trophy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 6px;
+  background: #fff;
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 4px 0 var(--cream-edge);
+  min-height: 84px;
+}
+
+.trophy canvas {
+  flex: none;
+}
+
+.trophy--unlocked {
+  background: #fff8e2;
+}
+
+.trophy--secret {
+  background: #efe9f6;
+  border-style: dashed;
+}
+
+.trophy--locked .trophy__text strong {
+  color: var(--ink-soft);
+}
+
+.trophy__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.trophy__text strong {
+  font: 20px var(--font-display);
+  font-weight: 400;
+}
+
+.trophy__text span {
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.trophy--secret .trophy__text span {
+  font-style: italic;
+  color: #6f6480;
+}
+
+.trophy__date {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #b08622;
+}
+
+.trophy__progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.trophy__bar {
+  flex: 1;
+  height: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #f3ecf1;
+  overflow: hidden;
+}
+
+.trophy__bar i {
+  display: block;
+  height: 100%;
+  background: #f2b84b;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(24px + var(--safe-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #fff8e2;
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 0 5px 0 var(--cream-edge);
+  font-weight: 800;
+  font-size: 18px;
+  z-index: 30;
+  pointer-events: none;
+  animation: toast-in 360ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 /* ---------- Preparation ---------- */
 
 .prep-screen {
@@ -1884,6 +2022,12 @@ body {
 .chip--unlock {
   background: #eaf6e5;
   font-size: 16px;
+}
+
+.chip--achievement {
+  background: #fff3cf;
+  font-size: 16px;
+  padding-left: 6px;
 }
 
 .results__actions {

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { danceFloorBounds } from '../../content/danceFloor';
+import { danceFloorBounds } from '../../content/venueLayout';
 import type { Id, Vec2 } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import { findGuest, holdsSeat } from '../../core/guests/guestMachine';

@@ -11,6 +11,8 @@ export interface ReceptionResult {
   readonly stats: Readonly<ReceptionStats>;
   /** Mood changes grouped by cause, biggest impact first. */
   readonly moodBreakdown: readonly { cause: string; amount: number }[];
+  /** Secret events found this reception (definition ids). */
+  readonly secretsFound: readonly string[];
 }
 
 export function starsFor(score: number, thresholds: readonly [number, number, number]): 0 | 1 | 2 | 3 {
@@ -40,5 +42,6 @@ export function buildResult(state: ReceptionState, level: LevelDef): ReceptionRe
     finalMood: Math.round(state.couple.mood),
     stats: { ...state.stats },
     moodBreakdown,
+    secretsFound: state.secrets.filter((s) => s.state === 'found').map((s) => s.defId),
   };
 }

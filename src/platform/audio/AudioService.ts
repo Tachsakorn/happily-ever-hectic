@@ -21,7 +21,9 @@ export type SfxId =
   | 'coin'
   | 'star'
   | 'whoosh'
-  | 'pop';
+  | 'pop'
+  | 'secret'
+  | 'achievement';
 
 export interface AudioService {
   /** Must be called from a user gesture (iOS will not start audio otherwise). */

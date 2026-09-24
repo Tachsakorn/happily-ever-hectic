@@ -1,4 +1,4 @@
-import { danceFloorBounds } from '../content/danceFloor';
+import { danceFloorBounds, venueTheme } from '../content/venueLayout';
 import type { VenueDef, VenueTheme } from '../content/types';
 import { disc, flat, groundShadow, hex, INK, oval, rrect, seeded, shade, toon } from './canvas';
 import { bush, flower, leaf, LEAF } from './flora';
@@ -30,9 +30,7 @@ const LOOKS: Record<VenueTheme, ThemeLook> = {
   night: { aisle: 0xf1e6ff, aisleAlpha: 0.7, petals: [0xf3d46b, 0xfffaf0], danceTiles: [0x6f63b0, 0x9784d6], danceRim: 0x3f3a6b },
 };
 
-export function themeOf(v: VenueDef): VenueTheme {
-  return v.theme ?? 'garden';
-}
+export const themeOf = venueTheme;
 
 export function themeLook(v: VenueDef): ThemeLook {
   return LOOKS[themeOf(v)];

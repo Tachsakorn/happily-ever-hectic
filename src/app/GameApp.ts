@@ -1,5 +1,6 @@
 import type { ContentRegistry } from '../content/ContentRegistry';
 import { applyResult, buyUpgrade, grantCoins, receptionModifiers, resetProgress, unlockAllLevels, type ResultOutcome } from '../core/progression/progression';
+import { unlockAchievements } from '../core/progression/achievements';
 import type { SaveData, Settings } from '../core/progression/saveData';
 import type { ReceptionResult } from '../core/scoring/results';
 import { ReceptionSession } from '../core/sim/ReceptionSession';
@@ -19,7 +20,7 @@ import { AppFlow, AppState, type AppStateId, type StateChange } from './AppFlow'
 import { AudioDirector } from './AudioDirector';
 import type { SettingsVM, UiCue } from '../ui/screens/common';
 import type { Cheat } from '../core/sim/cheats';
-import { decorLook, dialogueVM, levelCards, menuVM, nextLevelId, prepVM, resultsVM, shopItems } from './viewModels';
+import { achievementsVM, decorLook, dialogueVM, levelCards, menuVM, nextLevelId, prepVM, resultsVM, shopItems } from './viewModels';
 
 interface FlowContext {
   levelId: string | null;
@@ -123,7 +124,13 @@ export class GameApp {
   private mapScreen(): Screen {
     const { content, audio } = this.deps;
     return new LevelSelectScreen(
-      { levels: levelCards(content, this.save), coins: this.save.coins, shop: shopItems(content, this.save), testTools: this.save.settings.testTools },
+      {
+        levels: levelCards(content, this.save),
+        coins: this.save.coins,
+        shop: shopItems(content, this.save),
+        achievements: achievementsVM(content, this.save),
+        testTools: this.save.settings.testTools,
+      },
       {
         pick: (levelId) => this.go(AppState.WEDDING_PREPARATION, { levelId }),
         back: () => this.go(AppState.MAIN_MENU),
@@ -134,8 +141,14 @@ export class GameApp {
             return null;
           }
           audio.play('coin');
-          this.persist(next);
-          return { coins: next.coins, shop: shopItems(content, next) };
+          const { save, unlocked } = unlockAchievements(content, next, { now: new Date() });
+          this.persist(save);
+          return {
+            coins: save.coins,
+            shop: shopItems(content, save),
+            achievements: achievementsVM(content, save),
+            newAchievements: unlocked.map((a) => content.achievements.get(a).name),
+          };
         },
         cue: this.cue,
         test: this.testMapAction,
@@ -224,7 +237,7 @@ export class GameApp {
         const session = this.session;
         if (!session) throw new Error('Wedding completed without a session');
         const result = session.sim.result();
-        const outcome = applyResult(content, this.save, result);
+        const outcome = applyResult(content, this.save, result, new Date());
         this.persist(outcome.save);
         this.flow.transition(AppState.RESULTS, { result, outcome });
         break;

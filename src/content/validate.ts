@@ -145,6 +145,36 @@ export function validateContent(content: ContentRegistry): string[] {
     }
   }
 
+  for (const sec of content.secretEvents.all()) {
+    const where = `secret event ${sec.id}`;
+    check(sec.chance > 0 && sec.chance <= 1, `${where}: chance must be in (0, 1]`);
+    check(sec.window[0] < sec.window[1], `${where}: empty time window`);
+    check(sec.staySeconds > 0, `${where}: staySeconds must be > 0`);
+    if (sec.spots === 'danceFloor') continue;
+    check(sec.spots.length > 0, `${where}: needs at least one spot`);
+    // Every venue shares these coordinates, so every spot must be walkable in every venue.
+    for (const venue of content.venues.all()) {
+      for (const p of sec.spots) {
+        const blocked = venue.obstacles.some((o) =>
+          o.kind === 'circle'
+            ? Math.hypot(p.x - o.center.x, p.y - o.center.y) < o.radius
+            : p.x > o.x && p.x < o.x + o.w && p.y > o.y && p.y < o.y + o.h,
+        );
+        check(!blocked, `${where}: spot (${p.x}, ${p.y}) is inside an obstacle in venue ${venue.id}`);
+      }
+    }
+  }
+
+  for (const a of content.achievements.all()) {
+    const where = `achievement ${a.id}`;
+    const c = a.condition;
+    if (c.kind === 'secretFound') check(content.secretEvents.has(c.secretId), `${where}: unknown secret event ${c.secretId}`);
+    if (c.kind === 'allSecretsFound') check(content.secretEvents.all().length > 0, `${where}: there are no secret events`);
+    if (c.kind === 'weddingsCompleted' || c.kind === 'lifetime') check(c.count > 0, `${where}: count must be > 0`);
+    if (c.kind === 'completedDuringHours') check(c.from >= 0 && c.to <= 24 && c.from < c.to, `${where}: invalid hours`);
+    if (a.secret) check(!!a.hint, `${where}: secret achievements need a hint`);
+  }
+
   // Systems rely on these ids existing (gifts are carried as the 'gift' item).
   check(
     content.items.has(GIFT_ITEM_ID) && content.items.get(GIFT_ITEM_ID).kind === 'gift',

@@ -6,6 +6,7 @@ import { paintMapBackdrop, type Point } from '../../art/scenery';
 import { DomScreen } from '../Screen';
 import { button, h } from '../dom';
 import { backdrop, itemIcon, paintedCanvas, portrait, uiIcon } from '../paint';
+import { achievementsPanel, type AchievementsVM } from './AchievementsPanel';
 import { backButton, coinBadge, ribbon, starRow, type UiCue } from './common';
 
 export { coinBadge as coinsElement, starRow as starsElement } from './common';
@@ -34,7 +35,17 @@ interface MapVM {
   readonly levels: readonly LevelCardVM[];
   readonly coins: number;
   readonly shop: readonly ShopItemVM[];
+  readonly achievements: AchievementsVM;
   readonly testTools?: boolean;
+}
+
+/** What a purchase changes on the map. */
+export interface PurchaseVM {
+  readonly coins: number;
+  readonly shop: readonly ShopItemVM[];
+  readonly achievements: AchievementsVM;
+  /** Names of achievements the purchase unlocked. */
+  readonly newAchievements: readonly string[];
 }
 
 export type MapTestAction = 'unlockAll' | 'coins' | 'reset';
@@ -69,13 +80,14 @@ export class LevelSelectScreen extends DomScreen {
   private modal: HTMLElement | null = null;
   private root: HTMLElement | null = null;
   private coinSlot: HTMLElement | null = null;
+  private trophyBtn: HTMLButtonElement | null = null;
 
   constructor(
     private vm: MapVM,
     private readonly actions: {
       pick: (id: string) => void;
       back: () => void;
-      buy: (id: string) => { coins: number; shop: readonly ShopItemVM[] } | null;
+      buy: (id: string) => PurchaseVM | null;
       cue?: (cue: UiCue) => void;
       test?: (action: MapTestAction) => void;
     },
@@ -93,6 +105,12 @@ export class LevelSelectScreen extends DomScreen {
     const nodes = levels.map((l, i) => this.node(l, fractions[i]!, l === current, i));
     this.coinSlot = h('div', { class: 'coin-slot' }, coinBadge(this.vm.coins));
     const shopBtn = button('Shop', () => this.openShop(), this.disposer, { tone: 'gold', size: 'small', icon: uiIcon('shop', 0xe86f8e, 34) });
+    this.trophyBtn = button(`${this.vm.achievements.unlocked}/${this.vm.achievements.total}`, () => this.openAchievements(), this.disposer, {
+      tone: 'cream',
+      size: 'small',
+      icon: uiIcon('trophy', 0xf2b84b, 34),
+      aria: 'Achievements',
+    });
 
     this.root = h(
       'div',
@@ -109,7 +127,7 @@ export class LevelSelectScreen extends DomScreen {
           this.vm.testTools ? button('', () => this.openTestTools(), this.disposer, { tone: 'cream', size: 'round', icon: uiIcon('wrench', 0x8fd0e8, 38), aria: 'Test tools' }) : null,
         ),
         ribbon('Wedding Map', 'sage', 'h1'),
-        h('div', { class: 'group' }, this.coinSlot, shopBtn),
+        h('div', { class: 'group' }, this.trophyBtn, this.coinSlot, shopBtn),
       ),
     );
     return this.root;
@@ -208,6 +226,24 @@ export class LevelSelectScreen extends DomScreen {
     );
   }
 
+  private refreshTrophyCount(): void {
+    const label = this.trophyBtn?.querySelector('span');
+    if (label) label.textContent = `${this.vm.achievements.unlocked}/${this.vm.achievements.total}`;
+  }
+
+  /** A short "Achievement unlocked" note over the map. */
+  private toast(name: string): void {
+    this.actions.cue?.('achievement');
+    const note = h('div', { class: 'toast' }, uiIcon('trophy', 0xf2b84b, 30), h('span', { text: `Achievement unlocked: ${name}` }));
+    this.root?.append(note);
+    this.disposer.timeout(() => note.remove(), 2800);
+  }
+
+  private openAchievements(): void {
+    this.actions.cue?.('pop');
+    this.openModal(achievementsPanel(this.vm.achievements, () => this.closeModal(), this.disposer));
+  }
+
   private openShop(): void {
     this.actions.cue?.('pop');
     const list = h('div', { class: 'shop-list' });
@@ -219,8 +255,10 @@ export class LevelSelectScreen extends DomScreen {
             : button(String(item.cost), () => {
                 const next = this.actions.buy(item.id);
                 if (!next) return;
-                this.vm = { ...this.vm, coins: next.coins, shop: next.shop };
+                this.vm = { ...this.vm, coins: next.coins, shop: next.shop, achievements: next.achievements };
                 this.coinSlot?.replaceChildren(coinBadge(next.coins));
+                this.refreshTrophyCount();
+                for (const name of next.newAchievements) this.toast(name);
                 paintList();
               }, this.disposer, { tone: 'gold', size: 'small', icon: itemIcon('coin', 0xf2b84b, 30) });
           if (buy instanceof HTMLButtonElement) buy.disabled = item.cost > this.vm.coins;

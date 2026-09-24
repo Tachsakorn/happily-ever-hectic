@@ -1,4 +1,4 @@
-import { danceFloorBounds } from '../../content/danceFloor';
+import { danceFloorBounds } from '../../content/venueLayout';
 import type { Id, Vec2 } from '../../content/types';
 import { holdsSeat, isPresent } from '../guests/guestMachine';
 import { distance } from '../math/vec';
@@ -21,6 +21,7 @@ const RADIUS = {
   gift: 46,
   passSlot: 42,
   couple: 80,
+  secret: 64,
 } as const;
 
 export function pickTarget(ctx: SimContext, p: Vec2): TargetRef | null {
@@ -36,6 +37,9 @@ export function pickTarget(ctx: SimContext, p: Vec2): TargetRef | null {
     // Station disasters are fixed by tapping the station itself.
     if (dis.stationId) continue;
     consider({ kind: 'disaster', id: dis.id }, dis.pos, RADIUS.disaster, 0);
+  }
+  for (const secret of ctx.state.secrets) {
+    if (secret.state === 'active') consider({ kind: 'secret', id: secret.id }, secret.pos, RADIUS.secret, 0);
   }
   for (const g of ctx.state.guests) {
     if (!isPresent(g) || g.state === GuestState.UPSET) continue;

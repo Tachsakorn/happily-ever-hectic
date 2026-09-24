@@ -2,7 +2,8 @@ import { paintMenuBackdrop } from '../../art/scenery';
 import type { Cheat } from '../../core/sim/cheats';
 import { DomScreen } from '../Screen';
 import { button, countUp, h } from '../dom';
-import { backdrop, itemIcon, uiIcon } from '../paint';
+import { backdrop, itemIcon, medal, uiIcon } from '../paint';
+import type { UiIcon } from '../../art/props';
 import { coinBadge, ribbon, settingsToggles, starCanvas, type SettingsVM, type UiCue } from './common';
 
 /** In-play overlay: just the pause button (the HUD itself is drawn in the game canvas). */
@@ -67,6 +68,7 @@ export class PauseScreen extends DomScreen {
       button('Lose', () => cheat({ type: 'fail' }), this.disposer, small),
       button('+30 s', () => cheat({ type: 'skipTime', seconds: 30 }), this.disposer, small),
       button('Full mood', () => cheat({ type: 'fillMood' }), this.disposer, small),
+      button('Secret', () => cheat({ type: 'spawnSecret' }), this.disposer, { ...small, icon: uiIcon('sparkle', 0xb49be0, 24) }),
     );
   }
 }
@@ -85,6 +87,7 @@ export interface ResultsVM {
   readonly unlocked: readonly string[];
   readonly hasNext: boolean;
   readonly firstStarScore: number;
+  readonly achievements: readonly { name: string; icon: UiIcon; color: number }[];
 }
 
 const STAR_START_MS = 700;
@@ -136,6 +139,7 @@ export class ResultsScreen extends DomScreen {
     const afterStars = STAR_START_MS + Math.max(1, vm.stars) * STAR_STEP_MS + 200;
     if (vm.coinsEarned) this.disposer.timeout(() => cue('coin'), afterStars);
     if (celebrate) this.disposer.timeout(() => cue('cheer'), afterStars + 250);
+    if (vm.achievements.length) this.disposer.timeout(() => cue('achievement'), afterStars + 700);
 
     const breakdown = vm.moodBreakdown.slice(0, 6);
     const moodTone = vm.finalMood > 60 ? 'good' : vm.finalMood > 30 ? 'warn' : 'bad';
@@ -164,6 +168,9 @@ export class ResultsScreen extends DomScreen {
             vm.newBest && vm.stars > 0 ? h('span', { class: 'stamp', style: `animation-delay:${afterStars}ms`, text: 'New best!' }) : null,
             vm.coinsEarned ? h('span', { class: 'chip chip--coin', style: `animation-delay:${afterStars}ms` }, itemIcon('coin', 0xf2b84b, 26), `+${vm.coinsEarned}`) : null,
             ...vm.unlocked.map((u) => h('span', { class: 'chip chip--unlock', style: `animation-delay:${afterStars + 200}ms` }, uiIcon('map', 0xe86f8e, 24), `${u} unlocked`)),
+            ...vm.achievements.map((a, i) =>
+              h('span', { class: 'chip chip--achievement', style: `animation-delay:${afterStars + 600 + i * 160}ms` }, medal(a.icon, a.color, 'unlocked', 30), a.name),
+            ),
           ),
           h(
             'div',

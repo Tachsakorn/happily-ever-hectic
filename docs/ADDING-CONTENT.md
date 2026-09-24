@@ -73,6 +73,36 @@ A level can override when each of its disasters may fire with `disasterTriggers`
 (`{ 'missing-rings': { kind: 'scheduled', at: 88 } }`). Use it to make a level hard through
 variety — one new kind of surprise at a time — instead of piling on guests. The finale does this.
 
+## A new secret event
+
+Add to `secretEvents` in `src/data/packs/base/secrets.ts` (a personal pack can add its own too):
+
+```ts
+{
+  id: 'runaway-balloon', name: 'Runaway Balloon',
+  chance: 0.25,                    // rolled once per reception
+  window: [40, 160],               // seconds into the reception
+  requires: [{ kind: 'theme', themes: ['garden'] }],   // also: minMood, dancersAtOnce
+  spots: [{ x: 675, y: 570 }],     // walkable floor (validation checks every venue), or 'danceFloor'
+  staySeconds: 10,
+  appearText: 'A heart balloon is floating away!', foundText: 'Caught it!',
+  reward: { score: 200, mood: 6 },
+  visual: { icon: 'golden-bouquet', color: 0xf49ac1 },  // a new icon = one case in art/secrets.ts
+}
+```
+
+Secrets use their own random stream (seeded from the reception), so adding one never changes how
+the rest of a level plays. Test tools: *Secret* on the pause screen shows one immediately.
+
+## A new achievement
+
+Add to `achievements` in the same file. Conditions: `weddingsCompleted`, `threeStarLevels`,
+`finalLevelCompleted`, `lifetime` (dances, gifts, disasters fixed, happy goodbyes, guests served),
+`reception` (one finished wedding within bounds: `minGuests`, `maxUpset`, `maxFinalMood`, `minStars`),
+`secretFound`, `allSecretsFound`, `allUpgradesOwned`, `completedDuringHours`. `secret: true` hides it as
+"???" with its `hint` until unlocked. Achievements are checked after every reception and every purchase
+(`core/progression/achievements.ts`); unlocking is permanent.
+
 ## A new venue
 
 Add a `VenueDef` (stations, tables, waiting spots, pass slots, obstacles, aisle waypoints, optional

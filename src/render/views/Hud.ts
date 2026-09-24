@@ -210,9 +210,9 @@ export class Hud {
   }
 }
 
-export type BannerTone = 'info' | 'moment' | 'good' | 'bad';
+export type BannerTone = 'info' | 'moment' | 'good' | 'bad' | 'secret';
 
-const TONE_COLOR: Record<BannerTone, string> = { info: Colors.inkCss, moment: '#b4466a', good: Colors.goodCss, bad: Colors.badCss };
+const TONE_COLOR: Record<BannerTone, string> = { info: Colors.inkCss, moment: '#b4466a', good: Colors.goodCss, bad: Colors.badCss, secret: '#7a5bb5' };
 
 /** Bottom announcements: wedding moments, disaster hints, tutorial tips. Queued, one at a time. */
 export class Banner {
@@ -236,6 +236,7 @@ export class Banner {
       moment: tex.ensure('ui:heart-rose', 48, 48, paintUiIcon('heart', 0xe86f8e)),
       bad: tex.ensure('ui:warning', 48, 48, paintUiIcon('warning')),
       good: art.icon('star', 0xf2b84b),
+      secret: tex.ensure('ui:sparkle-lilac', 48, 48, paintUiIcon('sparkle', 0xb49be0)),
     };
     this.badge = tex.image(scene, BANNER.x - BANNER.w / 2 + 62, BANNER.y - 5, this.badgeKeys.moment).setDepth(Depth.banner + 1).setAlpha(0);
   }

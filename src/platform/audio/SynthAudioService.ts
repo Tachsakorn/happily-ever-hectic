@@ -78,6 +78,20 @@ const SFX: Record<SfxId, Note[]> = {
   ],
   whoosh: [{ f: N('C5'), t: 0, d: 0.22, type: 'sine', v: 0.05, slide: 500 }],
   pop: [{ f: N('A5'), t: 0, d: 0.05, type: 'sine', v: 0.09, slide: 300 }],
+  // A twinkly rising arpeggio: something magical just appeared.
+  secret: [
+    { f: N('E6'), t: 0, d: 0.1, type: 'sine', v: 0.09 },
+    { f: N('G6'), t: 0.08, d: 0.1, type: 'sine', v: 0.09 },
+    { f: N('B6'), t: 0.16, d: 0.1, type: 'sine', v: 0.09 },
+    { f: N('E7'), t: 0.24, d: 0.3, type: 'sine', v: 0.08 },
+  ],
+  achievement: [
+    { f: N('G5'), t: 0, d: 0.1, type: 'triangle' },
+    { f: N('C6'), t: 0.1, d: 0.1, type: 'triangle' },
+    { f: N('E6'), t: 0.2, d: 0.1, type: 'triangle' },
+    { f: N('G6'), t: 0.3, d: 0.4, type: 'triangle' },
+    { f: N('C6'), t: 0.3, d: 0.4, type: 'sine', v: 0.1 },
+  ],
 };
 
 /** A gentle waltz (3/4) over I–vi–IV–V: melody on beat one, chord on two and three. */

@@ -1,5 +1,5 @@
 import { disc, flat, FONT_DISPLAY, hex, INK, LINE, outline, oval, rrect, shade, toon, type Painter } from './canvas';
-import { heartPath } from './items';
+import { heartPath, starPath } from './items';
 
 /** Speech bubble, 64×64, tail pointing down at the speaker (or down-left, for a speaker beside it). */
 export function paintBubble(fill = 0xffffff, tail: 'down' | 'downLeft' = 'down'): Painter {
@@ -242,7 +242,7 @@ export function paintDisasterIcon(icon: string, color: number): Painter {
   };
 }
 
-export const UI_ICONS = ['music', 'sound', 'pause', 'back', 'lock', 'shop', 'chair', 'shoe', 'chef', 'walkie', 'violin', 'clock', 'heart', 'play', 'replay', 'map', 'close', 'check', 'warning', 'guests', 'next', 'wrench'] as const;
+export const UI_ICONS = ['music', 'sound', 'pause', 'back', 'lock', 'shop', 'chair', 'shoe', 'chef', 'walkie', 'violin', 'clock', 'heart', 'play', 'replay', 'map', 'close', 'check', 'warning', 'guests', 'next', 'wrench', 'trophy', 'star', 'gift', 'sparkle', 'moon', 'question'] as const;
 export type UiIcon = (typeof UI_ICONS)[number];
 
 export function isUiIcon(name: string | undefined): name is UiIcon {
@@ -517,6 +517,81 @@ export function paintUiIcon(icon: UiIcon, color = 0xffffff): Painter {
         c.stroke(arrow);
         break;
       }
+      case 'trophy': {
+        const cup = new Path2D();
+        cup.moveTo(-12, -15);
+        cup.lineTo(12, -15);
+        cup.quadraticCurveTo(12, 3, 0, 5);
+        cup.quadraticCurveTo(-12, 3, -12, -15);
+        cup.closePath();
+        c.lineWidth = 6;
+        c.strokeStyle = ink;
+        c.beginPath();
+        c.arc(-12, -8, 6, Math.PI * 0.5, Math.PI * 1.5);
+        c.moveTo(12, -14);
+        c.arc(12, -8, 6, -Math.PI * 0.5, Math.PI * 0.5);
+        c.stroke();
+        c.lineWidth = 3;
+        c.strokeStyle = hex(color);
+        c.stroke();
+        toon(c, cup, color, { x: -12, y: -15, w: 24, h: 20 }, { line: 2.4 });
+        flat(c, rrect(-3, 4, 6, 7, 1), shade(color, -0.15), 2);
+        toon(c, rrect(-10, 10, 20, 7, 2), shade(color, -0.1), { x: -10, y: 10, w: 20, h: 7 }, { line: 2.4 });
+        c.fillStyle = 'rgba(255,255,255,0.55)';
+        c.fill(oval(-5, -9, 2.5, 5, 0.2));
+        break;
+      }
+      case 'star':
+        toon(c, starPath(17, 8), color, { x: -17, y: -17, w: 34, h: 32 }, { line: 2.4 });
+        break;
+      case 'gift':
+        toon(c, rrect(-13, -6, 26, 20, 3), color, { x: -13, y: -6, w: 26, h: 20 }, { line: 2.4 });
+        toon(c, rrect(-15, -11, 30, 7, 2), shade(color, 0.1), { x: -15, y: -11, w: 30, h: 7 }, { line: 2.4 });
+        c.fillStyle = hex(0xe86f8e);
+        c.fillRect(-3, -11, 6, 25);
+        c.lineWidth = 2.4;
+        c.strokeStyle = ink;
+        c.beginPath();
+        c.ellipse(-6, -14, 6, 4, -0.4, 0, Math.PI * 2);
+        c.moveTo(12, -14);
+        c.ellipse(6, -14, 6, 4, 0.4, 0, Math.PI * 2);
+        c.stroke();
+        break;
+      case 'sparkle': {
+        const burst = (x: number, y: number, r: number) => {
+          const p = new Path2D();
+          p.moveTo(x, y - r);
+          p.quadraticCurveTo(x + r * 0.18, y - r * 0.18, x + r, y);
+          p.quadraticCurveTo(x + r * 0.18, y + r * 0.18, x, y + r);
+          p.quadraticCurveTo(x - r * 0.18, y + r * 0.18, x - r, y);
+          p.quadraticCurveTo(x - r * 0.18, y - r * 0.18, x, y - r);
+          p.closePath();
+          return p;
+        };
+        toon(c, burst(-3, 2, 15), color, { x: -18, y: -13, w: 30, h: 30 }, { line: 2.4 });
+        flat(c, burst(12, -11, 6), color, 2);
+        break;
+      }
+      case 'moon': {
+        const m = new Path2D();
+        m.arc(0, 0, 15, Math.PI * 0.35, Math.PI * 1.65);
+        m.arc(8, -3, 12, Math.PI * 1.35, Math.PI * 0.62, true);
+        m.closePath();
+        toon(c, m, color, { x: -15, y: -15, w: 30, h: 30 }, { line: 2.4 });
+        flat(c, disc(13, -13, 2.2), 0xfff3c4, 1.4);
+        flat(c, disc(15, 8, 1.6), 0xfff3c4, 1.2);
+        break;
+      }
+      case 'question':
+        c.font = `34px ${FONT_DISPLAY}`;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.lineWidth = 6;
+        c.strokeStyle = ink;
+        c.strokeText('?', 0, 2);
+        c.fillStyle = hex(color);
+        c.fillText('?', 0, 2);
+        break;
       case 'warning': {
         const tri = new Path2D();
         tri.moveTo(0, -16);
@@ -558,5 +633,41 @@ export function paintUiIcon(icon: UiIcon, color = 0xffffff): Painter {
         break;
     }
     c.restore();
+  };
+}
+
+/** An achievement medal (96×96): coloured when unlocked, grey when locked, a question mark when secret. */
+export function paintMedal(icon: UiIcon, color: number, state: 'unlocked' | 'locked' | 'secret'): Painter {
+  return (c) => {
+    const on = state === 'unlocked';
+    const face = on ? color : state === 'secret' ? 0x6f6480 : 0xd8d0dc;
+    // Ribbon tails.
+    for (const [dx, tone] of [
+      [-14, on ? 0xe86f8e : 0xbdb3c2],
+      [14, on ? 0x8fd0e8 : 0xc9c1cd],
+    ] as const) {
+      const tail = new Path2D();
+      tail.moveTo(48 + dx - 9, 60);
+      tail.lineTo(48 + dx + 9, 60);
+      tail.lineTo(48 + dx + 9, 92);
+      tail.lineTo(48 + dx, 84);
+      tail.lineTo(48 + dx - 9, 92);
+      tail.closePath();
+      flat(c, tail, tone, 2.4);
+    }
+    toon(c, disc(48, 44, 34), face, { x: 14, y: 10, w: 68, h: 68 }, { line: 3 });
+    c.strokeStyle = hex(0xffffff, on ? 0.7 : 0.4);
+    c.lineWidth = 2.4;
+    c.setLineDash([4, 5]);
+    c.stroke(disc(48, 44, 26));
+    c.setLineDash([]);
+    c.save();
+    c.translate(24, 20);
+    paintUiIcon(state === 'secret' ? 'question' : icon, on ? 0xffffff : state === 'secret' ? 0xe6dcef : 0xa99fae)(c);
+    c.restore();
+    if (on) {
+      c.fillStyle = 'rgba(255,255,255,0.45)';
+      c.fill(oval(36, 26, 10, 5, -0.6));
+    }
   };
 }

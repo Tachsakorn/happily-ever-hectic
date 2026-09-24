@@ -1,7 +1,7 @@
 import type { Painter } from '../art/canvas';
 import { paintIcon, type ItemIcon } from '../art/items';
 import { paintPerson, PERSON_H, PERSON_W, type PersonLook } from '../art/people';
-import { paintUiIcon, type UiIcon } from '../art/props';
+import { paintMedal, paintUiIcon, type UiIcon } from '../art/props';
 import type { Disposer } from './dom';
 
 /**
@@ -36,6 +36,10 @@ export function paintedCanvas(painter: Painter, dw: number, dh: number, cssW = d
 
 export function uiIcon(icon: UiIcon, color = 0xffffff, size = 40): HTMLCanvasElement {
   return paintedCanvas(paintUiIcon(icon, color), 48, 48, size, size);
+}
+
+export function medal(icon: UiIcon, color: number, state: 'unlocked' | 'locked' | 'secret', size = 64): HTMLCanvasElement {
+  return paintedCanvas(paintMedal(icon, color, state), 96, 96, size, size);
 }
 
 export function itemIcon(icon: ItemIcon, color: number, size = 40, accent?: number): HTMLCanvasElement {

@@ -1,4 +1,5 @@
 import { paintMenuBackdrop } from '../../art/scenery';
+import type { Cheat } from '../../core/sim/cheats';
 import { DomScreen } from '../Screen';
 import { button, countUp, h } from '../dom';
 import { backdrop, itemIcon, uiIcon } from '../paint';
@@ -19,8 +20,14 @@ export class PlayingScreen extends DomScreen {
 
 export class PauseScreen extends DomScreen {
   constructor(
-    private readonly vm: { settings: SettingsVM; levelName: string },
-    private readonly actions: { resume: () => void; restart: () => void; quit: () => void; settings: (s: SettingsVM) => void },
+    private readonly vm: { settings: SettingsVM; levelName: string; testTools?: boolean },
+    private readonly actions: {
+      resume: () => void;
+      restart: () => void;
+      quit: () => void;
+      settings: (s: SettingsVM) => void;
+      cheat?: (c: Cheat) => void;
+    },
   ) {
     super();
   }
@@ -43,7 +50,23 @@ export class PauseScreen extends DomScreen {
           button('Map', this.actions.quit, this.disposer, { tone: 'cream', icon: uiIcon('map', 0xe86f8e, 32) }),
         ),
         settingsToggles(this.vm.settings, this.actions.settings, this.disposer),
+        this.vm.testTools && this.actions.cheat ? this.testTools(this.actions.cheat) : null,
       ),
+    );
+  }
+
+  /** Playtest shortcuts: finish, fail or fast-forward the reception. */
+  private testTools(cheat: (c: Cheat) => void): HTMLElement {
+    const small = { tone: 'cream' as const, size: 'small' as const };
+    return h(
+      'div',
+      { class: 'test-row' },
+      h('span', { class: 'test-row__label' }, uiIcon('wrench', 0x8fd0e8, 26), 'Test'),
+      button('Win 3★', () => cheat({ type: 'finish', stars: 3 }), this.disposer, small),
+      button('Win 1★', () => cheat({ type: 'finish', stars: 1 }), this.disposer, small),
+      button('Lose', () => cheat({ type: 'fail' }), this.disposer, small),
+      button('+30 s', () => cheat({ type: 'skipTime', seconds: 30 }), this.disposer, small),
+      button('Full mood', () => cheat({ type: 'fillMood' }), this.disposer, small),
     );
   }
 }

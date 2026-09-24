@@ -129,3 +129,11 @@ music via `AudioDirector`.
 gifts, disasters, moments, couple mood, end conditions, determinism, progression, save migration,
 content integrity, and an **autoplayer** that plays every level with six seeds to prove each is
 winnable and to calibrate star thresholds (`tests/balance.test.ts`, run with `--silent=false` to see scores).
+
+## Test tools (playtesting)
+
+Tap the title on the main menu five times to toggle them (saved in `settings.testTools`; a badge
+shows when on). The map gets a wrench button (unlock every wedding, +500 coins, reset progress) and
+the pause menu gets shortcuts (win with 3 or 1 stars, lose, skip 30 s, full mood). Reception
+shortcuts are `Cheat`s applied by the simulation itself (`core/sim/cheats.ts`), so a cheated finish
+runs through the same results → progression → save path as a real one.

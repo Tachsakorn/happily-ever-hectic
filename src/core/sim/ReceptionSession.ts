@@ -1,6 +1,7 @@
 import type { ContentRegistry } from '../../content/ContentRegistry';
 import type { Id, Modifiers } from '../../content/types';
 import { FixedStepRunner } from './FixedStepRunner';
+import type { Cheat } from './cheats';
 import type { DomainEvent } from './events';
 import { ReceptionSimulation, SIM_STEP_SECONDS } from './ReceptionSimulation';
 
@@ -27,6 +28,12 @@ export class ReceptionSession {
       this.sim.step(dt);
       for (const e of this.sim.drainEvents()) this.pending.push(e);
     });
+  }
+
+  /** Playtest shortcut; its events are delivered with the next `advance` like any others. */
+  cheat(c: Cheat): void {
+    this.sim.cheat(c);
+    for (const e of this.sim.drainEvents()) this.pending.push(e);
   }
 
   /** Advances by real elapsed seconds; returns events produced since the last call. */

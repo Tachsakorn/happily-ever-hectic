@@ -120,6 +120,7 @@ export function menuVM(content: ContentRegistry, save: SaveData): MainMenuVM {
     title: content.info.title,
     tagline: content.info.tagline,
     settings: save.settings,
+    testTools: save.settings.testTools,
     couple: wedding ? [characterLook(wedding.partnerA), characterLook(wedding.partnerB)] : null,
     coupleNames: wedding?.title ?? '',
   };

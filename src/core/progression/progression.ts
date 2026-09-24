@@ -1,7 +1,7 @@
 import type { ContentRegistry } from '../../content/ContentRegistry';
 import type { Id, LevelDef, Modifiers } from '../../content/types';
 import type { ReceptionResult } from '../scoring/results';
-import type { LevelProgress, SaveData } from './saveData';
+import { newSave, type LevelProgress, type SaveData } from './saveData';
 
 /** Pure progression rules: unlocks, rewards, the shop and which modifiers apply to a reception. */
 
@@ -62,6 +62,26 @@ export function receptionModifiers(content: ContentRegistry, save: SaveData, lev
   const mods: Modifiers[] = save.upgrades.filter((id) => content.upgrades.has(id)).map((id) => content.upgrades.get(id).modifiers);
   if (decorMatches(content, level.weddingId, decorId)) mods.push(content.tuning.decorMatchBonus);
   return mods;
+}
+
+/** Test tools: every wedding playable, keeping any stars and best scores already earned. */
+export function unlockAllLevels(content: ContentRegistry, save: SaveData): SaveData {
+  const levels: Record<string, LevelProgress> = { ...save.levels };
+  for (const l of content.orderedLevels()) {
+    const p = levels[l.id];
+    levels[l.id] = { bestScore: p?.bestScore ?? 0, stars: p?.stars ?? 0, completed: true };
+  }
+  return { ...save, levels };
+}
+
+/** Test tools: extra coins for trying the shop. */
+export function grantCoins(save: SaveData, amount: number): SaveData {
+  return { ...save, coins: Math.max(0, save.coins + Math.floor(amount)) };
+}
+
+/** Test tools: start over, keeping only settings. */
+export function resetProgress(save: SaveData): SaveData {
+  return { ...newSave(), settings: save.settings };
 }
 
 export function totalStars(save: SaveData): number {

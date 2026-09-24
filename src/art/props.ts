@@ -166,7 +166,7 @@ export function paintDisasterIcon(icon: string, color: number): Painter {
   };
 }
 
-export const UI_ICONS = ['music', 'sound', 'pause', 'back', 'lock', 'shop', 'chair', 'shoe', 'chef', 'walkie', 'violin', 'clock', 'heart', 'play', 'replay', 'map', 'close', 'check', 'warning', 'guests', 'next'] as const;
+export const UI_ICONS = ['music', 'sound', 'pause', 'back', 'lock', 'shop', 'chair', 'shoe', 'chef', 'walkie', 'violin', 'clock', 'heart', 'play', 'replay', 'map', 'close', 'check', 'warning', 'guests', 'next', 'wrench'] as const;
 export type UiIcon = (typeof UI_ICONS)[number];
 
 export function isUiIcon(name: string | undefined): name is UiIcon {
@@ -456,6 +456,22 @@ export function paintUiIcon(icon: UiIcon, color = 0xffffff): Painter {
         c.stroke();
         c.fillStyle = ink;
         c.fill(disc(0, 9.5, 2));
+        break;
+      }
+      case 'wrench': {
+        c.save();
+        c.rotate(-Math.PI / 4);
+        const w = new Path2D();
+        w.moveTo(-4, -4);
+        w.lineTo(-4, 16);
+        w.arcTo(-4, 20, 0, 20, 4);
+        w.arcTo(4, 20, 4, 16, 4);
+        w.lineTo(4, -4);
+        w.arc(0, -10, 10, Math.PI * 0.3, Math.PI * 0.7, true);
+        w.closePath();
+        toon(c, w, color, { x: -10, y: -20, w: 20, h: 40 }, { line: 2.4 });
+        flat(c, rrect(-3.5, -22, 7, 10, 2), 0xfffaf0, 0);
+        c.restore();
         break;
       }
       case 'guests':

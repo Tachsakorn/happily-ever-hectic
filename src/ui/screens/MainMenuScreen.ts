@@ -15,12 +15,16 @@ export interface MainMenuVM {
   /** The couple standing under the arch; the heart of the title screen. */
   readonly couple: readonly [PersonLook, PersonLook] | null;
   readonly coupleNames: string;
+  readonly testTools: boolean;
 }
+
+const SECRET_TAPS = 5;
+const SECRET_WINDOW_MS = 2500;
 
 export class MainMenuScreen extends DomScreen {
   constructor(
     private readonly vm: MainMenuVM,
-    private readonly actions: { play: () => void; settings: (s: SettingsVM) => void },
+    private readonly actions: { play: () => void; settings: (s: SettingsVM) => void; toggleTestTools?: () => boolean },
   ) {
     super();
   }
@@ -37,16 +41,35 @@ export class MainMenuScreen extends DomScreen {
           h('span', { class: 'menu__love menu__love--late' }),
         )
       : null;
+    const title = logo(vm.title, true);
+    const badge = h('div', { class: 'test-badge', text: 'Test tools on' });
+    badge.hidden = !vm.testTools;
+    // Hidden switch for playtesting: tap the title five times quickly.
+    let taps: number[] = [];
+    this.disposer.listen(title, 'click', () => {
+      const now = performance.now();
+      taps = [...taps.filter((t) => now - t < SECRET_WINDOW_MS), now];
+      if (taps.length < SECRET_TAPS || !this.actions.toggleTestTools) return;
+      taps = [];
+      const on = this.actions.toggleTestTools();
+      badge.hidden = !on;
+      badge.textContent = on ? 'Test tools on' : 'Test tools off';
+      if (!on) {
+        badge.hidden = false;
+        this.disposer.timeout(() => (badge.hidden = true), 1400);
+      }
+    });
     return h(
       'div',
       { class: 'screen menu-screen' },
+      badge,
       backdrop((w, hgt) => paintMenuBackdrop(w, hgt, { archAt: 0.7, seed: 11 }), this.disposer),
       petals(10),
       couple,
       h(
         'div',
         { class: 'menu__column' },
-        logo(vm.title, true),
+        title,
         h('p', { class: 'tagline', text: vm.tagline }),
         button('Play', this.actions.play, this.disposer, { tone: 'go', size: 'big', icon: uiIcon('play', 0xffffff, 40), className: 'menu__play' }),
         settingsToggles(vm.settings, this.actions.settings, this.disposer),

@@ -15,6 +15,7 @@ import { clearQueue, PlannerSystem, queueAction } from '../planner/PlannerSystem
 import { buildResult, endBonus, type ReceptionResult } from '../scoring/results';
 import { ScoreKeeper } from '../scoring/ScoreKeeper';
 import { createTimelineSystem } from '../timeline/TimelineSystem';
+import { CHEAT_CAUSE, type Cheat } from './cheats';
 import { fail, type Command, type CommandResult } from './commands';
 import { EventBus, type DomainEvent } from './events';
 import { combineModifiers } from './modifiers';
@@ -141,22 +142,51 @@ export class ReceptionSimulation {
   }
 
   step(dt: number): void {
-    const { state, mood, score } = this.ctx;
+    const { state, mood } = this.ctx;
     if (state.outcome !== 'RUNNING') return;
     state.time += dt;
     for (const system of this.systems) system.update(this.ctx, dt);
     mood.tick(dt);
 
-    if (state.couple.mood <= 0) {
-      mood.flush();
-      state.outcome = 'FAILED';
-      this.ctx.events.emit({ type: 'receptionEnded', outcome: 'FAILED' });
-    } else if (state.time >= state.duration) {
-      mood.flush();
-      const rules = this.ctx.content.scoring;
+    if (state.couple.mood <= 0) this.end('FAILED');
+    else if (state.time >= state.duration) this.end('COMPLETE');
+  }
+
+  private end(outcome: 'COMPLETE' | 'FAILED', minScore = 0): void {
+    const { state, mood, score, events, content } = this.ctx;
+    mood.flush();
+    if (outcome === 'COMPLETE') {
+      const rules = content.scoring;
       score.add(endBonus(state, rules.perHappyGuestHeartAtEnd, rules.perMoodPointAtEnd), 'Wedding day bonus');
-      state.outcome = 'COMPLETE';
-      this.ctx.events.emit({ type: 'receptionEnded', outcome: 'COMPLETE' });
+      if (state.score < minScore) {
+        const delta = minScore - state.score;
+        state.score = minScore;
+        events.emit({ type: 'scoreChanged', delta, total: state.score, reason: CHEAT_CAUSE, pos: null });
+      }
+    }
+    state.outcome = outcome;
+    events.emit({ type: 'receptionEnded', outcome });
+  }
+
+  /** Playtest shortcuts; see `cheats.ts`. Ignored once the reception is over. */
+  cheat(c: Cheat): void {
+    if (this.isOver) return;
+    const { state, mood, level } = this.ctx;
+    switch (c.type) {
+      case 'finish':
+        this.end('COMPLETE', c.stars > 0 ? level.starScores[c.stars - 1] : 0);
+        break;
+      case 'fail':
+        this.end('FAILED');
+        break;
+      case 'skipTime': {
+        const steps = Math.round(Math.max(0, Math.min(c.seconds, state.duration - state.time)) / SIM_STEP_SECONDS);
+        for (let i = 0; i < steps && !this.isOver; i++) this.step(SIM_STEP_SECONDS);
+        break;
+      }
+      case 'fillMood':
+        mood.change(100 - state.couple.mood, CHEAT_CAUSE);
+        break;
     }
   }
 

@@ -1,5 +1,5 @@
 import type { ContentRegistry } from '../content/ContentRegistry';
-import { applyResult, buyUpgrade, receptionModifiers, type ResultOutcome } from '../core/progression/progression';
+import { applyResult, buyUpgrade, grantCoins, receptionModifiers, resetProgress, unlockAllLevels, type ResultOutcome } from '../core/progression/progression';
 import type { SaveData, Settings } from '../core/progression/saveData';
 import type { ReceptionResult } from '../core/scoring/results';
 import { ReceptionSession } from '../core/sim/ReceptionSession';
@@ -17,7 +17,8 @@ import { MainMenuScreen } from '../ui/screens/MainMenuScreen';
 import { PrepScreen } from '../ui/screens/PrepScreen';
 import { AppFlow, AppState, type AppStateId, type StateChange } from './AppFlow';
 import { AudioDirector } from './AudioDirector';
-import type { UiCue } from '../ui/screens/common';
+import type { SettingsVM, UiCue } from '../ui/screens/common';
+import type { Cheat } from '../core/sim/cheats';
 import { decorLook, dialogueVM, levelCards, menuVM, nextLevelId, prepVM, resultsVM, shopItems } from './viewModels';
 
 interface FlowContext {
@@ -88,10 +89,59 @@ export class GameApp {
     this.deps.audio.setSfxEnabled(s.sfx);
   }
 
-  private updateSettings = (s: Settings): void => {
-    this.applySettings(s);
-    this.persist({ ...this.save, settings: s });
+  private updateSettings = (s: SettingsVM): void => {
+    const next: Settings = { ...this.save.settings, ...s };
+    this.applySettings(next);
+    this.persist({ ...this.save, settings: next });
   };
+
+  /** Hidden switch on the title screen: turns the playtest tools on or off. */
+  private toggleTestTools = (): boolean => {
+    const on = !this.save.settings.testTools;
+    this.persist({ ...this.save, settings: { ...this.save.settings, testTools: on } });
+    this.deps.audio.play(on ? 'coin' : 'nope');
+    return on;
+  };
+
+  private testMapAction = (action: 'unlockAll' | 'coins' | 'reset'): void => {
+    const { content } = this.deps;
+    if (!this.save.settings.testTools) return;
+    if (action === 'unlockAll') this.persist(unlockAllLevels(content, this.save));
+    else if (action === 'coins') this.persist(grantCoins(this.save, 500));
+    else this.persist(resetProgress(this.save));
+    this.deps.audio.play('coin');
+    this.show(this.mapScreen(), 'cut');
+  };
+
+  /** Applies a playtest shortcut and goes straight back to the reception, which reacts to it. */
+  private testCheat = (cheat: Cheat): void => {
+    if (!this.save.settings.testTools || !this.session) return;
+    this.session.cheat(cheat);
+    this.go(AppState.RECEPTION_PLAYING);
+  };
+
+  private mapScreen(): Screen {
+    const { content, audio } = this.deps;
+    return new LevelSelectScreen(
+      { levels: levelCards(content, this.save), coins: this.save.coins, shop: shopItems(content, this.save), testTools: this.save.settings.testTools },
+      {
+        pick: (levelId) => this.go(AppState.WEDDING_PREPARATION, { levelId }),
+        back: () => this.go(AppState.MAIN_MENU),
+        buy: (id) => {
+          const next = buyUpgrade(content, this.save, id);
+          if ('error' in next) {
+            audio.play('nope');
+            return null;
+          }
+          audio.play('coin');
+          this.persist(next);
+          return { coins: next.coins, shop: shopItems(content, next) };
+        },
+        cue: this.cue,
+        test: this.testMapAction,
+      },
+    );
+  }
 
   private screenForBoot(): Screen {
     const { info } = this.deps.content;
@@ -109,33 +159,18 @@ export class GameApp {
         audio.setMusicPlaying(true);
         audio.setMusicDucked(false);
         this.show(
-          new MainMenuScreen(menuVM(content, this.save), { play: () => this.go(AppState.PROGRESSION), settings: this.updateSettings }),
+          new MainMenuScreen(menuVM(content, this.save), {
+            play: () => this.go(AppState.PROGRESSION),
+            settings: this.updateSettings,
+            toggleTestTools: this.toggleTestTools,
+          }),
         );
         break;
 
       case AppState.PROGRESSION:
         this.endSession();
         audio.setMusicDucked(false);
-        this.show(
-          new LevelSelectScreen(
-            { levels: levelCards(content, this.save), coins: this.save.coins, shop: shopItems(content, this.save) },
-            {
-              pick: (levelId) => this.go(AppState.WEDDING_PREPARATION, { levelId }),
-              back: () => this.go(AppState.MAIN_MENU),
-              buy: (id) => {
-                const next = buyUpgrade(content, this.save, id);
-                if ('error' in next) {
-                  audio.play('nope');
-                  return null;
-                }
-                audio.play('coin');
-                this.persist(next);
-                return { coins: next.coins, shop: shopItems(content, next) };
-              },
-              cue: this.cue,
-            },
-          ),
-        );
+        this.show(this.mapScreen());
         break;
 
       case AppState.WEDDING_PREPARATION: {
@@ -172,12 +207,13 @@ export class GameApp {
         audio.setMusicDucked(true);
         this.show(
           new PauseScreen(
-            { settings: this.save.settings, levelName: content.levels.get(this.requireLevel()).name },
+            { settings: this.save.settings, levelName: content.levels.get(this.requireLevel()).name, testTools: this.save.settings.testTools },
             {
               resume: () => this.go(AppState.RECEPTION_PLAYING),
               restart: () => this.go(AppState.RECEPTION_INTRO),
               quit: () => this.go(AppState.PROGRESSION),
               settings: this.updateSettings,
+              cheat: this.testCheat,
             },
           ),
           'cut',

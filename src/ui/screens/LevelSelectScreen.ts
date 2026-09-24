@@ -34,7 +34,10 @@ interface MapVM {
   readonly levels: readonly LevelCardVM[];
   readonly coins: number;
   readonly shop: readonly ShopItemVM[];
+  readonly testTools?: boolean;
 }
+
+export type MapTestAction = 'unlockAll' | 'coins' | 'reset';
 
 /** Stops along the garden path, as fractions of the map. Shared by the painter and the DOM nodes. */
 function stopFractions(n: number): Point[] {
@@ -74,6 +77,7 @@ export class LevelSelectScreen extends DomScreen {
       back: () => void;
       buy: (id: string) => { coins: number; shop: readonly ShopItemVM[] } | null;
       cue?: (cue: UiCue) => void;
+      test?: (action: MapTestAction) => void;
     },
   ) {
     super();
@@ -95,7 +99,18 @@ export class LevelSelectScreen extends DomScreen {
       { class: 'screen map-screen' },
       backdrop((w, hgt) => paintMapBackdrop(w, hgt, fractions.map((f) => ({ x: f.x * w, y: f.y * hgt })), reached), this.disposer),
       h('div', { class: 'map-nodes' }, ...nodes),
-      h('div', { class: 'topbar' }, backButton(this.actions.back, this.disposer), ribbon('Wedding Map', 'sage', 'h1'), h('div', { class: 'group' }, this.coinSlot, shopBtn)),
+      h(
+        'div',
+        { class: 'topbar' },
+        h(
+          'div',
+          { class: 'group' },
+          backButton(this.actions.back, this.disposer),
+          this.vm.testTools ? button('', () => this.openTestTools(), this.disposer, { tone: 'cream', size: 'round', icon: uiIcon('wrench', 0x8fd0e8, 38), aria: 'Test tools' }) : null,
+        ),
+        ribbon('Wedding Map', 'sage', 'h1'),
+        h('div', { class: 'group' }, this.coinSlot, shopBtn),
+      ),
     );
     return this.root;
   }
@@ -162,6 +177,33 @@ export class LevelSelectScreen extends DomScreen {
         starRow(l.stars, 54, 'star-row level-pop__stars'),
         h('p', { class: 'level-pop__best', text: l.bestScore > 0 ? `Best score ${l.bestScore.toLocaleString('en-US')}` : 'Not played yet' }),
         button('Plan it!', () => this.actions.pick(l.id), this.disposer, { tone: 'go', size: 'big', icon: uiIcon('play', 0xffffff, 38) }),
+      ),
+    );
+  }
+
+  private openTestTools(): void {
+    const test = this.actions.test;
+    if (!test) return;
+    let armed = false;
+    const reset = button('Reset progress', () => {
+      if (!armed) {
+        armed = true;
+        reset.querySelector('span')!.textContent = 'Tap again to reset';
+        return;
+      }
+      test('reset');
+    }, this.disposer, { tone: 'rose' });
+    const close = button('', () => this.closeModal(), this.disposer, { tone: 'cream', size: 'round', icon: uiIcon('close', 0xffffff, 34), aria: 'Close', className: 'panel__close' });
+    this.openModal(
+      h(
+        'div',
+        { class: 'panel pop test-tools' },
+        close,
+        ribbon('Test tools', 'gold'),
+        h('p', { class: 'shop__hint', text: 'For playtesting. Tap the title five times to hide these again.' }),
+        button('Unlock every wedding', () => test('unlockAll'), this.disposer, { tone: 'go', icon: uiIcon('map', 0xe86f8e, 30) }),
+        button('+500 coins', () => test('coins'), this.disposer, { tone: 'gold', icon: itemIcon('coin', 0xf2b84b, 30) }),
+        reset,
       ),
     );
   }

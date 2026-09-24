@@ -13,6 +13,8 @@ export interface LevelProgress {
 export interface Settings {
   readonly music: boolean;
   readonly sfx: boolean;
+  /** Playtest shortcuts (skip, win, unlock). Hidden switch on the title screen. */
+  readonly testTools: boolean;
 }
 
 export interface SaveData {
@@ -30,7 +32,7 @@ export function newSave(): SaveData {
     coins: 0,
     levels: {},
     upgrades: [],
-    settings: { music: true, sfx: true },
+    settings: { music: true, sfx: true, testTools: false },
     seenEnding: false,
   };
 }
@@ -61,7 +63,11 @@ export function migrate(raw: unknown): SaveData {
     coins: Math.max(0, Math.floor(num(raw.coins, 0))),
     levels,
     upgrades: Array.isArray(raw.upgrades) ? raw.upgrades.filter((u): u is string => typeof u === 'string') : [],
-    settings: { music: bool(settings.music, base.settings.music), sfx: bool(settings.sfx, base.settings.sfx) },
+    settings: {
+      music: bool(settings.music, base.settings.music),
+      sfx: bool(settings.sfx, base.settings.sfx),
+      testTools: bool(settings.testTools, base.settings.testTools),
+    },
     seenEnding: bool(raw.seenEnding, false),
   };
 }

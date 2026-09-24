@@ -8,6 +8,7 @@ import type { SimContext } from '../sim/SimContext';
 import { DisasterPhase, GuestState, MAX_HAPPINESS, type Disaster, type TargetRef } from '../sim/state';
 import { resolveDisaster } from '../disasters/DisasterSystem';
 import { serveCouple } from '../couple/CoupleSystem';
+import { stationItem } from '../sim/items';
 
 /**
  * What happens when the planner reaches a tapped target. Resolution happens on
@@ -176,7 +177,7 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
       return resolvePassSlot(ctx, slot);
     }
     case 'cakeTable': {
-      const itemId = station.providesItemId;
+      const itemId = stationItem(ctx, station);
       if (!itemId) return { skip: 'Nothing here' };
       if (ctx.state.couple.request?.itemId !== itemId) return { skip: 'Not time for the cake yet' };
       if (hands.includes(itemId)) return { skip: 'Already carrying it' };
@@ -184,7 +185,7 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
     }
     case 'drinkTap':
     case 'dessertTable': {
-      const itemId = station.providesItemId;
+      const itemId = stationItem(ctx, station);
       return itemId ? resolvePickup(ctx, itemId, station.pos) : { skip: 'Nothing here' };
     }
     default:

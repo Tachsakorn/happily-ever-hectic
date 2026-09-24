@@ -178,7 +178,7 @@ export const moments: MomentDef[] = [
   {
     id: 'toast',
     name: 'The Toast',
-    announcement: 'Time for the toast! Bring champagne to the couple.',
+    announcement: 'Time for the toast! Bring {item} to the couple.',
     itemId: 'champagne',
     patienceSeconds: 26,
     successMood: 10,

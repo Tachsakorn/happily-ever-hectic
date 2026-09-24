@@ -209,6 +209,7 @@ export interface DisasterDef {
 export interface MomentDef {
   readonly id: Id;
   readonly name: string;
+  /** Shown when the moment starts. `{item}` is replaced by the name of the item the level serves for it. */
   readonly announcement: string;
   /** The couple asks the planner to bring this item. */
   readonly itemId: Id;
@@ -282,6 +283,12 @@ export interface LevelDef {
    */
   readonly disasterTriggers?: Readonly<Record<Id, DisasterTrigger>>;
   readonly moments: readonly { readonly momentId: Id; readonly at: number }[];
+  /**
+   * Serve different items in this level only: every request, moment and
+   * station that would use the key item uses the value item instead
+   * (e.g. `{ champagne: 'bubble-tea' }`).
+   */
+  readonly itemSwaps?: Readonly<Record<Id, Id>>;
   readonly kitchen: { readonly burners: number; readonly cookSeconds: number };
   /** Score needed for 1, 2 and 3 stars. */
   readonly starScores: readonly [number, number, number];

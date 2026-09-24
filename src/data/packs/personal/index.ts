@@ -1,10 +1,18 @@
-import type { ContentPack } from '../../../content/types';
+import type { ContentPack, ItemDef } from '../../../content/types';
 import { guest } from '../base/weddings';
 import { personal } from './profile';
 
 const gift = { bringsGift: true };
 const a = personal.partnerA;
 const b = personal.partnerB;
+const fav = personal.favourites;
+
+const favouriteItems: ItemDef[] = [
+  ...fav.dishes.map((d) => ({ id: d.id, name: d.name, kind: 'dish' as const, hands: 1 as const, visual: { color: d.color, icon: d.icon } })),
+  { id: fav.drink.id, name: fav.drink.name, kind: 'drink', hands: 1, visual: { color: fav.drink.color, icon: fav.drink.icon } },
+  { id: fav.secondDrink.id, name: fav.secondDrink.name, kind: 'drink', hands: 1, visual: { color: fav.secondDrink.color, icon: fav.secondDrink.icon } },
+  { id: fav.dessert.id, name: fav.dessert.name, kind: 'dessert', hands: 1, visual: { color: fav.dessert.color, icon: fav.dessert.icon } },
+];
 
 /**
  * The personal pack: the final wedding and the special ending. It only adds
@@ -12,6 +20,7 @@ const b = personal.partnerB;
  */
 export const personalPack: ContentPack = {
   id: 'personal',
+  items: favouriteItems,
   info: {
     title: personal.gameTitle,
     tagline: 'A wedding planner’s race against chaos',
@@ -26,8 +35,8 @@ export const personalPack: ContentPack = {
       partnerA: { id: 'partner-a', name: a.name, visual: { color: a.outfitColor, accent: a.hairColor, icon: a.outfit }, look: a.look },
       partnerB: { id: 'partner-b', name: b.name, visual: { color: b.outfitColor, accent: b.hairColor, icon: b.outfit }, look: b.look },
       lovesTags: personal.lovesTags,
-      menuItemIds: ['roast-chicken', 'salmon', 'risotto'],
-      coupleRequestItemIds: ['champagne', 'lemonade'],
+      menuItemIds: fav.dishes.map((d) => d.id),
+      coupleRequestItemIds: [fav.drink.id, fav.secondDrink.id],
       coupleRequestIntervalSeconds: [40, 58],
     },
   ],
@@ -66,6 +75,8 @@ export const personalPack: ContentPack = {
         'loose-puppy': { kind: 'random', from: 158, to: 172, chancePerSecond: 0.15 },
         'photo-time': { kind: 'random', from: 176, to: 190, chancePerSecond: 0.2 },
       },
+      // Our wedding serves Tanya's favourites instead of the hall's usual menu.
+      itemSwaps: { champagne: fav.drink.id, lemonade: fav.secondDrink.id, 'cake-slice': fav.dessert.id },
       moments: [
         { momentId: 'toast', at: 48 },
         { momentId: 'cake-cutting', at: 122 },

@@ -26,6 +26,23 @@ export const personal = {
     hairColor: 0x1c1512,
     look: { skin: 0xe6b48e, hairStyle: 'longSide', accessory: 'star-clip', signatureMood: 'cheeky' },
   },
+  /**
+   * Tanya's favourites. The final wedding serves these instead of the usual
+   * menu: dishes come from the kitchen, drinks from the drink carts, the
+   * dessert replaces cake slices, and the toast is made with bubble tea.
+   */
+  favourites: {
+    dishes: [
+      { id: 'sushi', name: 'Sushi Platter', color: 0xf08a6c, icon: 'sushi' },
+      { id: 'crying-tiger', name: 'Smoked Crying Tiger', color: 0xa0522d, icon: 'steak' },
+    ],
+    /** Replaces champagne (and the toast). */
+    drink: { id: 'bubble-tea', name: 'Bubble Milk Tea', color: 0xd9b08c, icon: 'boba' },
+    /** Replaces pink lemonade. */
+    secondDrink: { id: 'matcha-latte', name: 'Iced Matcha Latte', color: 0x8fbf6a, icon: 'matcha' },
+    /** Replaces cake slices. */
+    dessert: { id: 'dragon-fruit', name: 'Dragon Fruit', color: 0xe8508a, icon: 'dragonfruit' },
+  },
   /** ✏️ Decor tags the two of you love: flowers, pastel, lights, rustic, classic, elegant, bright, tropical. */
   lovesTags: ['flowers', 'lights'],
   /** ✏️ Intro before the final wedding. */

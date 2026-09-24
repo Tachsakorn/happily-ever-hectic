@@ -1,5 +1,6 @@
 import type { SimContext, System } from '../sim/SimContext';
 import { DisasterPhase, GuestState } from '../sim/state';
+import { servedItem } from '../sim/items';
 
 function scheduleCoupleRequest(ctx: SimContext): void {
   const [min, max] = ctx.wedding.coupleRequestIntervalSeconds;
@@ -30,14 +31,15 @@ export function serveCouple(ctx: SimContext): void {
 /** Starts a wedding moment: it replaces any small request the couple had, because the moment matters more. */
 export function startMoment(ctx: SimContext, momentId: string): void {
   const moment = ctx.content.moments.get(momentId);
+  const itemId = servedItem(ctx, moment.itemId);
   ctx.state.couple.request = {
-    itemId: moment.itemId,
+    itemId,
     momentId,
     timeLeft: moment.patienceSeconds,
     total: moment.patienceSeconds,
   };
   ctx.events.emit({ type: 'momentStarted', momentId });
-  ctx.events.emit({ type: 'coupleRequested', itemId: moment.itemId, momentId });
+  ctx.events.emit({ type: 'coupleRequested', itemId, momentId });
 }
 
 /**

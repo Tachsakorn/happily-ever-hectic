@@ -4,6 +4,7 @@ import { GuestState, MAX_HAPPINESS, type Guest } from '../sim/state';
 import { makeUpset } from './guestActions';
 import { isAtTable, isWaiting, transitionGuest } from './guestMachine';
 import { refreshTableMoods } from './seating';
+import { servedItem } from '../sim/items';
 
 /** Moves a walker along its path. Returns true when the path is complete. */
 export function walk(guest: { pos: Guest['pos']; path: Guest['path'] }, speed: number, dt: number): boolean {
@@ -30,7 +31,8 @@ function chooseRequest(ctx: SimContext, guest: Guest): string | null {
   const pool = ctx.content.guestTypes
     .get(guest.typeId)
     .requestPool.filter((r) => !r.requiresFlag || ctx.state.flags.has(r.requiresFlag));
-  return ctx.rng.weighted(pool, (r) => r.weight)?.itemId ?? null;
+  const picked = ctx.rng.weighted(pool, (r) => r.weight)?.itemId;
+  return picked ? servedItem(ctx, picked) : null;
 }
 
 /**

@@ -388,7 +388,16 @@ function waitingArea(c: CanvasRenderingContext2D, v: VenueDef): void {
   }
 }
 
-function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, decor: DecorLook, itemColor: (itemId: string) => number): void {
+/** How the caller's level dresses the venue: colours and names of what each station serves. */
+export interface VenueServing {
+  readonly itemColor: (itemId: string) => number;
+  /** A sign text for stations whose item the level swapped, or null to keep the usual sign. */
+  readonly stationLabel: (station: StationDef) => string | null;
+}
+
+function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, decor: DecorLook, serving: VenueServing): void {
+  const itemColor = serving.itemColor;
+  const label = serving.stationLabel(s);
   const { x, y } = s.pos;
   switch (s.kind) {
     case 'entrance':
@@ -412,7 +421,7 @@ function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, d
       break;
     case 'dessertTable':
       dessertTable(c, x, y, decor);
-      sign(c, 'Cake Slices', x, y + 62);
+      sign(c, label ?? 'Cake Slices', x, y + 62);
       break;
     case 'kitchenPass': {
       const { top } = passCounter(c, v, x);
@@ -421,7 +430,7 @@ function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, d
     }
     case 'drinkTap':
       drinkCart(c, x, y, s.providesItemId ? itemColor(s.providesItemId) : decor.flower);
-      sign(c, s.name, x - 104, y + 4, 14);
+      sign(c, label ?? s.name, x - 104, y + 4, 14);
       break;
     case 'bin':
       bin(c, x, y);
@@ -439,7 +448,7 @@ export function stovePos(v: VenueDef): { x: number; y: number } | null {
 }
 
 /** The static venue: floor, rugs, furniture and signs. Dynamic things (people, food, cake) are sprites on top. */
-export function paintVenue(v: VenueDef, decor: DecorLook, itemColor: (itemId: string) => number): Painter {
+export function paintVenue(v: VenueDef, decor: DecorLook, serving: VenueServing): Painter {
   return (c) => {
     const kitchen = v.stations.find((s) => s.kind === 'kitchenPass');
     const kitchenX = kitchen ? kitchen.pos.x + 32 : v.size.width;
@@ -462,7 +471,7 @@ export function paintVenue(v: VenueDef, decor: DecorLook, itemColor: (itemId: st
     }
 
     waitingArea(c, v);
-    for (const s of v.stations) paintStation(c, s, v, decor, itemColor);
+    for (const s of v.stations) paintStation(c, s, v, decor, serving);
     v.tables.forEach((t, i) => paintTable(c, t, decor, 40 + i));
     if (v.waitingSlots.length) {
       const xs = v.waitingSlots.map((p) => p.x);

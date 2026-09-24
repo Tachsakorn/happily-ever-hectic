@@ -15,7 +15,12 @@ export type ItemIcon =
   | 'heart-empty'
   | 'star'
   | 'star-empty'
-  | 'coin';
+  | 'coin'
+  | 'boba'
+  | 'matcha'
+  | 'sushi'
+  | 'steak'
+  | 'dragonfruit';
 
 /** Item icons live in a 44×44 box and are drawn around its centre. */
 export const ICON_SIZE = 44;
@@ -187,6 +192,133 @@ export function paintIcon(icon: ItemIcon, color: number, accent = 0xe86f8e): Pai
         lemon.arc(-9, -14, 6, Math.PI * 0.9, Math.PI * 2.1);
         lemon.closePath();
         flat(c, lemon, 0xf6d860, 1.6);
+        break;
+      }
+      case 'boba':
+      case 'matcha': {
+        // Tall cup with a domed lid and a straw; boba has pearls, matcha a cream swirl.
+        const cup = new Path2D();
+        cup.moveTo(-10, -10);
+        cup.lineTo(10, -10);
+        cup.lineTo(7, 18);
+        cup.lineTo(-7, 18);
+        cup.closePath();
+        c.save();
+        c.clip(cup);
+        c.fillStyle = hex(color);
+        c.fill(cup);
+        if (icon === 'boba') {
+          c.fillStyle = hex(0x3b2640);
+          for (const [x, y] of [
+            [-4, 14],
+            [1, 15],
+            [5, 13],
+            [-2, 10],
+            [3, 10],
+            [-5, 9],
+          ] as const) {
+            c.fill(disc(x, y, 2.2));
+          }
+        } else {
+          c.fillStyle = 'rgba(255,255,255,0.9)';
+          c.fillRect(-12, -10, 24, 7);
+          c.fillStyle = hex(shade(color, -0.2));
+          c.fillRect(-12, 4, 24, 16);
+        }
+        c.fillStyle = 'rgba(255,255,255,0.4)';
+        c.fillRect(-7, -8, 3, 22);
+        c.restore();
+        outline(c, cup, 2);
+        const lid = new Path2D();
+        lid.moveTo(-12, -10);
+        lid.quadraticCurveTo(0, -20, 12, -10);
+        lid.closePath();
+        flat(c, lid, 0xffffff, 2);
+        c.lineWidth = 4.6;
+        c.strokeStyle = hex(INK);
+        c.beginPath();
+        c.moveTo(2, -14);
+        c.lineTo(6, -22);
+        c.stroke();
+        c.lineWidth = 2.4;
+        c.strokeStyle = hex(icon === 'boba' ? 0xe86f8e : 0x7fb08a);
+        c.stroke();
+        break;
+      }
+      case 'sushi': {
+        plate(c);
+        for (const [x, fish] of [
+          [-9, 0xf08a6c],
+          [9, 0xf6b6a8],
+        ] as const) {
+          toon(c, rrect(x - 8, -2, 16, 10, 5), 0xfffaf0, { x: x - 8, y: -2, w: 16, h: 10 }, { line: 1.8 });
+          const top = rrect(x - 9, -7, 18, 8, 4);
+          toon(c, top, fish, { x: x - 9, y: -7, w: 18, h: 8 }, { line: 1.8 });
+          c.strokeStyle = 'rgba(255,255,255,0.8)';
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.moveTo(x - 5, -5);
+          c.lineTo(x - 1, -2);
+          c.moveTo(x + 1, -5);
+          c.lineTo(x + 5, -2);
+          c.stroke();
+        }
+        flat(c, oval(0, 11, 4, 2.5), 0x7fb08a, 1.2);
+        break;
+      }
+      case 'steak': {
+        plate(c);
+        const meat = new Path2D();
+        meat.moveTo(-14, -2);
+        meat.bezierCurveTo(-14, -10, 8, -12, 13, -5);
+        meat.bezierCurveTo(16, 2, 6, 8, -4, 7);
+        meat.bezierCurveTo(-12, 6, -14, 3, -14, -2);
+        meat.closePath();
+        toon(c, meat, color, { x: -14, y: -11, w: 30, h: 18 }, { line: 2 });
+        c.strokeStyle = hex(shade(color, -0.45));
+        c.lineWidth = 2;
+        for (const x of [-7, -1, 5]) {
+          c.beginPath();
+          c.moveTo(x - 3, -6);
+          c.lineTo(x + 3, 3);
+          c.stroke();
+        }
+        // Little dipping bowl of jaew sauce.
+        flat(c, disc(12, 9, 5), 0xfffaf0, 1.6);
+        flat(c, disc(12, 9, 3), 0xc0392b, 0);
+        break;
+      }
+      case 'dragonfruit': {
+        const body = oval(0, 2, 14, 12, -0.2);
+        toon(c, body, color, { x: -14, y: -10, w: 28, h: 24 }, { line: 2 });
+        const cut = oval(2, 3, 9, 7.5, -0.2);
+        c.fillStyle = hex(0xfffaf0);
+        c.fill(cut);
+        outline(c, cut, 1.6);
+        c.fillStyle = hex(INK);
+        for (const [x, y] of [
+          [-2, 1],
+          [3, -1],
+          [6, 4],
+          [0, 6],
+          [4, 7],
+          [-4, 5],
+        ] as const) {
+          c.fill(disc(x, y, 0.9));
+        }
+        // Green-tipped bracts around the skin.
+        for (const a of [-2.7, -1.9, -1.1, -0.3, 2.5]) {
+          const bx = Math.cos(a) * 13;
+          const by = 2 + Math.sin(a) * 11;
+          const nx = Math.cos(a);
+          const ny = Math.sin(a);
+          const bract = new Path2D();
+          bract.moveTo(bx - ny * 3.5, by + nx * 3.5);
+          bract.quadraticCurveTo(bx + nx * 4, by + ny * 4, bx + nx * 8 + ny * 2, by + ny * 8 - nx * 2);
+          bract.lineTo(bx + ny * 3.5, by - nx * 3.5);
+          bract.closePath();
+          flat(c, bract, 0x9fcf7a, 1.4);
+        }
         break;
       }
       case 'slice': {

@@ -8,6 +8,7 @@ import { FEET_ORIGIN_Y, type ArtKit } from '../art/ArtKit';
 import type { TextureFactory } from '../art/TextureFactory';
 import type { Fx } from '../fx/Fx';
 import { Colors, Depth } from '../ui/text';
+import { stationItem } from '../../core/sim/items';
 
 const COUPLE_SCALE = 1.2;
 const COUPLE_HAPPY = 60;
@@ -137,10 +138,11 @@ export class PropsView {
     const venue = sim.context.venue.def;
 
     for (const s of venue.stations) {
-      if ((s.kind === 'drinkTap' || s.kind === 'dessertTable') && s.providesItemId) {
+      const provides = stationItem(sim.context, s);
+      if ((s.kind === 'drinkTap' || s.kind === 'dessertTable') && provides) {
         const count = s.kind === 'dessertTable' ? 3 : 1;
         for (let i = 0; i < count; i++) {
-          tex.image(scene, s.pos.x + (i - (count - 1) / 2) * 32, s.pos.y - 4, art.item(s.providesItemId)).setScale(1.1 / tex.scale).setDepth(Depth.props);
+          tex.image(scene, s.pos.x + (i - (count - 1) / 2) * 32, s.pos.y - 4, art.item(provides)).setScale(1.1 / tex.scale).setDepth(Depth.props);
         }
       }
     }

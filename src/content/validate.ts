@@ -110,29 +110,27 @@ export function validateContent(content: ContentRegistry): string[] {
           );
         }
       }
+      // Requests go through the level's item swaps; so do station hand-outs.
+      const swap = (id: string) => level.itemSwaps?.[id] ?? id;
+      const provided = (id: string) => venue.stations.some((s) => s.providesItemId !== undefined && swap(s.providesItemId) === id);
+      for (const [from, to] of Object.entries(level.itemSwaps ?? {})) {
+        check(content.items.has(from) && content.items.has(to), `${where}: item swap ${from} → ${to} uses an unknown item`);
+      }
       for (const m of level.moments) {
         if (!content.moments.has(m.momentId)) continue;
-        const itemId = content.moments.get(m.momentId).itemId;
-        check(
-          venue.stations.some((s) => s.providesItemId === itemId),
-          `${where}: moment ${m.momentId} needs a station providing ${itemId}`,
-        );
+        const itemId = swap(content.moments.get(m.momentId).itemId);
+        check(provided(itemId), `${where}: moment ${m.momentId} needs a station providing ${itemId}`);
       }
       if (content.weddings.has(level.weddingId)) {
         for (const itemId of content.weddings.get(level.weddingId).coupleRequestItemIds) {
-          check(
-            venue.stations.some((s) => s.providesItemId === itemId),
-            `${where}: couple request ${itemId} has no station providing it`,
-          );
+          check(provided(itemId), `${where}: couple request ${itemId} has no station providing it`);
         }
       }
       for (const g of level.guests) {
         if (!content.guestTypes.has(g.typeId)) continue;
         for (const r of content.guestTypes.get(g.typeId).requestPool) {
-          check(
-            venue.stations.some((s) => s.providesItemId === r.itemId),
-            `${where}: guest type ${g.typeId} may request ${r.itemId} but no station provides it`,
-          );
+          const itemId = swap(r.itemId);
+          check(provided(itemId), `${where}: guest type ${g.typeId} may request ${itemId} but no station provides it`);
         }
       }
     }

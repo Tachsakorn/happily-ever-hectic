@@ -1,6 +1,7 @@
 import type { ReceptionSimulation } from '../../src/core/sim/ReceptionSimulation';
 import type { TargetRef } from '../../src/core/sim/state';
 import { SIM_STEP_SECONDS } from '../../src/core/sim/ReceptionSimulation';
+import { stationItem } from '../../src/core/sim/items';
 
 /**
  * A greedy automated player used to prove levels are winnable and to
@@ -47,7 +48,7 @@ function chooseAction(sim: ReceptionSimulation): TargetRef | null {
   const hands = s.planner.hands;
   const handsUsed = hands.reduce((n, id) => n + ctx.content.items.get(id).hands, 0);
   const room = ctx.tuning.hands - handsUsed;
-  const stationFor = (itemId: string) => ctx.venue.def.stations.find((st) => st.providesItemId === itemId);
+  const stationFor = (itemId: string) => ctx.venue.def.stations.find((st) => stationItem(ctx, st) === itemId);
 
   const req = s.couple.request;
   if (req) {

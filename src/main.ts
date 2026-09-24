@@ -6,6 +6,7 @@ import { SynthAudioService } from './platform/audio/SynthAudioService';
 import { LocalStorageSaveService } from './platform/save/SaveService';
 import { computeRenderScale } from './platform/viewport/renderScale';
 import { installTouchHardening } from './platform/viewport/touchHardening';
+import { installUiScale } from './platform/viewport/uiScale';
 import { loadGameFonts } from './platform/fonts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH, SceneKey } from './render/config';
 import { PhaserHost } from './render/PhaserHost';
@@ -37,6 +38,7 @@ await loadGameFonts();
 
 const audio = new SynthAudioService();
 const uiLayer = requireElement('ui-layer');
+installUiScale(uiLayer);
 // Every menu button clicks audibly; screens stay free of audio concerns.
 uiLayer.addEventListener('pointerdown', (e) => {
   if (e.target instanceof Element && e.target.closest('.btn:not(:disabled), .map-node, .decor-tile')) audio.play('tap');

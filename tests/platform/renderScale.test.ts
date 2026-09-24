@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeRenderScale } from '../../src/platform/viewport/renderScale';
+import { uiScaleFor } from '../../src/platform/viewport/uiScale';
 
 describe('computeRenderScale', () => {
   it('renders at 2x on a retina iPad filling the screen', () => {
@@ -17,5 +18,17 @@ describe('computeRenderScale', () => {
 
   it('is safe with degenerate input', () => {
     expect(computeRenderScale(0, 0, 2, 1400, 1000)).toBe(1);
+  });
+});
+
+describe('UI frame scaling', () => {
+  it('iPads keep the UI at 1:1', () => {
+    expect(uiScaleFor(1180, 820)).toBe(1);
+    expect(uiScaleFor(1024, 768)).toBe(1);
+  });
+  it('a phone in landscape lays the UI out larger and scales it down', () => {
+    const s = uiScaleFor(844, 390);
+    expect(s).toBeCloseTo(390 / 700, 5);
+    expect(390 / s).toBeGreaterThanOrEqual(700 - 1e-6);
   });
 });

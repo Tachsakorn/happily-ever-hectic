@@ -31,6 +31,11 @@
   --safe-left: env(safe-area-inset-left, 0px);
 
   --touch-min: 60px;
+  /* Viewport units of the UI's design frame. The frame is the real viewport on
+     iPad; on smaller screens (phones) it is larger and scaled down to fit, so
+     layouts never squeeze (see platform/viewport/uiScale.ts). */
+  --vw: 1vw;
+  --vh: 1vh;
   --line: 3px;
 }
 
@@ -180,7 +185,7 @@ body {
 
 .logo {
   margin: 0;
-  font: clamp(54px, 8.4vw, 104px) / 0.95 var(--font-display);
+  font: clamp(54px, calc(8.4 * var(--vw)), 104px) / 0.95 var(--font-display);
   text-align: center;
   color: #fff;
   letter-spacing: 0.01em;
@@ -251,7 +256,7 @@ body {
 
 .tagline {
   margin: 0;
-  font-size: clamp(18px, 2.2vw, 24px);
+  font-size: clamp(18px, calc(2.2 * var(--vw)), 24px);
   font-weight: 800;
   color: var(--ink);
   text-align: center;
@@ -434,7 +439,7 @@ body {
   background: var(--rose);
   border: var(--line) solid var(--ink);
   border-radius: 8px;
-  font: clamp(26px, 3.2vw, 38px) / 1 var(--font-display);
+  font: clamp(26px, calc(3.2 * var(--vw)), 38px) / 1 var(--font-display);
   color: #fff;
   text-shadow: 0 3px 0 var(--rose-edge);
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.1);
@@ -575,10 +580,10 @@ body {
     transform: translate(0, 0) rotate(0deg);
   }
   50% {
-    transform: translate(40px, 55vh) rotate(200deg);
+    transform: translate(40px, calc(55 * var(--vh))) rotate(200deg);
   }
   100% {
-    transform: translate(-20px, 110vh) rotate(420deg);
+    transform: translate(-20px, calc(110 * var(--vh))) rotate(420deg);
   }
 }
 
@@ -659,7 +664,7 @@ body {
 }
 
 .topbar .ribbon {
-  font-size: clamp(24px, 2.8vw, 34px);
+  font-size: clamp(24px, calc(2.8 * var(--vw)), 34px);
 }
 
 .topbar__spacer {
@@ -709,7 +714,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 22px;
-  margin-top: -6vh;
+  margin-top: calc(-6 * var(--vh));
 }
 
 .boot__stack .tagline {
@@ -769,7 +774,7 @@ body {
 
 .menu-screen {
   align-items: flex-start;
-  padding-left: calc(6vw + var(--safe-left));
+  padding-left: calc(calc(6 * var(--vw)) + var(--safe-left));
 }
 
 .menu__column {
@@ -777,8 +782,8 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  width: min(48vw, 560px);
-  margin-top: -3vh;
+  width: min(calc(48 * var(--vw)), 640px);
+  margin-top: calc(-3 * var(--vh));
 }
 
 .menu__column .toggles {
@@ -814,7 +819,7 @@ body {
 
 .menu__person--a {
   animation-delay: 500ms;
-  margin-right: -3vh;
+  margin-right: calc(-3 * var(--vh));
 }
 
 .menu__person--b {
@@ -823,7 +828,7 @@ body {
 
 .menu__person canvas {
   display: block;
-  height: 36vh;
+  height: calc(36 * var(--vh));
   width: auto;
   transform-origin: 50% 100%;
   animation: breathe 3.4s ease-in-out infinite;
@@ -1140,7 +1145,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  width: min(460px, 90vw);
+  width: min(460px, calc(90 * var(--vw)));
   padding: 34px 30px 36px;
   text-align: center;
 }
@@ -1177,8 +1182,8 @@ body {
 }
 
 .shop {
-  width: min(640px, 92vw);
-  max-height: 86vh;
+  width: min(640px, calc(92 * var(--vw)));
+  max-height: calc(86 * var(--vh));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1305,7 +1310,7 @@ body {
 
 .invite__names {
   margin: 0;
-  font-size: clamp(34px, 4vw, 48px);
+  font-size: clamp(34px, calc(4 * var(--vw)), 48px);
   color: var(--rose);
   text-shadow: 0 3px 0 var(--ink);
   -webkit-text-stroke: 1.5px var(--ink);
@@ -1536,12 +1541,12 @@ body {
 }
 
 .talker--left {
-  left: calc(6vw + var(--safe-left));
+  left: calc(calc(6 * var(--vw)) + var(--safe-left));
   transform: translateX(-60px);
 }
 
 .talker--right {
-  right: calc(6vw + var(--safe-right));
+  right: calc(calc(6 * var(--vw)) + var(--safe-right));
   transform: translateX(60px) scaleX(-1);
 }
 
@@ -1565,7 +1570,7 @@ body {
 
 .talker__art {
   display: block;
-  width: min(250px, 24vw) !important;
+  width: min(250px, calc(24 * var(--vw))) !important;
   height: auto !important;
   filter: drop-shadow(0 6px 0 rgba(59, 38, 64, 0.25));
 }
@@ -1585,7 +1590,7 @@ body {
 }
 
 .dialogue-box {
-  width: min(900px, 94vw);
+  width: min(900px, calc(94 * var(--vw)));
   min-height: 150px;
   padding: 34px 38px 26px;
   animation: pop-in 380ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
@@ -1633,7 +1638,7 @@ body {
 .dialogue-text {
   margin: 0;
   min-height: 2.6em;
-  font-size: clamp(22px, 2.4vw, 28px);
+  font-size: clamp(22px, calc(2.4 * var(--vw)), 28px);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -1666,7 +1671,7 @@ body {
 
 .dialogue-heading {
   position: absolute;
-  top: calc(5vh + var(--safe-top));
+  top: calc(calc(5 * var(--vh)) + var(--safe-top));
   left: 0;
   right: 0;
   display: flex;
@@ -1698,10 +1703,10 @@ body {
     opacity: 1;
   }
   50% {
-    transform: translate(26px, -55vh) rotate(10deg);
+    transform: translate(26px, calc(-55 * var(--vh))) rotate(10deg);
   }
   100% {
-    transform: translate(-10px, -115vh) rotate(-8deg);
+    transform: translate(-10px, calc(-115 * var(--vh))) rotate(-8deg);
     opacity: 0.2;
   }
 }
@@ -1730,7 +1735,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  width: min(460px, 90vw);
+  width: min(460px, calc(90 * var(--vw)));
   padding: 40px 30px 30px;
 }
 
@@ -1837,7 +1842,7 @@ body {
 }
 
 .results__score {
-  font-size: clamp(56px, 7vw, 84px);
+  font-size: clamp(56px, calc(7 * var(--vw)), 84px);
   line-height: 1;
   color: #fff;
   font-variant-numeric: tabular-nums;
@@ -2009,7 +2014,7 @@ body {
   }
   100% {
     opacity: 1;
-    transform: translate(var(--drift), 108vh) rotate(var(--spin));
+    transform: translate(var(--drift), calc(108 * var(--vh))) rotate(var(--spin));
   }
 }
 
@@ -2088,7 +2093,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  width: min(460px, 90vw);
+  width: min(460px, calc(90 * var(--vw)));
   padding: 34px 28px 30px;
 }
 

@@ -208,8 +208,19 @@ function resolvePassSlot(ctx: SimContext, slot: number): Resolution {
   };
 }
 
+/**
+ * Tapping the couple serves what they asked for; otherwise it fixes a problem
+ * at their table (e.g. missing rings). The couple and their table are one
+ * tap target, so both must be reachable from it.
+ */
 function resolveCouple(ctx: SimContext): Resolution {
   const request = ctx.state.couple.request;
+  const canServe = !!request && ctx.state.planner.hands.includes(request.itemId);
+  if (!canServe) {
+    const table = ctx.venue.stationsOfKind('coupleTable')[0];
+    const disaster = table ? disasterAtStation(ctx, table.id) : undefined;
+    if (disaster) return resolveDisasterWork(ctx, disaster);
+  }
   if (!request) return { skip: 'The couple is fine' };
   if (!ctx.state.planner.hands.includes(request.itemId)) {
     return { skip: `They want ${ctx.content.items.get(request.itemId).name}` };

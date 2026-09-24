@@ -61,8 +61,14 @@ function chooseAction(sim: ReceptionSimulation): TargetRef | null {
     if (st && !s.disasters.some((d) => d.stationId === st.id)) return { kind: 'station', id: st.id };
   }
 
+  // Disasters are handled the way a player must: by tapping where they are.
+  // (Queueing targets directly once hid a disaster no tap could reach.)
   const disaster = s.disasters[0];
-  if (disaster) return disaster.stationId ? { kind: 'station', id: disaster.stationId } : { kind: 'disaster', id: disaster.id };
+  if (disaster) {
+    const tap = disaster.stationId ? ctx.venue.station(disaster.stationId).pos : disaster.pos;
+    const picked = sim.pickTarget(tap);
+    if (picked) return picked;
+  }
 
   const waiting = s.guests
     .filter((g) => (g.state === 'WAITING_FOR_FOOD' || g.state === 'REQUESTING') && g.wantsItemId)

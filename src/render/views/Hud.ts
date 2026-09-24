@@ -11,7 +11,8 @@ const MOOD_BAR = { x: 112, y: 50, w: 330, h: 26 };
 const SCORE_BAR = { x: 1004, y: 76, w: 262, h: 14 };
 const SCORE_POS = { x: 1150, y: 38 };
 const TICKER_LINES = 2;
-const BANNER = { x: 700, y: 948 };
+/** Bottom, right of the gift table by the entrance and left of the kitchen. */
+const BANNER = { x: 770, y: 948, w: 700 };
 const MOOD_OK = 60;
 const MOOD_DANGER = 30;
 
@@ -228,15 +229,15 @@ export class Banner {
     art: ArtKit,
     renderScale: number,
   ) {
-    // Bottom centre, over the aisle: it never hides the couple, the HUD or a table.
-    this.bg = tex.image(scene, BANNER.x, BANNER.y, tex.ensure('panel:banner', 760, 104, paintPanel(760, 104, 0xfffaf0, 0.98))).setDepth(Depth.banner).setAlpha(0);
-    this.text = makeText(scene, BANNER.x, BANNER.y - 5, '', renderScale, { size: 21, weight: '800', wrapWidth: 620 }).setOrigin(0.5).setDepth(Depth.banner + 1).setAlpha(0);
+    // Bottom, over the aisle: it never hides the couple, the HUD, a table or the gift table.
+    this.bg = tex.image(scene, BANNER.x, BANNER.y, tex.ensure(`panel:banner:${BANNER.w}`, BANNER.w, 104, paintPanel(BANNER.w, 104, 0xfffaf0, 0.98))).setDepth(Depth.banner).setAlpha(0);
+    this.text = makeText(scene, BANNER.x, BANNER.y - 5, '', renderScale, { size: 21, weight: '800', wrapWidth: BANNER.w - 150 }).setOrigin(0.5).setDepth(Depth.banner + 1).setAlpha(0);
     this.badgeKeys = {
       moment: tex.ensure('ui:heart-rose', 48, 48, paintUiIcon('heart', 0xe86f8e)),
       bad: tex.ensure('ui:warning', 48, 48, paintUiIcon('warning')),
       good: art.icon('star', 0xf2b84b),
     };
-    this.badge = tex.image(scene, BANNER.x - 318, BANNER.y - 5, this.badgeKeys.moment).setDepth(Depth.banner + 1).setAlpha(0);
+    this.badge = tex.image(scene, BANNER.x - BANNER.w / 2 + 62, BANNER.y - 5, this.badgeKeys.moment).setDepth(Depth.banner + 1).setAlpha(0);
   }
 
   show(message: string, tone: BannerTone = 'info', seconds = 4, urgent = false): void {

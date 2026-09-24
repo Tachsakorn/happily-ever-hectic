@@ -51,6 +51,8 @@ export interface Modifiers {
   readonly startMood?: number;
   /** Additive fraction added to all score, e.g. 0.1 = +10%. */
   readonly scoreBonus?: number;
+  /** Additive: extra dishes the kitchen can cook at once. */
+  readonly kitchenBurners?: number;
 }
 
 // ---------------------------------------------------------------- guests
@@ -77,6 +79,14 @@ export interface GuestTypeDef {
   readonly requestIntervalSeconds: readonly [number, number];
   /** Items this guest type may request after dinner, with weights. */
   readonly requestPool: readonly { readonly itemId: Id; readonly weight: number; readonly requiresFlag?: string }[];
+  /**
+   * How many follow-up requests (drinks, dessert, dances) the guest makes after
+   * dinner before saying goodbye and freeing the seat, [min, max]. Omit to
+   * stay for the whole reception.
+   */
+  readonly staysFor?: readonly [number, number];
+  /** Weight of wanting to dance, compared with the request pool weights (levels with a dance floor only). */
+  readonly danceWeight?: number;
   readonly traitIds: readonly Id[];
   readonly visual: VisualHint;
 }
@@ -146,6 +156,10 @@ export interface VenueDef {
   readonly obstacles: readonly Obstacle[];
   /** Extra navigation points (aisles) to route around obstacles. */
   readonly waypoints: readonly Vec2[];
+  /** Where dancing guests stand, in front of the DJ. The floor's drop area is the box around them. */
+  readonly danceSpots?: readonly Vec2[];
+  /** Painted look of the room: garden, beach, ballroom or night. */
+  readonly theme?: VenueTheme;
   readonly floorColor: number;
   readonly accentColor: number;
 }
@@ -267,6 +281,8 @@ export interface LevelGuestSpec {
   readonly dislikes: readonly string[];
 }
 
+export type VenueTheme = 'garden' | 'beach' | 'ballroom' | 'night';
+
 export interface LevelDef {
   readonly id: Id;
   readonly order: number;
@@ -276,6 +292,10 @@ export interface LevelDef {
   readonly durationSeconds: number;
   readonly guests: readonly LevelGuestSpec[];
   readonly disasterIds: readonly Id[];
+  /** Guests may ask to dance and must be dragged to the dance floor. */
+  readonly dancing?: boolean;
+  /** Level-wide tuning for every guest, e.g. pickier crowds (guestPatienceDrain > 1). */
+  readonly modifiers?: Modifiers;
   /**
    * Optional per-level choreography: replaces a disaster's default trigger in
    * this level only, so a level can pace its surprises (one kind at a time)
@@ -338,6 +358,10 @@ export interface ScoringRules {
   readonly maxTip: number;
   readonly giftDelivered: number;
   readonly guestLeftUpset: number;
+  /** Per heart when a guest leaves happy after their visit. */
+  readonly guestLeftHappyPerHeart: number;
+  /** When a guest starts dancing. */
+  readonly danceStarted: number;
   readonly perHappyGuestHeartAtEnd: number;
   readonly perMoodPointAtEnd: number;
 }
@@ -382,6 +406,8 @@ export interface TuningDef {
     readonly coupleRequestExpired: number;
   };
   readonly giftLostAfterSeconds: number;
+  readonly danceSeconds: number;
+  readonly danceHappinessPerSecond: number;
   readonly coupleRequestPatienceSeconds: number;
   /** Bonus when the chosen decor matches something the couple loves. */
   readonly decorMatchBonus: Modifiers;

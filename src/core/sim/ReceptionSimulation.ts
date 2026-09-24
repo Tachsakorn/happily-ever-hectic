@@ -4,11 +4,11 @@ import { MoodLedger } from '../couple/MoodLedger';
 import { createCoupleSystem } from '../couple/CoupleSystem';
 import { createDisasterSystem } from '../disasters/DisasterSystem';
 import { GiftSystem } from '../gifts/GiftSystem';
-import { seatGuest } from '../guests/guestActions';
+import { seatGuest, sendToDance } from '../guests/guestActions';
 import { GuestSystem } from '../guests/GuestSystem';
 import { tableScore } from '../guests/seating';
 import { findGuest } from '../guests/guestMachine';
-import { pickSeat, pickTarget, pickWaitingGuest } from '../input/picking';
+import { isOnDanceFloor, pickDraggableGuest, pickSeat, pickTarget, pickWaitingGuest } from '../input/picking';
 import { KitchenSystem } from '../kitchen/kitchen';
 import { NavGraph } from '../nav/NavGraph';
 import { clearQueue, PlannerSystem, queueAction } from '../planner/PlannerSystem';
@@ -50,7 +50,7 @@ export class ReceptionSimulation {
     const wedding = content.weddings.get(level.weddingId);
     const venueDef = content.venues.get(level.venueId);
     const venue = new VenueIndex(venueDef);
-    const modifiers = combineModifiers(setup.modifiers ?? []);
+    const modifiers = combineModifiers([...(setup.modifiers ?? []), level.modifiers]);
     const tuning = content.tuning;
 
     const state: ReceptionState = {
@@ -70,6 +70,8 @@ export class ReceptionSimulation {
         guestsSeated: 0,
         guestsServed: 0,
         guestsUpset: 0,
+        guestsLeftHappy: 0,
+        dances: 0,
         giftsDelivered: 0,
         disastersResolved: 0,
         disastersFailed: 0,
@@ -138,6 +140,8 @@ export class ReceptionSimulation {
         return queueAction(this.ctx, cmd.target);
       case 'clearQueue':
         return clearQueue(this.ctx);
+      case 'sendToDance':
+        return sendToDance(this.ctx, cmd.guestKey);
     }
   }
 
@@ -206,6 +210,15 @@ export class ReceptionSimulation {
 
   pickSeat(p: Vec2): Id | null {
     return pickSeat(this.ctx, p);
+  }
+
+  /** A guest the player can drag: waiting for a seat, or asking to dance. */
+  pickDraggableGuest(p: Vec2): string | null {
+    return pickDraggableGuest(this.ctx, p);
+  }
+
+  isOnDanceFloor(p: Vec2): boolean {
+    return isOnDanceFloor(this.ctx, p);
   }
 
   pickWaitingGuest(p: Vec2): string | null {

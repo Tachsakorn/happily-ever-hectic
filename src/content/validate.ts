@@ -62,6 +62,9 @@ export function validateContent(content: ContentRegistry): string[] {
     const where = `level ${level.id}`;
     check(content.weddings.has(level.weddingId), `${where}: unknown wedding ${level.weddingId}`);
     check(content.venues.has(level.venueId), `${where}: unknown venue ${level.venueId}`);
+    if (level.dancing && content.venues.has(level.venueId)) {
+      check((content.venues.get(level.venueId).danceSpots?.length ?? 0) > 0, `${where}: dancing needs a venue with a dance floor`);
+    }
     for (const d of level.disasterIds) check(content.disasters.has(d), `${where}: unknown disaster ${d}`);
     for (const [d, t] of Object.entries(level.disasterTriggers ?? {})) {
       check(level.disasterIds.includes(d), `${where}: trigger set for disaster ${d}, which the level does not use`);
@@ -99,7 +102,13 @@ export function validateContent(content: ContentRegistry): string[] {
     if (content.venues.has(level.venueId)) {
       const venue = content.venues.get(level.venueId);
       const seatCount = venue.tables.reduce((n, t) => n + t.seats.length, 0);
-      check(level.guests.length <= seatCount, `${where}: ${level.guests.length} guests but only ${seatCount} seats`);
+      // More guests than seats only works if guests eventually leave and free their seats.
+      if (level.guests.length > seatCount) {
+        for (const g of level.guests) {
+          const stays = content.guestTypes.has(g.typeId) ? content.guestTypes.get(g.typeId).staysFor : undefined;
+          check(stays !== undefined, `${where}: ${level.guests.length} guests for ${seatCount} seats, but ${g.key} never leaves (no staysFor)`);
+        }
+      }
       for (const dId of level.disasterIds) {
         if (!content.disasters.has(dId)) continue;
         const target = content.disasters.get(dId).target;

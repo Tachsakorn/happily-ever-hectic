@@ -17,6 +17,7 @@ export function autoplay(sim: ReceptionSimulation, reactionSeconds = 0.35): void
     if (cooldown > 0) continue;
     cooldown = reactionSeconds;
     seatEveryone(sim);
+    sendDancers(sim);
     const p = sim.state.planner;
     if (p.current || p.queue.length) continue;
     const target = chooseAction(sim);
@@ -39,6 +40,12 @@ function seatEveryone(sim: ReceptionSimulation): void {
       }
     }
     if (best) sim.command({ type: 'seatGuest', guestKey: g.key, seatId: best.seat });
+  }
+}
+
+function sendDancers(sim: ReceptionSimulation): void {
+  for (const g of sim.state.guests) {
+    if (g.state === 'WANTS_TO_DANCE') sim.command({ type: 'sendToDance', guestKey: g.key });
   }
 }
 

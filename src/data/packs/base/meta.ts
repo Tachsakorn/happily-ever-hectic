@@ -24,6 +24,8 @@ export const tuning: TuningDef = {
     coupleRequestExpired: 8,
   },
   giftLostAfterSeconds: 60,
+  danceSeconds: 7,
+  danceHappinessPerSecond: 6,
   coupleRequestPatienceSeconds: 35,
   decorMatchBonus: { startMood: 10, scoreBonus: 0.1 },
 };
@@ -37,6 +39,8 @@ export const scoring: ScoringRules = {
   maxTip: 25,
   giftDelivered: 40,
   guestLeftUpset: -60,
+  guestLeftHappyPerHeart: 12,
+  danceStarted: 35,
   perHappyGuestHeartAtEnd: 10,
   perMoodPointAtEnd: 4,
 };
@@ -53,6 +57,7 @@ export const upgrades: UpgradeDef[] = [
   { id: 'running-shoes', name: 'Running Shoes', description: 'Your planner walks 15% faster.', cost: 200, modifiers: { plannerSpeed: 1.15 }, icon: 'shoe' },
   { id: 'extra-chef', name: 'Extra Chef', description: 'The kitchen cooks 25% faster.', cost: 250, modifiers: { kitchenCookTime: 0.75 }, icon: 'chef' },
   { id: 'early-warning', name: 'Walkie-Talkie', description: 'Disaster warnings last 50% longer.', cost: 200, modifiers: { disasterWarningTime: 1.5 }, icon: 'walkie' },
+  { id: 'extra-stove', name: 'Extra Stove', description: 'The chef can cook one more dish at the same time.', cost: 350, modifiers: { kitchenBurners: 1 }, icon: 'chef' },
   { id: 'string-quartet', name: 'String Quartet', description: 'The couple stays calmer: mood losses 15% smaller.', cost: 300, modifiers: { coupleMoodDrain: 0.85 }, icon: 'violin' },
 ];
 
@@ -113,5 +118,50 @@ export const dialogues: DialogueDef[] = [
   {
     id: 'outro-level-5',
     lines: [{ speaker: 'June', text: 'Chaos, cake and a very good boy. Best day ever!' }],
+  },
+  {
+    id: 'intro-beach-dance',
+    lines: [
+      { speaker: 'Nia', text: 'Barefoot wedding on the beach! Our friends came here to dance.' },
+      { speaker: 'Kai', text: 'When someone gets the urge, walk them over to the dance floor by the DJ.' },
+    ],
+  },
+  {
+    id: 'outro-beach-dance',
+    lines: [{ speaker: 'Kai', text: 'Sand in every shoe and nobody cares. What a party!' }],
+  },
+  {
+    id: 'intro-critics-table',
+    lines: [
+      { speaker: 'Vera', text: 'Dante’s family runs a restaurant. They invited every food critic in town.' },
+      { speaker: 'Dante', text: 'They hate waiting. They love tipping. Please feed them first.' },
+    ],
+  },
+  {
+    id: 'outro-critics-table',
+    lines: [{ speaker: 'Dante', text: 'Monsieur Laurent smiled. Twice! That has never happened.' }],
+  },
+  {
+    id: 'intro-moonlight',
+    lines: [
+      { speaker: 'Zoe', text: 'A reception under the stars, with lanterns everywhere!' },
+      { speaker: 'Finn', text: 'Night owls are impatient, though. And my cousins brought the puppy again.' },
+    ],
+  },
+  {
+    id: 'outro-moonlight',
+    lines: [{ speaker: 'Zoe', text: 'Dancing under the moon… we’ll remember this forever.' }],
+  },
+  {
+    id: 'intro-big-night',
+    lines: [
+      { speaker: 'Iris', text: 'Twenty guests, two critics, one very long night.' },
+      { speaker: 'Felix', text: 'If you can plan this one, you can plan anything.' },
+      { speaker: 'Planner', text: 'Deep breath. Couple first, disasters next, then the guests.' },
+    ],
+  },
+  {
+    id: 'outro-big-night',
+    lines: [{ speaker: 'Felix', text: 'You did it! Honestly, you should plan your own wedding next.' }],
   },
 ];

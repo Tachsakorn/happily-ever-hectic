@@ -56,6 +56,17 @@ Guest lifecycle: `ARRIVING → WAITING_TO_BE_SEATED → WALKING_TO_SEAT → SEAT
 WAITING_FOR_FOOD → EATING → SATISFIED ⇄ REQUESTING`, and from any waiting/seated state `→ UPSET →
 LEAVING → GONE`. Illegal transitions throw.
 
+Turnover: each guest type's `staysFor: [min, max]` is how many follow-up wishes (a drink, a dance)
+a guest has before a happy goodbye (`SATISFIED → LEAVING`, bonus score per heart). Their seat frees
+up, so a level can have more guests than seats — validation requires `staysFor` for every guest in
+such a level.
+
+Dancing (levels with `dancing: true`, venues with `danceSpots`): a follow-up wish can be a dance
+instead of an item (`GuestTypeDef.danceWeight`). `SATISFIED → WANTS_TO_DANCE` (music-note bubble,
+patience drains) → the player drags the guest onto the floor (`sendToDance`) → `WALKING_TO_DANCE →
+DANCING` (happiness rises) `→ RETURNING_TO_SEAT → SATISFIED`. Dancers keep their seat. The floor's
+rectangle comes from `content/danceFloor.ts`, shared by the painter, the drop test and the highlight.
+
 Seating: a guest's comfort at a table = Σ affinity with each neighbour (likes/dislikes by guest key
 or group, same-group familiarity, trait bonuses). It changes happiness continuously and can trigger
 the argument disaster.
@@ -80,8 +91,8 @@ Progression rules (unlocks, coins, shop, decor bonus) are pure functions in `cor
 
 ## Input
 
-Touch-first, no hover or keyboard. Only the first finger is tracked. Gestures: drag guest → seat,
-tap guest then tap seat, tap anything to queue an action, tap the planner to clear the queue.
+Touch-first, no hover or keyboard. Only the first finger is tracked. Gestures: drag guest → seat
+(or a guest who wants to dance → dance floor), tap guest then tap seat/floor, tap anything to queue an action, tap the planner to clear the queue.
 Hit-testing is done in world space by the simulation (`core/input/picking.ts`) with generous radii.
 `installTouchHardening` blocks pinch zoom, double-tap zoom, long-press menus and rubber-banding.
 

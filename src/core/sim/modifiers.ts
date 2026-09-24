@@ -14,9 +14,10 @@ const IDENTITY: Resolved = {
   coupleMoodDrain: 1,
   startMood: 0,
   scoreBonus: 0,
+  kitchenBurners: 0,
 };
 
-const ADDITIVE = new Set<keyof Modifiers>(['startMood', 'scoreBonus']);
+const ADDITIVE = new Set<keyof Modifiers>(['startMood', 'scoreBonus', 'kitchenBurners']);
 
 export type ResolvedModifiers = Readonly<Resolved>;
 

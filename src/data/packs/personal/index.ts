@@ -47,9 +47,10 @@ export const personalPack: ContentPack = {
       name: 'Our Wedding',
       weddingId: 'our-wedding',
       venueId: 'garden-hall',
-      durationSeconds: 210,
+      durationSeconds: 215,
+      dancing: true,
       // The finale is hard through variety, not volume: fewer guests than
-      // wedding 5, but every one is a different personality, the seating is a
+      // weddings 8–9, but every one is a different personality, the seating is a
       // puzzle (five family members for four seats per table, a feud), and a
       // new kind of surprise arrives roughly every 20 seconds — one at a time.
       // ✏️ Guest names are placeholders — replace with your real people.
@@ -63,6 +64,9 @@ export const personalPack: ContentPack = {
         guest('grandma', 'Grandma', 'grandparent', 'family', 52, gift),
         guest('uncle', 'Uncle', 'regular', 'family', 66, { bringsGift: true, dislikes: ['work'] }),
         guest('classmate', 'Classmate', 'regular', 'friends', 80, { likes: ['bestie-a'] }),
+        guest('roommate', 'Old Roommate', 'party-animal', 'friends', 96, { likes: ['classmate'] }),
+        guest('aunt', 'Aunt', 'grandparent', 'family', 110, gift),
+        guest('coworker', 'Coworker', 'regular', 'work', 124),
       ],
       disasterIds: ['spilled-drink', 'toppled-gifts', 'missing-rings', 'leaning-cake', 'dj-glitch', 'loose-puppy', 'photo-time', 'guest-argument'],
       disasterTriggers: {
@@ -83,9 +87,9 @@ export const personalPack: ContentPack = {
       ],
       kitchen: { burners: 3, cookSeconds: 5 },
       // A forgiving first star: finishing the finale is what unlocks the ending.
-      starScores: [1800, 3150, 3850],
+      starScores: [1800, 3450, 4100],
       coinReward: 400,
-      unlockRequiresLevelId: 'level-5',
+      unlockRequiresLevelId: 'big-night',
       introDialogueId: 'intro-our-wedding',
       tutorialTips: ['This one is ours. Fewer guests, but expect a new surprise every few moments!'],
     },

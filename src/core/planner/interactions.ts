@@ -1,7 +1,7 @@
 import { GIFT_ITEM_ID } from '../../content/contracts';
 import type { Vec2 } from '../../content/types';
 import { findGuest, transitionGuest } from '../guests/guestMachine';
-import { scheduleNextRequest } from '../guests/GuestSystem';
+import { consumeVisit, scheduleNextRequest } from '../guests/GuestSystem';
 import { placeOrder, takeFromPass } from '../kitchen/kitchen';
 import { distance } from '../math/vec';
 import type { SimContext } from '../sim/SimContext';
@@ -108,6 +108,7 @@ function resolveGuest(ctx: SimContext, key: string): Resolution {
           ctx.score.add(ctx.score.rules.dishServed + tip, 'Dinner served', g.pos);
         } else {
           transitionGuest(ctx, g, GuestState.SATISFIED);
+          consumeVisit(g);
           scheduleNextRequest(ctx, g);
           ctx.score.add(ctx.score.rules.requestServed + tip, 'Request served', g.pos);
         }

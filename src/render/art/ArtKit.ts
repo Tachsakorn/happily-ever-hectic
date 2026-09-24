@@ -10,6 +10,7 @@ import {
   paintDot,
   paintIcon,
   paintPerson,
+  paintUiIcon,
   PERSON_FEET,
   PERSON_H,
   PERSON_W,
@@ -18,6 +19,7 @@ import {
   type Mood,
   type PersonLook,
   type PersonStyle,
+  type UiIcon,
 } from '../../art/painters';
 
 const GUEST_HAIR_STYLES: HairStyle[] = ['short', 'bob', 'long', 'curly', 'side', 'bun'];
@@ -83,6 +85,11 @@ export class ArtKit {
 
   icon(icon: ItemIcon, color = 0xe86f8e, accent?: number): string {
     return this.tex.ensure(`icon:${icon}:${color}:${accent ?? ''}`, ICON_SIZE, ICON_SIZE, paintIcon(icon, color, accent));
+  }
+
+  /** Interface icons (48×48) for use inside the world, such as a guest's music-note wish. */
+  uiIcon(icon: UiIcon, color = 0xe86f8e): string {
+    return this.tex.ensure(`ui:${icon}:${color}`, 48, 48, paintUiIcon(icon, color));
   }
 
   bubble(tail: 'down' | 'downLeft' = 'down'): string {

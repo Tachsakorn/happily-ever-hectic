@@ -79,7 +79,8 @@ export class ReceptionScene extends Phaser.Scene {
     const venue = ctx.venue.def;
     const bgScale = Math.min(renderScale, BACKGROUND_MAX_SCALE);
     const swaps = Object.entries(ctx.level.itemSwaps ?? {}).map(([a, b]) => `${a}>${b}`).join(',');
-    const bgKey = `venue:${venue.id}:${data.decor.flower}:${data.decor.cloth}:${swaps}`;
+    const dancing = ctx.level.dancing === true;
+    const bgKey = `venue:${venue.id}:${data.decor.flower}:${data.decor.cloth}:${swaps}:${dancing ? 'dance' : ''}`;
     // The venue is the biggest texture by far: keep only the current one in memory.
     for (const key of this.textures.getTextureKeys()) if (key.startsWith('venue:') && key !== bgKey) this.tex.replace(key);
     this.tex.ensure(bgKey, venue.size.width, venue.size.height, paintVenue(venue, data.decor, {
@@ -88,6 +89,7 @@ export class ReceptionScene extends Phaser.Scene {
           const served = stationItem(ctx, s);
           return served && served !== s.providesItemId ? session.content.items.get(served).name : null;
         },
+        dancing,
       }), bgScale);
     this.tex.image(this, venue.size.width / 2, venue.size.height / 2, bgKey, bgScale).setDepth(0);
 

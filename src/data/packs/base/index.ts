@@ -2,7 +2,7 @@ import type { ContentPack } from '../../../content/types';
 import { disasters, moments } from './chaos';
 import { decor, dialogues, scoring, tuning, upgrades } from './meta';
 import { groups, guestTypes, items, traits } from './people';
-import { gardenHall } from './venues';
+import { beachDeck, gardenHall, grandBallroom, lanternNight } from './venues';
 import { levels, weddings } from './weddings';
 
 /** The base game: systems-agnostic content anyone could play. Personal content lives in its own pack. */
@@ -19,7 +19,7 @@ export const basePack: ContentPack = {
   traits,
   guestTypes,
   groups,
-  venues: [gardenHall],
+  venues: [gardenHall, beachDeck, grandBallroom, lanternNight],
   disasters,
   moments,
   weddings,

@@ -97,9 +97,10 @@ export function resultsVM(content: ContentRegistry, result: ReceptionResult, out
     coins: outcome.save.coins,
     finalMood: result.finalMood,
     stats: [
-      { label: 'Guests seated', value: String(s.guestsSeated) },
       { label: 'Dinners served', value: String(s.guestsServed) },
       { label: 'Gifts delivered', value: String(s.giftsDelivered) },
+      ...(s.dances ? [{ label: 'Dances', value: String(s.dances) }] : []),
+      { label: 'Happy goodbyes', value: String(s.guestsLeftHappy) },
       { label: 'Disasters fixed', value: `${s.disastersResolved} / ${s.disastersResolved + s.disastersFailed}` },
       { label: 'Wedding moments', value: `${s.momentsCompleted} / ${s.momentsCompleted + s.momentsFailed}` },
       { label: 'Guests who left upset', value: String(s.guestsUpset) },

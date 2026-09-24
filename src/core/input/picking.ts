@@ -1,3 +1,4 @@
+import { danceFloorBounds } from '../../content/danceFloor';
 import type { Id, Vec2 } from '../../content/types';
 import { holdsSeat, isPresent } from '../guests/guestMachine';
 import { distance } from '../math/vec';
@@ -67,6 +68,29 @@ export function pickSeat(ctx: SimContext, p: Vec2): Id | null {
     }
   }
   return best?.id ?? null;
+}
+
+/** Forgiveness around the painted floor: a drop just past its edge still counts. */
+const DANCE_FLOOR_MARGIN = 30;
+
+/** Whether a point is on (or near) the dance floor, for dropping a dancer. */
+export function isOnDanceFloor(ctx: SimContext, p: Vec2): boolean {
+  const r = danceFloorBounds(ctx.venue.def);
+  if (!r) return false;
+  const m = DANCE_FLOOR_MARGIN;
+  return p.x >= r.x - m && p.x <= r.x + r.w + m && p.y >= r.y - m && p.y <= r.y + r.h + m;
+}
+
+/** A guest under a point who can be dragged: waiting for a seat, or asking to dance. */
+export function pickDraggableGuest(ctx: SimContext, p: Vec2): string | null {
+  let best: { key: string; d: number } | null = null;
+  for (const g of ctx.state.guests) {
+    const draggable = g.state === GuestState.WAITING_TO_BE_SEATED || g.state === GuestState.ARRIVING || g.state === GuestState.WANTS_TO_DANCE;
+    if (!draggable) continue;
+    const d = distance(p, body(g.pos));
+    if (d <= RADIUS.guest + 8 && (!best || d < best.d)) best = { key: g.key, d };
+  }
+  return best?.key ?? null;
 }
 
 /** The waiting guest under a point, for starting a seat drag. */

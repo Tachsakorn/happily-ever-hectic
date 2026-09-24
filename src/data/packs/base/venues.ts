@@ -35,12 +35,22 @@ const tables = [
 ];
 
 const KITCHEN_X = 1180;
+const DJ = { x: 250, y: 185 };
+const GIFT_TABLE = { x: 300, y: 905 };
+/** Dancers stand on the floor in front of the DJ. */
+const DANCE_SPOTS = [
+  { x: 324, y: 296 },
+  { x: 402, y: 290 },
+  { x: 328, y: 364 },
+  { x: 406, y: 358 },
+];
 const SERVICE_X = 1092;
 
 const stations: StationDef[] = [
   { id: 'entrance', kind: 'entrance', name: 'Entrance', pos: { x: 120, y: 950 }, interactPos: { x: 180, y: 930 }, hitRadius: 0 },
-  { id: 'gift-table', kind: 'giftTable', name: 'Gift Table', pos: { x: 200, y: 270 }, interactPos: { x: 285, y: 320 }, hitRadius: 85 },
-  { id: 'dj-booth', kind: 'djBooth', name: 'DJ Booth', pos: { x: 400, y: 190 }, interactPos: { x: 400, y: 262 }, hitRadius: 72 },
+  // Gifts are dropped off by the entrance, the way guests come in.
+  { id: 'gift-table', kind: 'giftTable', name: 'Gift Table', pos: { x: GIFT_TABLE.x, y: GIFT_TABLE.y }, interactPos: { x: GIFT_TABLE.x + 20, y: GIFT_TABLE.y - 58 }, hitRadius: 80 },
+  { id: 'dj-booth', kind: 'djBooth', name: 'DJ Booth', pos: { x: DJ.x, y: DJ.y }, interactPos: { x: DJ.x, y: DJ.y + 72 }, hitRadius: 72 },
   { id: 'couple-table', kind: 'coupleTable', name: 'Sweetheart Table', pos: { x: 675, y: 200 }, interactPos: { x: 675, y: 290 }, hitRadius: 100 },
   {
     id: 'cake-table',
@@ -88,6 +98,8 @@ const aisleY = [300, 570, 850];
 export const gardenHall: VenueDef = {
   id: 'garden-hall',
   name: 'Rosewood Garden Hall',
+  theme: 'garden',
+  danceSpots: DANCE_SPOTS,
   size: { width: 1400, height: 1000 },
   stations,
   tables,
@@ -113,10 +125,15 @@ export const gardenHall: VenueDef = {
     { kind: 'rect', x: 1015, y: 180, w: 110, h: 50 },
     { kind: 'rect', x: KITCHEN_X - 35, y: 320, w: 70, h: 270 },
     { kind: 'rect', x: KITCHEN_X - 35, y: 625, w: 70, h: 180 },
-    { kind: 'rect', x: 140, y: 235, w: 120, h: 70 },
-    { kind: 'rect', x: 345, y: 155, w: 110, h: 65 },
+    { kind: 'rect', x: GIFT_TABLE.x - 62, y: GIFT_TABLE.y - 34, w: 124, h: 70 },
+    { kind: 'rect', x: DJ.x - 80, y: DJ.y - 32, w: 160, h: 62 },
   ],
   waypoints: aisleX.flatMap((x) => aisleY.map((y) => ({ x, y }))),
   floorColor: 0xf6e6da,
   accentColor: 0xe07a95,
 };
+
+/* Same floor plan, different weddings: themes only change how the room is painted. */
+export const beachDeck: VenueDef = { ...gardenHall, id: 'beach-deck', name: 'Seashell Beach Deck', theme: 'beach', floorColor: 0xf3e2c0 };
+export const grandBallroom: VenueDef = { ...gardenHall, id: 'grand-ballroom', name: 'The Grand Ballroom', theme: 'ballroom', floorColor: 0xf4e6e8 };
+export const lanternNight: VenueDef = { ...gardenHall, id: 'lantern-night', name: 'Lantern Night Terrace', theme: 'night', floorColor: 0xd9c3ae };

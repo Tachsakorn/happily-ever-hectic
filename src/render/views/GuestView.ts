@@ -12,6 +12,10 @@ const URGENT_HAPPINESS = 35;
 const ANGRY_BELOW = 30;
 const HAPPY_ABOVE = 72;
 const WALK_CADENCE = 13;
+const DANCE_NOTE_EVERY = 0.55;
+/** Bubble sentinels that are not item ids. */
+const WANT_MENU = 'menu';
+const WANT_DANCE = '@dance';
 
 /**
  * One guest on screen. Reads guest state every frame but only touches
@@ -39,6 +43,7 @@ export class GuestView {
   private walk = 0;
   private t = 0;
   private steamTimer = 0;
+  private noteTimer = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -83,15 +88,28 @@ export class GuestView {
     const bob = moving ? -Math.abs(Math.sin(this.walk)) * 5 : 0;
     const tilt = moving ? Math.sin(this.walk) * 5 : 0;
     const eating = g.state === 'EATING';
+    const dancing = g.state === 'DANCING';
     const breathe = moving ? 0 : Math.sin(this.t * (eating ? 11 : 2.4) + this.phase) * (eating ? 0.035 : 0.015);
     const sq = this.react.squash;
     const grow = this.react.grow;
-    this.body.setScale(this.unit * grow * (1 + sq), this.unit * grow * (1 - sq + breathe));
+    // Dancing: a bouncy two-step with a sway, flipping sides on the beat.
+    const beat = this.t * 7 + this.phase;
+    const danceBob = dancing ? -Math.abs(Math.sin(beat)) * 12 : 0;
+    const danceTilt = dancing ? Math.sin(beat / 2) * 11 : 0;
+    this.body.setScale(this.unit * grow * (1 + sq), this.unit * grow * (1 - sq + breathe + (dancing ? Math.sin(beat * 2) * 0.03 : 0)));
     this.body
-      .setPosition(x + this.react.shake, y + bob - this.react.hop)
-      .setAngle(tilt)
+      .setPosition(x + this.react.shake, y + bob + danceBob - this.react.hop)
+      .setAngle(tilt + danceTilt)
       .setDepth(depth);
     if (facing !== 0) this.body.setFlipX(facing < 0);
+    else if (dancing) this.body.setFlipX(Math.sin(beat / 2) < 0);
+    if (dancing) {
+      this.noteTimer -= dt;
+      if (this.noteTimer <= 0) {
+        this.noteTimer = DANCE_NOTE_EVERY;
+        this.fx.note({ x: x + (Math.random() - 0.5) * 30, y: y - 110 });
+      }
+    }
     this.selection.setPosition(x, y - 4).setDepth(depth - 1).setVisible(selected);
     if (selected) this.selection.setScale(this.unit * (1 + Math.sin(this.t * 6) * 0.06));
 
@@ -123,9 +141,10 @@ export class GuestView {
     if (want !== this.shownWant) {
       this.shownWant = want;
       this.bubbleGroup.setVisible(want !== null);
-      if (want === 'menu') this.bubbleIcon.setTexture(this.art.icon('menu'));
+      if (want === WANT_MENU) this.bubbleIcon.setTexture(this.art.icon('menu'));
+      else if (want === WANT_DANCE) this.bubbleIcon.setTexture(this.art.uiIcon('music', 0xb49be0));
       else if (want) this.bubbleIcon.setTexture(this.art.item(want));
-      this.bubbleIcon.setScale(this.unit);
+      this.bubbleIcon.setScale(this.unit * (want === WANT_DANCE ? 0.85 : 1));
       this.bubble.setScale(this.unit);
       if (want !== null) {
         this.stopUrgent();
@@ -161,7 +180,7 @@ export class GuestView {
   private moodFor(g: Guest): Mood {
     if (g.state === 'UPSET') return 'angry';
     if (g.state === 'LEAVING') return g.happiness < ANGRY_BELOW ? 'sad' : 'happy';
-    if (g.state === 'EATING' || g.state === 'SATISFIED') return 'happy';
+    if (g.state === 'EATING' || g.state === 'SATISFIED' || g.state === 'DANCING' || g.state === 'WANTS_TO_DANCE') return 'happy';
     if (g.happiness < ANGRY_BELOW) return 'angry';
     if (g.happiness > HAPPY_ABOVE) return 'happy';
     return 'neutral';
@@ -190,7 +209,11 @@ export class GuestView {
         this.scene.tweens.add({ targets: this.react, shake: { from: -6, to: 6 }, yoyo: true, repeat: 5, duration: 50, onComplete: () => (this.react.shake = 0) });
         break;
       case 'LEAVING':
-        if (g.happiness >= ANGRY_BELOW) this.fx.hearts({ x: g.pos.x, y: g.pos.y - 90 }, 3, 24);
+        if (g.happiness >= ANGRY_BELOW) this.fx.hearts({ x: g.pos.x, y: g.pos.y - 90 }, g.happyExit ? 5 : 3, 24);
+        break;
+      case 'DANCING':
+        this.hop(18);
+        this.fx.sparkles({ x: g.pos.x, y: g.pos.y - 60 }, 6, 40, 0xb49be0);
         break;
       default:
         break;
@@ -205,7 +228,9 @@ export class GuestView {
   private bubbleContent(g: Guest): string | null {
     switch (g.state) {
       case 'READY_TO_ORDER':
-        return 'menu';
+        return WANT_MENU;
+      case 'WANTS_TO_DANCE':
+        return WANT_DANCE;
       case 'WAITING_FOR_FOOD':
       case 'REQUESTING':
         return g.wantsItemId;

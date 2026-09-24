@@ -21,6 +21,7 @@ export type DomainEvent =
   | { type: 'actionSkipped'; actionId: number; reason: string; pos: Vec2 }
   | { type: 'queueCleared' }
   | { type: 'guestUpset'; guestKey: string; pos: Vec2 }
+  | { type: 'guestDancing'; guestKey: string; pos: Vec2 }
   | { type: 'guestLeft'; guestKey: string; upset: boolean }
   | { type: 'disasterStarted'; disasterId: number; defId: Id; pos: Vec2 }
   | { type: 'disasterPhaseChanged'; disasterId: number; defId: Id; phase: DisasterPhaseId; pos: Vec2 }

@@ -13,8 +13,13 @@ const TRANSITIONS: Readonly<Record<GuestStateId, readonly GuestStateId[]>> = {
   READY_TO_ORDER: ['WAITING_FOR_FOOD', 'UPSET'],
   WAITING_FOR_FOOD: ['EATING', 'UPSET'],
   EATING: ['SATISFIED', 'UPSET'],
-  SATISFIED: ['REQUESTING', 'UPSET'],
+  // SATISFIED → LEAVING is the happy goodbye once the visit is over.
+  SATISFIED: ['REQUESTING', 'WANTS_TO_DANCE', 'LEAVING', 'UPSET'],
   REQUESTING: ['SATISFIED', 'UPSET'],
+  WANTS_TO_DANCE: ['WALKING_TO_DANCE', 'UPSET'],
+  WALKING_TO_DANCE: ['DANCING'],
+  DANCING: ['RETURNING_TO_SEAT'],
+  RETURNING_TO_SEAT: ['SATISFIED'],
   UPSET: ['LEAVING'],
   LEAVING: ['GONE'],
   GONE: [],
@@ -26,6 +31,14 @@ const WAITING_STATES: ReadonlySet<GuestStateId> = new Set<GuestStateId>([
   GuestState.READY_TO_ORDER,
   GuestState.WAITING_FOR_FOOD,
   GuestState.REQUESTING,
+  GuestState.WANTS_TO_DANCE,
+]);
+
+/** States in which a guest is away from their seat for a dance but keeps it. */
+const DANCE_STATES: ReadonlySet<GuestStateId> = new Set<GuestStateId>([
+  GuestState.WALKING_TO_DANCE,
+  GuestState.DANCING,
+  GuestState.RETURNING_TO_SEAT,
 ]);
 
 /** States in which a guest occupies a seat at a table. */
@@ -36,12 +49,15 @@ const AT_TABLE_STATES: ReadonlySet<GuestStateId> = new Set<GuestStateId>([
   GuestState.EATING,
   GuestState.SATISFIED,
   GuestState.REQUESTING,
+  GuestState.WANTS_TO_DANCE,
 ]);
 
 export const isWaiting = (g: Guest): boolean => WAITING_STATES.has(g.state);
 export const isAtTable = (g: Guest): boolean => AT_TABLE_STATES.has(g.state);
-/** Holds a seat (including while walking to it). */
-export const holdsSeat = (g: Guest): boolean => g.seatId !== null && (isAtTable(g) || g.state === GuestState.WALKING_TO_SEAT);
+export const isDancing = (g: Guest): boolean => DANCE_STATES.has(g.state);
+/** Holds a seat (including while walking to it, or away dancing). */
+export const holdsSeat = (g: Guest): boolean =>
+  g.seatId !== null && (isAtTable(g) || isDancing(g) || g.state === GuestState.WALKING_TO_SEAT);
 export const isPresent = (g: Guest): boolean => g.state !== GuestState.GONE && g.state !== GuestState.LEAVING;
 
 /** 0–5 hearts, the player-facing view of happiness. */

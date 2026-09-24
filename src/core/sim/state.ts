@@ -16,6 +16,10 @@ export const GuestState = {
   EATING: 'EATING',
   SATISFIED: 'SATISFIED',
   REQUESTING: 'REQUESTING',
+  WANTS_TO_DANCE: 'WANTS_TO_DANCE',
+  WALKING_TO_DANCE: 'WALKING_TO_DANCE',
+  DANCING: 'DANCING',
+  RETURNING_TO_SEAT: 'RETURNING_TO_SEAT',
   UPSET: 'UPSET',
   LEAVING: 'LEAVING',
   GONE: 'GONE',
@@ -52,6 +56,12 @@ export interface Guest {
   nextRequestIn: number;
   /** Multiplier from active disasters, recomputed every tick. */
   disasterDrain: number;
+  /** Follow-up requests left before a happy goodbye; null = stays all reception. */
+  requestsLeft: number | null;
+  /** Dance floor spot while walking to or dancing on it. */
+  danceSpot: number | null;
+  /** Set when leaving because the visit is over (not upset). */
+  happyExit: boolean;
 }
 
 export type TargetRef =
@@ -155,6 +165,8 @@ export interface ReceptionStats {
   guestsSeated: number;
   guestsServed: number;
   guestsUpset: number;
+  guestsLeftHappy: number;
+  dances: number;
   giftsDelivered: number;
   disastersResolved: number;
   disastersFailed: number;

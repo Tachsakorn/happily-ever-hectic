@@ -2,6 +2,7 @@ import type { StationDef, TableDef, VenueDef } from '../content/types';
 import { disc, flat, FONT_DISPLAY, groundShadow, hex, INK, outline, oval, rrect, seeded, shade, toon } from './canvas';
 import { bloom, bush, flower, leaf, LEAF, LEAF_DARK, posy } from './flora';
 import { paintArch } from './scenery';
+import { paintDanceFloor, paintThemeFloor, paintThemeLighting, paintThemeProps, paintThemeWall, themeLook } from './venueThemes';
 import type { Painter } from './canvas';
 
 /** Decor affects the look of every table — the preparation choice is visible in play. */
@@ -33,32 +34,6 @@ function sign(c: CanvasRenderingContext2D, text: string, x: number, y: number, s
   c.fillText(text, x, y + 1);
 }
 
-function floor(c: CanvasRenderingContext2D, v: VenueDef, kitchenX: number): void {
-  const { height } = v.size;
-  const rnd = seeded(101);
-  const plankH = 36;
-  for (let y = 100, row = 0; y < height; y += plankH, row++) {
-    let x = row % 2 ? -90 : -20;
-    while (x < kitchenX) {
-      const len = 150 + Math.floor(rnd() * 90);
-      const tone = shade(v.floorColor, (rnd() - 0.5) * 0.08);
-      c.fillStyle = hex(tone);
-      c.fillRect(x, y, len, plankH);
-      // Grain: a couple of faint arcs per plank.
-      c.strokeStyle = hex(shade(tone, -0.08), 0.6);
-      c.lineWidth = 1.2;
-      c.beginPath();
-      const gx = x + len * (0.3 + rnd() * 0.4);
-      c.ellipse(gx, y + plankH / 2, len * 0.18, plankH * 0.18, 0, 0, Math.PI * 2);
-      c.stroke();
-      c.strokeStyle = hex(shade(v.floorColor, -0.16), 0.55);
-      c.lineWidth = 1.6;
-      c.strokeRect(x, y, len, plankH);
-      x += len;
-    }
-  }
-}
-
 function kitchenFloor(c: CanvasRenderingContext2D, v: VenueDef, fromX: number): void {
   const size = 44;
   for (let y = 100, r = 0; y < v.size.height; y += size, r++) {
@@ -72,30 +47,6 @@ function kitchenFloor(c: CanvasRenderingContext2D, v: VenueDef, fromX: number): 
   c.beginPath();
   c.moveTo(fromX, 100);
   c.lineTo(fromX, v.size.height);
-  c.stroke();
-}
-
-/** Hedge and flower border along the top wall, with lights strung in front of it. */
-function gardenWall(c: CanvasRenderingContext2D, v: VenueDef): void {
-  const { width } = v.size;
-  const rnd = seeded(7);
-  c.fillStyle = hex(0xbfe0a8);
-  c.fillRect(0, 0, width, 104);
-  for (let x = -30; x < width + 40; x += 58) bush(c, x, 64 + rnd() * 10, 40 + rnd() * 8, rnd, rnd() > 0.5 ? LEAF : 0x8cc38e);
-  for (let x = 10; x < width; x += 46) {
-    const tone = [0xfffaf0, 0xf7b7c6, 0xfffaf0, 0xf2b84b][Math.floor(rnd() * 4)]!;
-    flower(c, x + rnd() * 20, 40 + rnd() * 50, 6 + rnd() * 3, tone, rnd() * 3, 1.4);
-  }
-  // A low white picket edge where the hedge meets the floor.
-  c.fillStyle = hex(0xfffaf0);
-  c.fillRect(0, 96, width, 10);
-  c.strokeStyle = hex(INK);
-  c.lineWidth = 2.4;
-  c.beginPath();
-  c.moveTo(0, 96);
-  c.lineTo(width, 96);
-  c.moveTo(0, 106);
-  c.lineTo(width, 106);
   c.stroke();
 }
 
@@ -393,6 +344,8 @@ export interface VenueServing {
   readonly itemColor: (itemId: string) => number;
   /** A sign text for stations whose item the level swapped, or null to keep the usual sign. */
   readonly stationLabel: (station: StationDef) => string | null;
+  /** Whether this level uses the dance floor (it is only painted when it does). */
+  readonly dancing: boolean;
 }
 
 function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, decor: DecorLook, serving: VenueServing): void {
@@ -452,24 +405,29 @@ export function paintVenue(v: VenueDef, decor: DecorLook, serving: VenueServing)
   return (c) => {
     const kitchen = v.stations.find((s) => s.kind === 'kitchenPass');
     const kitchenX = kitchen ? kitchen.pos.x + 32 : v.size.width;
-    floor(c, v, kitchenX);
+    paintThemeFloor(c, v, kitchenX);
     kitchenFloor(c, v, kitchenX);
     const stoveAt = stovePos(v);
     if (stoveAt) stove(c, stoveAt.x, stoveAt.y);
-    gardenWall(c, v);
+    paintThemeWall(c, v);
+    paintThemeLighting(c, v, kitchenX);
 
-    // The aisle: a white runner from the door side of the room up to the couple.
+    // The aisle: a runner from the door side of the room up to the couple.
+    const look = themeLook(v);
     const aisle = rrect(v.couplePos.x - 34, 250, 68, v.size.height - 250 + 20, 6);
-    c.fillStyle = hex(0xfffaf0, 0.75);
+    c.fillStyle = hex(look.aisle, look.aisleAlpha);
     c.fill(aisle);
     c.strokeStyle = hex(INK, 0.25);
     c.lineWidth = 2;
     c.stroke(aisle);
     const rnd = seeded(61);
     for (let y = 300; y < v.size.height; y += 60) {
-      flower(c, v.couplePos.x + (rnd() - 0.5) * 40, y + rnd() * 30, 4.5, rnd() > 0.5 ? 0xf7b7c6 : decor.flower, rnd() * 3, 1.1);
+      const petal = rnd() > 0.5 ? look.petals[0]! : rnd() > 0.5 ? look.petals[1]! : decor.flower;
+      flower(c, v.couplePos.x + (rnd() - 0.5) * 40, y + rnd() * 30, 4.5, petal, rnd() * 3, 1.1);
     }
 
+    if (serving.dancing) paintDanceFloor(c, v);
+    paintThemeProps(c, v);
     waitingArea(c, v);
     for (const s of v.stations) paintStation(c, s, v, decor, serving);
     v.tables.forEach((t, i) => paintTable(c, t, decor, 40 + i));

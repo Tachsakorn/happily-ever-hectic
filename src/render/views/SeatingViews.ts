@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { danceFloorBounds } from '../../content/danceFloor';
 import type { Id, Vec2 } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import { findGuest, holdsSeat } from '../../core/guests/guestMachine';
@@ -15,7 +16,10 @@ import { Colors, Depth, makeText } from '../ui/text';
 export class SeatingOverlay {
   private readonly g: Phaser.GameObjects.Graphics;
   private readonly labels: Phaser.GameObjects.Text[];
+  private readonly floorLabel: Phaser.GameObjects.Text;
   private preview: Map<Id, number> | null = null;
+  /** Set while the held guest wants to dance: then the dance floor is the only target. */
+  private dancer = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -29,21 +33,47 @@ export class SeatingOverlay {
         .setDepth(Depth.overlay - 4)
         .setVisible(false),
     );
+    const floor = danceFloorBounds(sim.context.venue.def);
+    this.floorLabel = makeText(scene, floor ? floor.x + floor.w / 2 : 0, floor ? floor.y - 26 : 0, 'Dance here!', renderScale, { size: 24, weight: '800', stroke: '#ffffff', strokeWidth: 6 })
+      .setOrigin(0.5)
+      .setColor(DANCE_CSS)
+      .setDepth(Depth.overlay - 4)
+      .setVisible(false);
   }
 
   show(guestKey: string): void {
+    const g = findGuest(this.sim.context, guestKey);
+    this.dancer = g?.state === 'WANTS_TO_DANCE';
+    if (this.dancer) {
+      this.preview = null;
+      this.drawFloor(false);
+      return;
+    }
     this.preview = this.sim.seatingPreview(guestKey);
     this.draw(null);
   }
 
-  highlight(seatId: Id | null): void {
-    if (this.preview) this.draw(seatId);
+  /** Follows the finger: lights up the seat, or the dance floor, it is over. */
+  highlight(p: Vec2): void {
+    if (this.dancer) this.drawFloor(this.sim.isOnDanceFloor(p));
+    else if (this.preview) this.draw(this.sim.pickSeat(p));
   }
 
   hide(): void {
     this.preview = null;
+    this.dancer = false;
     this.g.clear();
     for (const l of this.labels) l.setVisible(false);
+    this.floorLabel.setVisible(false);
+  }
+
+  private drawFloor(active: boolean): void {
+    const r = danceFloorBounds(this.sim.context.venue.def);
+    this.g.clear();
+    if (!r) return;
+    this.g.fillStyle(DANCE_COLOR, active ? 0.3 : 0.16).fillRoundedRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12, 18);
+    this.g.lineStyle(active ? 7 : 5, DANCE_COLOR, active ? 1 : 0.8).strokeRoundedRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12, 18);
+    this.floorLabel.setVisible(true).setScale(active ? 1.12 : 1);
   }
 
   private draw(activeSeat: Id | null): void {
@@ -71,8 +101,12 @@ export class SeatingOverlay {
   destroy(): void {
     this.g.destroy();
     for (const l of this.labels) l.destroy();
+    this.floorLabel.destroy();
   }
 }
+
+const DANCE_COLOR = 0xb49be0;
+const DANCE_CSS = '#8a6cc8';
 
 /** A small card describing a guest: who they are, their traits, who they like and dislike. */
 export class GuestCard {
@@ -98,6 +132,12 @@ export class GuestCard {
     if (!g) return;
     const type = ctx.content.guestTypes.get(g.typeId);
     const group = ctx.content.groups.get(g.groupId);
+    if (g.state === 'WANTS_TO_DANCE') {
+      this.title.setText(`${g.name} wants to dance!`);
+      this.body.setText('Drop them on the dance floor by the DJ.');
+      for (const o of [this.bg, this.title, this.body]) o.setVisible(true);
+      return;
+    }
     const traits = type.traitIds.map((id) => ctx.content.traits.get(id).name).join(', ');
     const nameOf = (ref: string) =>
       ctx.level.guests.find((s) => s.key === ref)?.name ?? (ctx.content.groups.has(ref) ? `all ${ctx.content.groups.get(ref).name}` : ref);

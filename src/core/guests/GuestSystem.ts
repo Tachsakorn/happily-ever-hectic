@@ -2,8 +2,8 @@ import type { Vec2 } from '../../content/types';
 import { stepToward } from '../math/vec';
 import type { SimContext, System } from '../sim/SimContext';
 import { GuestState, MAX_HAPPINESS, type Guest } from '../sim/state';
-import { makeUpset } from './guestActions';
-import { isAtTable, isWaiting, transitionGuest } from './guestMachine';
+import { fillWaitingSlots, makeUpset } from './guestActions';
+import { hearts, isAtTable, isWaiting, transitionGuest } from './guestMachine';
 import { refreshTableMoods } from './seating';
 import { servedItem } from '../sim/items';
 
@@ -28,12 +28,38 @@ function scheduleNextRequest(ctx: SimContext, guest: Guest): void {
   guest.nextRequestIn = ctx.rng.range(min, max) * guest.mods.guestRequestInterval;
 }
 
-function chooseRequest(ctx: SimContext, guest: Guest): string | null {
-  const pool = ctx.content.guestTypes
-    .get(guest.typeId)
-    .requestPool.filter((r) => !r.requiresFlag || ctx.state.flags.has(r.requiresFlag));
-  const picked = ctx.rng.weighted(pool, (r) => r.weight)?.itemId;
-  return picked ? servedItem(ctx, picked) : null;
+/** A follow-up wish: an item, or (on levels with a dance floor) a dance. */
+type Wish = { kind: 'item'; itemId: string } | { kind: 'dance' };
+
+const canDance = (ctx: SimContext): boolean => !!ctx.level.dancing && (ctx.venue.def.danceSpots?.length ?? 0) > 0;
+
+function chooseWish(ctx: SimContext, guest: Guest): Wish | null {
+  const type = ctx.content.guestTypes.get(guest.typeId);
+  const options: { wish: Wish; weight: number }[] = type.requestPool
+    .filter((r) => !r.requiresFlag || ctx.state.flags.has(r.requiresFlag))
+    .map((r) => ({ wish: { kind: 'item', itemId: servedItem(ctx, r.itemId) } as Wish, weight: r.weight }));
+  if (canDance(ctx) && (type.danceWeight ?? 0) > 0) options.push({ wish: { kind: 'dance' }, weight: type.danceWeight ?? 0 });
+  return ctx.rng.weighted(options, (o) => o.weight)?.wish ?? null;
+}
+
+/** The visit is over: a happy goodbye frees the seat for the next guest. */
+function leaveHappily(ctx: SimContext, g: Guest): void {
+  const tableId = g.tableId;
+  g.happyExit = true;
+  g.wantsItemId = null;
+  g.path = ctx.nav.findPath(g.pos, ctx.venue.def.doorPos);
+  transitionGuest(ctx, g, GuestState.LEAVING);
+  ctx.state.stats.guestsLeftHappy++;
+  const h = hearts(g);
+  ctx.score.add(ctx.score.rules.guestLeftHappyPerHeart * h, 'Happy goodbye', g.pos);
+  ctx.mood.change(ctx.tuning.mood.guestServed, 'Happy goodbyes', g.pos);
+  if (tableId) refreshTableMoods(ctx, tableId);
+  fillWaitingSlots(ctx);
+}
+
+/** One more thing done for a guest who is counting down to their goodbye. */
+export function consumeVisit(g: Guest): void {
+  if (g.requestsLeft !== null && g.requestsLeft > 0) g.requestsLeft--;
 }
 
 /**
@@ -74,13 +100,40 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
     g.happiness = Math.min(MAX_HAPPINESS, g.happiness + ctx.tuning.satisfiedRecoveryPerSecond * dt);
     g.nextRequestIn -= dt;
     if (g.nextRequestIn > 0) return;
-    const itemId = chooseRequest(ctx, g);
-    if (!itemId) {
+    if (g.requestsLeft === 0) {
+      leaveHappily(ctx, g);
+      return;
+    }
+    const wish = chooseWish(ctx, g);
+    if (!wish) {
       scheduleNextRequest(ctx, g);
       return;
     }
-    g.wantsItemId = itemId;
+    if (wish.kind === 'dance') {
+      transitionGuest(ctx, g, GuestState.WANTS_TO_DANCE);
+      return;
+    }
+    g.wantsItemId = wish.itemId;
     transitionGuest(ctx, g, GuestState.REQUESTING);
+  },
+  WALKING_TO_DANCE(ctx, g, dt) {
+    if (!walk(g, ctx.tuning.guestWalkSpeed, dt)) return;
+    transitionGuest(ctx, g, GuestState.DANCING, ctx.tuning.danceSeconds);
+  },
+  DANCING(ctx, g, dt) {
+    g.happiness = Math.min(MAX_HAPPINESS, g.happiness + ctx.tuning.danceHappinessPerSecond * dt);
+    if (g.stateTime < g.stateDuration) return;
+    g.danceSpot = null;
+    const seatPos = g.seatId ? ctx.venue.seat(g.seatId).seat.pos : ctx.venue.def.doorPos;
+    g.path = ctx.nav.findPath(g.pos, seatPos);
+    transitionGuest(ctx, g, GuestState.RETURNING_TO_SEAT);
+  },
+  RETURNING_TO_SEAT(ctx, g, dt) {
+    if (!walk(g, ctx.tuning.guestWalkSpeed, dt)) return;
+    consumeVisit(g);
+    transitionGuest(ctx, g, GuestState.SATISFIED);
+    scheduleNextRequest(ctx, g);
+    if (g.tableId) refreshTableMoods(ctx, g.tableId);
   },
   UPSET(ctx, g) {
     if (g.stateTime < g.stateDuration) return;
@@ -90,7 +143,7 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
   LEAVING(ctx, g, dt) {
     if (!walk(g, ctx.tuning.guestWalkSpeed * 1.3, dt)) return;
     transitionGuest(ctx, g, GuestState.GONE);
-    ctx.events.emit({ type: 'guestLeft', guestKey: g.key, upset: true });
+    ctx.events.emit({ type: 'guestLeft', guestKey: g.key, upset: !g.happyExit });
   },
 };
 

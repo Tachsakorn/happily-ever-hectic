@@ -13,9 +13,9 @@ export interface InputFeedback {
 }
 
 /**
- * Touch → commands. Two seating gestures are supported because both feel
- * natural on iPad: drag a guest onto a seat, or tap the guest then tap the
- * seat. Every other tap queues an action at whatever was tapped.
+ * Touch → commands. Two placing gestures are supported because both feel
+ * natural on iPad: drag a guest onto a seat (or a dancer onto the dance
+ * floor), or tap the guest then tap where they should go. Every other tap queues an action at whatever was tapped.
  * Only the first finger is tracked, so a resting palm cannot trigger actions.
  */
 export class ReceptionInput {
@@ -47,7 +47,7 @@ export class ReceptionInput {
   validateSelection(): void {
     if (!this.selected) return;
     const g = this.sim.state.guests.find((x) => x.key === this.selected);
-    if (!g || (g.state !== 'WAITING_TO_BE_SEATED' && g.state !== 'ARRIVING')) this.select(null);
+    if (!g || (g.state !== 'WAITING_TO_BE_SEATED' && g.state !== 'ARRIVING' && g.state !== 'WANTS_TO_DANCE')) this.select(null);
   }
 
   private point(p: Phaser.Input.Pointer): Vec2 {
@@ -59,7 +59,7 @@ export class ReceptionInput {
     this.pointerId = p.id;
     const pt = this.point(p);
     this.downAt = pt;
-    this.candidate = this.sim.pickWaitingGuest(pt);
+    this.candidate = this.sim.pickDraggableGuest(pt);
   }
 
   private onMove(p: Phaser.Input.Pointer): void {
@@ -73,7 +73,7 @@ export class ReceptionInput {
     }
     if (this.dragging && this.candidate) {
       this.feedback.onDragGuest(this.candidate, pt);
-      this.overlay.highlight(this.sim.pickSeat(pt));
+      this.overlay.highlight(pt);
     }
   }
 
@@ -92,7 +92,7 @@ export class ReceptionInput {
       this.feedback.onDragGuest(candidate, null);
       this.overlay.hide();
       this.card.hide();
-      this.trySeat(candidate, pt);
+      this.place(candidate, pt);
       return;
     }
     if (candidate) {
@@ -103,10 +103,10 @@ export class ReceptionInput {
     }
     if (this.selected) {
       const guestKey = this.selected;
-      const seat = this.sim.pickSeat(pt);
+      const dancer = this.wantsToDance(guestKey);
       this.select(null);
-      if (seat) {
-        this.trySeat(guestKey, pt);
+      if (dancer ? this.sim.isOnDanceFloor(pt) : this.sim.pickSeat(pt)) {
+        this.place(guestKey, pt);
         return;
       }
     }
@@ -121,6 +121,25 @@ export class ReceptionInput {
       return;
     }
     const result = this.sim.command({ type: 'queueAction', target });
+    this.taps.ripple(pt, result.ok);
+    if (!result.ok) this.feedback.onCommandFailed(result.reason, pt);
+  }
+
+  private wantsToDance(guestKey: string): boolean {
+    return this.sim.state.guests.find((g) => g.key === guestKey)?.state === 'WANTS_TO_DANCE';
+  }
+
+  /** Drops a held guest: dancers go to the dance floor, everyone else to a seat. */
+  private place(guestKey: string, pt: Vec2): void {
+    if (!this.wantsToDance(guestKey)) {
+      this.trySeat(guestKey, pt);
+      return;
+    }
+    if (!this.sim.isOnDanceFloor(pt)) {
+      this.taps.ripple(pt, false);
+      return;
+    }
+    const result = this.sim.command({ type: 'sendToDance', guestKey });
     this.taps.ripple(pt, result.ok);
     if (!result.ok) this.feedback.onCommandFailed(result.reason, pt);
   }

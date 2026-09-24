@@ -31,7 +31,7 @@ export const KitchenSystem: System = {
 
     let cooking = orders.filter((o) => o.cookLeft !== null).length;
     for (const o of orders) {
-      if (cooking >= ctx.level.kitchen.burners) break;
+      if (cooking >= ctx.level.kitchen.burners + Math.round(ctx.modifiers.kitchenBurners)) break;
       if (o.cookLeft === null) {
         o.cookLeft = cookTime;
         o.cookTotal = cookTime;

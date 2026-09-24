@@ -17,6 +17,8 @@ const result = (levelId: string, score: number, stars: 0 | 1 | 2 | 3, outcome: '
     guestsSeated: 0,
     guestsServed: 0,
     guestsUpset: 0,
+    guestsLeftHappy: 0,
+    dances: 0,
     giftsDelivered: 0,
     disastersResolved: 0,
     disastersFailed: 0,

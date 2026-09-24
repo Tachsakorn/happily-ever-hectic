@@ -4,7 +4,7 @@ import { combineModifiers } from '../sim/modifiers';
 import type { SimContext } from '../sim/SimContext';
 import { GuestState, MAX_HAPPINESS, type Guest } from '../sim/state';
 import { cancelOrdersFor } from '../kitchen/kitchen';
-import { findGuest, holdsSeat, transitionGuest } from './guestMachine';
+import { findGuest, holdsSeat, isDancing, transitionGuest } from './guestMachine';
 import { isSeatFree, refreshTableMoods, tableScore } from './seating';
 
 /** Creates a guest at the door and sends them to a free waiting spot (or queues them outside). */
@@ -36,6 +36,9 @@ export function spawnGuest(ctx: SimContext, spec: LevelGuestSpec): Guest {
     seatingMood: 0,
     nextRequestIn: 0,
     disasterDrain: 1,
+    requestsLeft: type.staysFor ? Math.round(ctx.rng.range(type.staysFor[0], type.staysFor[1])) : null,
+    danceSpot: null,
+    happyExit: false,
   };
   ctx.state.guests.push(guest);
   ctx.events.emit({ type: 'guestArrived', guestKey: guest.key });
@@ -99,10 +102,30 @@ export function seatGuest(ctx: SimContext, guestKey: string, seatId: Id): Comman
   return ok;
 }
 
+/** Sends a guest who asked to dance to a free spot on the dance floor. */
+export function sendToDance(ctx: SimContext, guestKey: string): CommandResult {
+  const guest = findGuest(ctx, guestKey);
+  if (!guest) return fail('No such guest');
+  if (guest.state !== GuestState.WANTS_TO_DANCE) return fail('They don’t want to dance right now');
+  const spots = ctx.venue.def.danceSpots ?? [];
+  const taken = new Set(ctx.state.guests.map((g) => g.danceSpot).filter((s) => s !== null));
+  const spot = spots.findIndex((_, i) => !taken.has(i));
+  if (spot === -1) return fail('The dance floor is full');
+  guest.danceSpot = spot;
+  guest.path = ctx.nav.findPath(guest.pos, spots[spot]!);
+  transitionGuest(ctx, guest, GuestState.WALKING_TO_DANCE);
+  if (guest.tableId) refreshTableMoods(ctx, guest.tableId);
+  ctx.state.stats.dances++;
+  ctx.events.emit({ type: 'guestDancing', guestKey, pos: spots[spot]! });
+  ctx.score.add(ctx.score.rules.danceStarted, 'Dance floor', spots[spot]!);
+  ctx.mood.change(ctx.tuning.mood.guestServed, 'Guests dancing', spots[spot]!);
+  return ok;
+}
+
 /** A guest reaches the end of their patience (or is dragged into a disaster) and storms out. */
 export function makeUpset(ctx: SimContext, guest: Guest, cause: string): void {
   if (guest.state === GuestState.UPSET || guest.state === GuestState.LEAVING || guest.state === GuestState.GONE) return;
-  if (guest.state === GuestState.WALKING_TO_SEAT) return;
+  if (guest.state === GuestState.WALKING_TO_SEAT || isDancing(guest)) return;
   const tableId = guest.tableId;
   guest.happiness = 0;
   guest.wantsItemId = null;

@@ -5,7 +5,9 @@ import type { TargetRef } from './state';
 export type Command =
   | { type: 'seatGuest'; guestKey: string; seatId: Id }
   | { type: 'queueAction'; target: TargetRef }
-  | { type: 'clearQueue' };
+  | { type: 'clearQueue' }
+  /** Send a guest who wants to dance onto the dance floor. */
+  | { type: 'sendToDance'; guestKey: string };
 
 export type CommandResult = { ok: true } | { ok: false; reason: string };
 

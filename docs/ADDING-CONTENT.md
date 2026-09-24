@@ -15,6 +15,8 @@ Add to `guestTypes` in `src/data/packs/base/people.ts`:
   eatSeconds: 8,
   requestIntervalSeconds: [15, 25],
   requestPool: [{ itemId: 'champagne', weight: 5 }, { itemId: 'cake-slice', weight: 2, requiresFlag: 'cake-cut' }],
+  staysFor: [1, 2],              // follow-up wishes before a happy goodbye (frees the seat)
+  danceWeight: 5,                // how likely a follow-up wish is a dance (dancing levels only)
   traitIds: ['social', 'demanding'],
   visual: { color: 0xf2c9a8, icon: 'party' },   // icon: guest | grandparent | party | foodie | kid | boss
 }
@@ -57,6 +59,9 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
 2. Add a `LevelDef` to `levels` (`src/data/packs/base/weddings.ts`): venue, duration, guest list
    (use the `guest(key, name, type, group, arriveAt, { bringsGift, likes, dislikes })` helper),
    disasters, moments (`toast`, `cake-cutting`), kitchen, star scores, coins, unlock chain, dialogue ids.
+   Optional: `dancing: true` (needs a venue with `danceSpots`) and `modifiers` for pickier guests
+   (e.g. `{ guestPatienceDrain: 1.15, guestRequestInterval: 0.9 }`). Level ids are save keys —
+   never rename a shipped one; change `order` to move it on the map.
 3. Add intro/outro lines to `dialogues` in `meta.ts`.
 4. Run `pnpm vitest run tests/balance.test.ts --silent=false` and copy the printed `suggested`
    thresholds (≈ 55% / 80% / 95% of what the *casual* autoplayer scores) into `starScores`.
@@ -70,8 +75,10 @@ variety — one new kind of surprise at a time — instead of piling on guests. 
 
 ## A new venue
 
-Add a `VenueDef` (stations, tables, waiting spots, pass slots, obstacles, aisle waypoints) and a
-drawing for any new station kind in `art/venuePainter.ts`. Required stations: `kitchenPass`,
+Add a `VenueDef` (stations, tables, waiting spots, pass slots, obstacles, aisle waypoints, optional
+`danceSpots`) and a drawing for any new station kind in `art/venuePainter.ts`. A new *look* for the
+same floor plan is just `{ ...gardenHall, id, name, theme, floorColor }`; themes (`garden`, `beach`,
+`ballroom`, `night`) are painted in `art/venueThemes.ts` (wall, floor, props, lighting, dance floor). Required stations: `kitchenPass`,
 `coupleTable`, `giftTable`, `bin`, plus a station providing every item any guest or moment asks for —
 validation tells you what is missing.
 

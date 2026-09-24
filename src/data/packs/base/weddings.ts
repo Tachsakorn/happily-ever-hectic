@@ -81,7 +81,7 @@ export const weddings: WeddingDef[] = [
 const tips = {
   seat: 'Drag a waiting guest onto a free seat. Matching colours = same group = happier guests.',
   order: 'When a guest shows a menu bubble, tap them to take their order.',
-  serve: 'Tap a ready dish at the kitchen, then tap the guest who ordered it.',
+  serve: 'Taking an order sends a ticket to the chef. When the dish appears on the pass, tap it, then tap the guest.',
   queue: 'You can tap several things in a row — your planner does them in order. Tap her to cancel.',
   couple: 'The heart meter is the couple’s mood. Keep it up — if it empties, the wedding is ruined!',
   toast: 'The toast! When the couple asks for champagne, bring it quickly.',

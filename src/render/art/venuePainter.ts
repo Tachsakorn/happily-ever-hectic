@@ -189,12 +189,16 @@ function paintStation(c: CanvasRenderingContext2D, s: StationDef, v: VenueDef, d
       c.lineWidth = 2.5;
       c.strokeStyle = hex(INK, 0.35);
       c.stroke();
+      // Empty spots are dashed outlines, so an empty pass never looks like ready food.
+      c.setLineDash([5, 5]);
+      c.lineWidth = 2;
+      c.strokeStyle = hex(INK, 0.3);
       for (const slot of v.passSlots) {
         c.beginPath();
-        c.ellipse(slot.x, slot.y + 4, 26, 18, 0, 0, Math.PI * 2);
-        c.fillStyle = 'rgba(255,255,255,0.55)';
-        c.fill();
+        c.ellipse(slot.x, slot.y + 4, 24, 16, 0, 0, Math.PI * 2);
+        c.stroke();
       }
+      c.setLineDash([]);
       label(c, 'Kitchen', x, top - 26);
       break;
     }

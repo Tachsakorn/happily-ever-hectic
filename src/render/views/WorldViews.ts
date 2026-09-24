@@ -77,16 +77,11 @@ export class CoupleView {
   }
 }
 
-/** Food on the pass, cooking progress, drinks, desserts, the cake and gifts. */
+/** Drinks, desserts, the cake and gifts. (The kitchen has its own view.) */
 export class PropsView {
-  private readonly passImages: Phaser.GameObjects.Image[];
-  private readonly cooking: Phaser.GameObjects.Graphics;
-  /** Where cooking progress bars are drawn: just behind the kitchen pass. */
-  private readonly cookAnchor: { x: number; y: number };
   private readonly cake: Phaser.GameObjects.Image;
   private readonly giftImages = new Map<number, Phaser.GameObjects.Image>();
   private readonly giftPile: Phaser.GameObjects.Image[] = [];
-  private shownPass = '';
   private readonly cakeBase: { x: number; y: number };
   private readonly cakeStationId: string | null;
   private readonly cakeItemId: string | null;
@@ -100,11 +95,6 @@ export class PropsView {
     private readonly sim: ReceptionSimulation,
   ) {
     const venue = sim.context.venue.def;
-    this.passImages = venue.passSlots.map((p) => tex.image(scene, p.x, p.y, art.icon('plate')).setDepth(Depth.props).setVisible(false));
-    this.cooking = scene.add.graphics().setDepth(Depth.props);
-    const kitchen = venue.stations.find((s) => s.kind === 'kitchenPass');
-    const firstSlotY = Math.min(...venue.passSlots.map((p) => p.y));
-    this.cookAnchor = { x: (kitchen?.pos.x ?? 0) + 44, y: firstSlotY - 15 };
 
     for (const s of venue.stations) {
       if ((s.kind === 'drinkTap' || s.kind === 'dessertTable') && s.providesItemId) {
@@ -132,35 +122,6 @@ export class PropsView {
 
   sync(time: number): void {
     const state = this.sim.state;
-    const passKey = state.kitchen.pass.join('|');
-    if (passKey !== this.shownPass) {
-      this.shownPass = passKey;
-      state.kitchen.pass.forEach((itemId, i) => {
-        const img = this.passImages[i];
-        if (!img) return;
-        img.setVisible(!!itemId);
-        if (itemId) {
-          img.setTexture(this.art.item(itemId)).setScale(1.2 / this.tex.scale);
-          this.scene.tweens.add({ targets: img, scale: { from: 1.8 / this.tex.scale, to: 1.2 / this.tex.scale }, duration: 220, ease: 'Back.easeOut' });
-        }
-      });
-    }
-
-    // Cooking progress bars next to the kitchen window.
-    this.cooking.clear();
-    let row = 0;
-    for (const o of state.kitchen.orders) {
-      if (o.cookLeft === null) continue;
-      const t = o.cookTotal > 0 ? 1 - o.cookLeft / o.cookTotal : 1;
-      const x = this.cookAnchor.x;
-      const y = this.cookAnchor.y + row * 26;
-      this.cooking.fillStyle(0xffffff, 0.9).fillRoundedRect(x, y, 42, 14, 6);
-      this.cooking.fillStyle(t >= 1 ? Colors.warn : 0xf08a4b, 1).fillRoundedRect(x + 2, y + 2, 38 * Math.min(1, t), 10, 5);
-      row++;
-    }
-    const queued = state.kitchen.orders.length - row;
-    for (let i = 0; i < queued && i < 6; i++) this.cooking.fillStyle(Colors.ink, 0.35).fillCircle(this.cookAnchor.x + 6 + i * 8, this.cookAnchor.y + row * 26 + 8, 3);
-
     // The cake: on its table, in the planner's hands, or cut at the couple's table.
     const carried = this.cakeItemId !== null && state.planner.hands.includes(this.cakeItemId);
     const cut = this.cakeServedFlag !== null && state.flags.has(this.cakeServedFlag);
@@ -198,10 +159,8 @@ export class PropsView {
   }
 
   destroy(): void {
-    for (const img of this.passImages) img.destroy();
     for (const img of this.giftImages.values()) img.destroy();
     for (const img of this.giftPile) img.destroy();
-    this.cooking.destroy();
     this.cake.destroy();
   }
 }

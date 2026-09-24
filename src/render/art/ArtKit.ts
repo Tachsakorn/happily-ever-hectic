@@ -13,7 +13,7 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
-const STYLES = new Set(['guest', 'grandparent', 'party', 'foodie', 'kid', 'boss', 'dress', 'suit', 'planner']);
+const STYLES = new Set(['guest', 'grandparent', 'party', 'foodie', 'kid', 'boss', 'dress', 'suit', 'planner', 'chef']);
 
 /** Maps content to baked textures. The only place that knows how content *looks*. */
 export class ArtKit {
@@ -24,7 +24,7 @@ export class ArtKit {
 
   person(look: PersonLook): string {
     const key = `person:${look.style}:${look.skin}:${look.hair}:${look.outfit}:${look.ring ?? 'x'}`;
-    return this.tex.ensure(key, 60, 84, paintPerson(look));
+    return this.tex.ensure(key, 60, 104, paintPerson(look));
   }
 
   guest(g: Guest): string {
@@ -38,6 +38,10 @@ export class ArtKit {
       hair: HAIRS[(h >> 8) % HAIRS.length] ?? HAIRS[0]!,
       outfit: group.visual.color,
     });
+  }
+
+  chef(): string {
+    return this.person({ style: 'chef', skin: 0xd9a47e, hair: 0x2b1d14, outfit: 0xffffff });
   }
 
   planner(): string {

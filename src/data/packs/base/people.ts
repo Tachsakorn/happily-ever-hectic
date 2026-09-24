@@ -1,9 +1,9 @@
 import type { GroupDef, GuestTypeDef, ItemDef, TraitDef } from '../../../content/types';
 
 export const items: ItemDef[] = [
-  { id: 'roast-chicken', name: 'Roast Chicken', kind: 'dish', hands: 1, visual: { color: 0xd9a066, icon: 'plate' } },
-  { id: 'salmon', name: 'Grilled Salmon', kind: 'dish', hands: 1, visual: { color: 0xf08a6c, icon: 'plate' } },
-  { id: 'risotto', name: 'Garden Risotto', kind: 'dish', hands: 1, visual: { color: 0x9dbf6a, icon: 'plate' } },
+  { id: 'roast-chicken', name: 'Roast Chicken', kind: 'dish', hands: 1, visual: { color: 0xd9a066, icon: 'chicken' } },
+  { id: 'salmon', name: 'Grilled Salmon', kind: 'dish', hands: 1, visual: { color: 0xf08a6c, icon: 'fish' } },
+  { id: 'risotto', name: 'Garden Risotto', kind: 'dish', hands: 1, visual: { color: 0x7fae4f, icon: 'risotto' } },
   { id: 'champagne', name: 'Champagne', kind: 'drink', hands: 1, visual: { color: 0xf3d46b, icon: 'flute' } },
   { id: 'lemonade', name: 'Pink Lemonade', kind: 'drink', hands: 1, visual: { color: 0xf49ac1, icon: 'glass' } },
   { id: 'cake-slice', name: 'Cake Slice', kind: 'dessert', hands: 1, visual: { color: 0xfff1e0, accent: 0xe07a95, icon: 'slice' } },

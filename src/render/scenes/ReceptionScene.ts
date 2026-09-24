@@ -18,6 +18,7 @@ import { Banner, Hud } from '../views/Hud';
 import { PlannerView } from '../views/PlannerView';
 import { GuestCard, SeatingOverlay, TapFeedback } from '../views/SeatingViews';
 import { CoupleView, PropsView } from '../views/WorldViews';
+import { KitchenView } from '../views/KitchenView';
 
 export interface ReceptionSceneData {
   readonly session: ReceptionSession;
@@ -45,6 +46,7 @@ export class ReceptionScene extends Phaser.Scene {
   private planner!: PlannerView;
   private couple!: CoupleView;
   private props!: PropsView;
+  private kitchen!: KitchenView;
   private disasters!: DisasterLayer;
   private floating!: FloatingTextLayer;
   private hud!: Hud;
@@ -78,6 +80,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.tex.image(this, venue.size.width / 2, venue.size.height / 2, bgKey, bgScale).setDepth(0);
 
     this.props = new PropsView(this, this.art, this.tex, sim);
+    this.kitchen = new KitchenView(this, this.art, this.tex, sim, renderScale);
     this.couple = new CoupleView(this, this.art, this.tex, sim, ctx.wedding);
     this.planner = new PlannerView(this, this.art, this.tex, sim, renderScale, (t) => this.positionOf(t));
     this.disasters = new DisasterLayer(this, this.art, this.tex, sim);
@@ -114,6 +117,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.planner.sync(dt);
     this.couple.sync(dt);
     this.props.sync(time);
+    this.kitchen.sync(dt);
     this.disasters.sync(time);
     this.hud.sync();
     // Announcements wait while paused (e.g. during the intro dialogue) so none are missed.
@@ -239,6 +243,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.planner?.destroy();
     this.couple?.destroy();
     this.props?.destroy();
+    this.kitchen?.destroy();
     this.disasters?.destroy();
     this.overlay?.destroy();
     this.hud?.destroy();

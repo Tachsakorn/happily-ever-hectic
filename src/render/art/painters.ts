@@ -57,17 +57,17 @@ export interface PersonLook {
   readonly outfit: number;
   readonly hair: number;
   /** Small identifying accessory. */
-  readonly style: 'guest' | 'grandparent' | 'party' | 'foodie' | 'kid' | 'boss' | 'dress' | 'suit' | 'planner';
+  readonly style: 'guest' | 'grandparent' | 'party' | 'foodie' | 'kid' | 'boss' | 'dress' | 'suit' | 'planner' | 'chef';
   readonly ring?: number;
 }
 
-/** A chibi person, 60×84 design units, anchored bottom-centre at (30, 80). */
+/** A chibi person, 60×104 design units (room for hats), anchored bottom-centre at (30, 99). */
 export function paintPerson(look: PersonLook): Painter {
   return (c) => {
     const kid = look.style === 'kid';
     const s = kid ? 0.82 : 1;
     c.save();
-    c.translate(30, 80);
+    c.translate(30, 99);
     c.scale(s, s);
     softShadow(c, 0, -2, 24, 7);
     if (look.ring !== undefined) {
@@ -162,6 +162,16 @@ export function paintPerson(look: PersonLook): Painter {
       roundRect(c, -13, -92, 26, 16, 7);
       fillStroke(c, 0xffffff, INK, 2);
     }
+    if (look.style === 'chef') {
+      // Tall toque
+      roundRect(c, -12, -98, 24, 22, 4);
+      fillStroke(c, 0xffffff, INK, 2);
+      circle(c, -9, -98, 8);
+      circle(c, 0, -102, 9);
+      circle(c, 9, -98, 8);
+      c.fillStyle = '#ffffff';
+      c.fill();
+    }
     if (look.style === 'planner') {
       // Headset
       c.beginPath();
@@ -204,7 +214,7 @@ export function paintPerson(look: PersonLook): Painter {
 
 // ------------------------------------------------------------------ items
 
-export type ItemIcon = 'plate' | 'flute' | 'glass' | 'slice' | 'cake' | 'gift' | 'menu' | 'heart' | 'heart-empty' | 'star' | 'star-empty';
+export type ItemIcon = 'plate' | 'chicken' | 'fish' | 'risotto' | 'flute' | 'glass' | 'slice' | 'cake' | 'gift' | 'menu' | 'heart' | 'heart-empty' | 'star' | 'star-empty';
 
 /** Item icons, 44×44 design units, centred. */
 export function paintIcon(icon: ItemIcon, color: number, accent = 0xe07a95): Painter {
@@ -212,6 +222,48 @@ export function paintIcon(icon: ItemIcon, color: number, accent = 0xe07a95): Pai
     c.save();
     c.translate(22, 22);
     switch (icon) {
+      case 'chicken':
+      case 'fish':
+      case 'risotto':
+        c.beginPath();
+        c.ellipse(0, 4, 20, 13, 0, 0, Math.PI * 2);
+        fillStroke(c, 0xffffff);
+        if (icon === 'chicken') {
+          // Drumstick
+          c.beginPath();
+          c.ellipse(-3, 0, 10, 7, -0.5, 0, Math.PI * 2);
+          fillStroke(c, color, INK, 1.8);
+          c.beginPath();
+          c.moveTo(4, -4);
+          c.lineTo(12, -11);
+          c.lineWidth = 4;
+          c.strokeStyle = '#fff6e8';
+          c.stroke();
+          circle(c, 13, -12, 3);
+          c.fillStyle = '#fff6e8';
+          c.fill();
+        } else if (icon === 'fish') {
+          c.beginPath();
+          c.ellipse(-2, 2, 11, 6, 0, 0, Math.PI * 2);
+          c.moveTo(8, 2);
+          c.lineTo(15, -4);
+          c.lineTo(15, 8);
+          c.closePath();
+          fillStroke(c, color, INK, 1.8);
+          circle(c, -8, 1, 1.4);
+          c.fillStyle = hex(INK);
+          c.fill();
+        } else {
+          c.beginPath();
+          c.ellipse(0, 1, 12, 7, 0, 0, Math.PI * 2);
+          fillStroke(c, 0xf3e3b5, INK, 1.5);
+          c.fillStyle = hex(color);
+          for (const [x, y] of [[-5, 0], [2, -2], [6, 2], [-1, 3]] as const) {
+            circle(c, x, y, 2.4);
+            c.fill();
+          }
+        }
+        break;
       case 'plate':
         c.beginPath();
         c.ellipse(0, 3, 19, 13, 0, 0, Math.PI * 2);

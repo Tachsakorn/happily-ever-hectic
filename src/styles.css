@@ -1,0 +1,244 @@
+:root {
+  --c-bg: #fbeee6;
+  --c-bg-deep: #f3d9cf;
+  --c-card: #fffaf6;
+  --c-ink: #4a3548;
+  --c-ink-soft: #7d6479;
+  --c-blush: #f2a7b8;
+  --c-blush-deep: #e07a95;
+  --c-sage: #9dbf9a;
+  --c-gold: #d9b15f;
+  --c-danger: #d9534f;
+  --c-shadow: rgba(74, 53, 72, 0.18);
+
+  --font-display: 'Snell Roundhand', 'Brush Script MT', 'Segoe Script', cursive;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Apple HIG minimum is 44pt; we go bigger for a hectic game played with thumbs. */
+  --touch-min: 56px;
+  --radius: 18px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--font-body);
+  -webkit-text-size-adjust: 100%;
+  /* No long-press callouts, text selection or grey tap flash anywhere in the game. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* manipulation = no double-tap zoom; children can still opt into pan-y scrolling. */
+  touch-action: manipulation;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#game-layer {
+  position: absolute;
+  inset: 0;
+  background: var(--c-bg-deep);
+}
+
+#game-layer canvas {
+  display: block;
+  touch-action: none;
+}
+
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+
+#ui-layer > * {
+  pointer-events: auto;
+}
+
+#rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--c-bg);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 22px;
+}
+
+@media (orientation: portrait) {
+  #rotate-overlay {
+    display: flex;
+  }
+}
+
+.rotate-icon {
+  width: 72px;
+  height: 100px;
+  margin: 0 auto 20px;
+  border: 6px solid var(--c-ink);
+  border-radius: 14px;
+  animation: rotate-hint 2s ease-in-out infinite;
+}
+
+@keyframes rotate-hint {
+  0%,
+  30% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* ---------- Shared UI primitives ---------- */
+
+.screen {
+  position: absolute;
+  inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  animation: screen-in 220ms ease-out;
+}
+
+.screen--scroll {
+  justify-content: flex-start;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.screen--dim {
+  background: rgba(74, 53, 72, 0.45);
+  inset: 0;
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 700;
+  color: var(--c-blush-deep);
+  margin: 0;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 3px 0 #fff;
+}
+
+.subtitle {
+  font-size: clamp(18px, 2.2vw, 24px);
+  color: var(--c-ink-soft);
+  margin: 0;
+  text-align: center;
+}
+
+.h2 {
+  font-size: clamp(26px, 3.2vw, 36px);
+  margin: 0;
+  text-align: center;
+}
+
+.card {
+  background: var(--c-card);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px var(--c-shadow);
+  padding: 24px;
+}
+
+.btn {
+  min-width: 220px;
+  min-height: var(--touch-min);
+  padding: 12px 28px;
+  border: none;
+  border-radius: 999px;
+  background: var(--c-blush-deep);
+  color: #fff;
+  font: 700 22px var(--font-body);
+  box-shadow: 0 5px 0 #b95670;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.btn:active,
+.btn.is-pressed {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #b95670;
+}
+
+.btn:disabled {
+  background: #cbbac6;
+  box-shadow: 0 5px 0 #a797a3;
+  color: #f4eef2;
+}
+
+.btn--secondary {
+  background: var(--c-card);
+  color: var(--c-ink);
+  box-shadow: 0 5px 0 #d8c3bd;
+}
+
+.btn--secondary:active {
+  box-shadow: 0 1px 0 #d8c3bd;
+}
+
+.btn--small {
+  min-width: var(--touch-min);
+  font-size: 18px;
+  padding: 10px 18px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tap-hint {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}

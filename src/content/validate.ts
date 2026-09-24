@@ -1,4 +1,5 @@
 import type { ContentRegistry } from './ContentRegistry';
+import { GIFT_ITEM_ID } from './contracts';
 import type { StationKind } from './types';
 
 /**
@@ -132,7 +133,10 @@ export function validateContent(content: ContentRegistry): string[] {
   }
 
   // Systems rely on these ids existing (gifts are carried as the 'gift' item).
-  check(content.items.has('gift') && content.items.get('gift').kind === 'gift', `items: a 'gift' item of kind gift is required`);
+  check(
+    content.items.has(GIFT_ITEM_ID) && content.items.get(GIFT_ITEM_ID).kind === 'gift',
+    `items: a '${GIFT_ITEM_ID}' item of kind gift is required`,
+  );
 
   const info = content.info;
   if (info.endingDialogueId) check(content.dialogues.has(info.endingDialogueId), `info: unknown ending dialogue`);

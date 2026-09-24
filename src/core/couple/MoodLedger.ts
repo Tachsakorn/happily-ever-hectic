@@ -29,9 +29,13 @@ export class MoodLedger {
     return this.state.couple.mood;
   }
 
-  /** Immediate, visible change (a guest storms out, a moment succeeds). */
-  change(delta: number, cause: string, pos: Vec2 | null = null): void {
-    const applied = this.apply(delta, cause);
+  /**
+   * Immediate, visible change (a guest storms out, a moment succeeds).
+   * `ledgerCause` groups many specific causes under one results line
+   * ("Aunt June stormed off" → "Guests stormed off").
+   */
+  change(delta: number, cause: string, pos: Vec2 | null = null, ledgerCause: string = cause): void {
+    const applied = this.apply(delta, ledgerCause);
     if (applied !== 0) this.events.emit({ type: 'moodChanged', delta: applied, mood: this.mood, cause, pos });
   }
 

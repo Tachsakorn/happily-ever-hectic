@@ -1,3 +1,4 @@
+import { GIFT_ITEM_ID } from '../../content/contracts';
 import type { Vec2 } from '../../content/types';
 import { findGuest, transitionGuest } from '../guests/guestMachine';
 import { scheduleNextRequest } from '../guests/GuestSystem';
@@ -16,7 +17,6 @@ import { serveCouple } from '../couple/CoupleSystem';
  */
 export type Resolution = { readonly work: number; readonly perform: () => void } | { readonly skip: string };
 
-const GIFT_ITEM = 'gift';
 
 export function handsUsed(ctx: SimContext): number {
   return ctx.state.planner.hands.reduce((n, id) => n + ctx.content.items.get(id).hands, 0);
@@ -144,14 +144,14 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
     case 'coupleTable':
       return resolveCouple(ctx);
     case 'giftTable': {
-      const count = hands.filter((h) => h === GIFT_ITEM).length;
+      const count = hands.filter((h) => h === GIFT_ITEM_ID).length;
       if (!count) return { skip: 'No gifts in hand' };
       return {
         work: w.dropGifts,
         perform: () => {
           const carried = ctx.state.gifts.filter((g) => g.state === 'carried');
           for (const gift of carried) gift.state = 'delivered';
-          ctx.state.planner.hands = hands.filter((h) => h !== GIFT_ITEM);
+          ctx.state.planner.hands = hands.filter((h) => h !== GIFT_ITEM_ID);
           ctx.state.stats.giftsDelivered += carried.length;
           ctx.events.emit({ type: 'giftsDelivered', count: carried.length, pos: station.pos });
           ctx.score.add(ctx.score.rules.giftDelivered * carried.length, 'Gifts delivered', station.pos);
@@ -160,12 +160,12 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
       };
     }
     case 'bin': {
-      const discardable = hands.filter((h) => h !== GIFT_ITEM);
+      const discardable = hands.filter((h) => h !== GIFT_ITEM_ID);
       if (!discardable.length) return { skip: 'Nothing to throw away' };
       return {
         work: w.discard,
         perform: () => {
-          ctx.state.planner.hands = hands.filter((h) => h === GIFT_ITEM);
+          ctx.state.planner.hands = hands.filter((h) => h === GIFT_ITEM_ID);
           ctx.events.emit({ type: 'itemDiscarded', itemIds: discardable, pos: station.pos });
         },
       };
@@ -245,12 +245,12 @@ export function resolveInteraction(ctx: SimContext, target: TargetRef): Resoluti
     case 'gift': {
       const gift = ctx.state.gifts.find((g) => g.id === target.id && g.state === 'waiting');
       if (!gift) return { skip: 'Gift already handled' };
-      if (!hasRoomFor(ctx, GIFT_ITEM)) return { skip: 'Hands full' };
+      if (!hasRoomFor(ctx, GIFT_ITEM_ID)) return { skip: 'Hands full' };
       return {
         work: ctx.tuning.work.pickUp,
         perform: () => {
           gift.state = 'carried';
-          ctx.state.planner.hands.push(GIFT_ITEM);
+          ctx.state.planner.hands.push(GIFT_ITEM_ID);
           ctx.events.emit({ type: 'giftPickedUp', giftId: gift.id, pos: gift.pos });
         },
       };

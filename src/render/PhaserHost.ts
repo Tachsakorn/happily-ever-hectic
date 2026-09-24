@@ -16,7 +16,7 @@ export class PhaserHost {
   constructor(
     parent: HTMLElement,
     readonly renderScale: number,
-    scenes: Phaser.Types.Scenes.SceneType[],
+    scenes: readonly { key: string; scene: Phaser.Types.Scenes.SceneType }[],
   ) {
     this.game = new Phaser.Game({
       type: Phaser.AUTO,
@@ -32,8 +32,9 @@ export class PhaserHost {
       render: { antialias: true, powerPreference: 'high-performance' },
       banner: false,
       audio: { noAudio: true },
-      scene: scenes,
     });
+    // Registered without auto-start: scenes only run when the app asks, with their data.
+    for (const { key, scene } of scenes) this.game.scene.add(key, scene, false);
   }
 
   /** Applies the design-space camera to a scene. Call from each scene's create(). */
@@ -43,15 +44,33 @@ export class PhaserHost {
     cam.centerOn(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2);
   }
 
+  private isLive(scene: Phaser.Scene): boolean {
+    const sys = scene.sys;
+    return sys.isActive() || sys.isPaused() || sys.isSleeping();
+  }
+
+  /** Stops every other scene and (re)starts `key` with fresh data. */
   start(key: string, data?: object): void {
-    for (const scene of this.game.scene.getScenes(true)) {
-      if (scene.scene.key !== key) this.game.scene.stop(scene.scene.key);
+    for (const scene of this.game.scene.getScenes(false)) {
+      if (this.isLive(scene)) this.game.scene.stop(scene.scene.key);
     }
     this.game.scene.start(key, data);
   }
 
+  pause(key: string): void {
+    const scene = this.game.scene.getScene(key);
+    if (scene?.sys.isActive()) this.game.scene.pause(key);
+  }
+
+  resume(key: string): void {
+    const scene = this.game.scene.getScene(key);
+    if (scene?.sys.isPaused()) this.game.scene.resume(key);
+  }
+
   stopAll(): void {
-    for (const scene of this.game.scene.getScenes(true)) this.game.scene.stop(scene.scene.key);
+    for (const scene of this.game.scene.getScenes(false)) {
+      if (this.isLive(scene)) this.game.scene.stop(scene.scene.key);
+    }
   }
 
   destroy(): void {

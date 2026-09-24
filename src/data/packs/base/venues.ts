@@ -1,10 +1,11 @@
 import type { SeatDef, StationDef, TableDef, VenueDef } from '../../../content/types';
 
 const SEAT_OFFSET = 92;
-const SERVE_OFFSET = 150;
+/** The planner serves from beside the chair (clockwise), so she never covers the guest's bubble. */
+const SERVE_SIDE = 62;
 const TABLE_RADIUS = 62;
 
-/** Four seats around a round table (N, E, S, W), each with a serving spot further out. */
+/** Four seats around a round table (N, E, S, W), each with a serving spot beside it. */
 function roundTable(id: string, x: number, y: number): TableDef {
   const dirs: [string, number, number][] = [
     ['n', 0, -1],
@@ -15,7 +16,8 @@ function roundTable(id: string, x: number, y: number): TableDef {
   const seats: SeatDef[] = dirs.map(([suffix, dx, dy]) => ({
     id: `${id}-${suffix}`,
     pos: { x: x + dx * SEAT_OFFSET, y: y + dy * SEAT_OFFSET },
-    interactPos: { x: x + dx * SERVE_OFFSET, y: y + dy * SERVE_OFFSET },
+    // Perpendicular (clockwise) to the seat direction: (dx, dy) → (-dy, dx).
+    interactPos: { x: x + dx * SEAT_OFFSET - dy * SERVE_SIDE, y: y + dy * SEAT_OFFSET + dx * SERVE_SIDE },
   }));
   return { id, pos: { x, y }, radius: TABLE_RADIUS, seats };
 }

@@ -111,7 +111,7 @@ export function makeUpset(ctx: SimContext, guest: Guest, cause: string): void {
   transitionGuest(ctx, guest, GuestState.UPSET, ctx.tuning.upsetSeconds);
   ctx.state.stats.guestsUpset++;
   ctx.events.emit({ type: 'guestUpset', guestKey: guest.key, pos: guest.pos });
-  ctx.mood.change(-ctx.tuning.mood.guestUpset, cause, guest.pos);
+  ctx.mood.change(-ctx.tuning.mood.guestUpset, cause, guest.pos, 'Guests stormed off');
   ctx.score.add(ctx.score.rules.guestLeftUpset, 'Guest left upset', guest.pos);
   if (tableId && !holdsSeat(guest)) refreshTableMoods(ctx, tableId);
   fillWaitingSlots(ctx);

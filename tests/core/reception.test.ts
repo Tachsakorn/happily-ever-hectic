@@ -43,7 +43,8 @@ describe('guest lifecycle', () => {
     runUntil(sim, () => events.some((e) => e.type === 'guestUpset'), 200, events);
     const moodEvent = events.find((e) => e.type === 'moodChanged' && e.delta < -5);
     expect(moodEvent).toBeDefined();
-    expect(sim.state.moodLedger.get('Guest One stormed off')).toBeLessThan(0);
+    expect(sim.state.moodLedger.get('Guests stormed off')).toBeLessThan(0);
+    expect(events.some((e) => e.type === 'moodChanged' && e.cause === 'Guest One stormed off')).toBe(true);
     runUntil(sim, () => sim.state.guests.length === 0, 30, events);
     expect(events.some((e) => e.type === 'guestLeft')).toBe(true);
     expect(sim.state.stats.guestsUpset).toBe(1);

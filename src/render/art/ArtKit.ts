@@ -85,8 +85,8 @@ export class ArtKit {
     return this.tex.ensure(`icon:${icon}:${color}:${accent ?? ''}`, ICON_SIZE, ICON_SIZE, paintIcon(icon, color, accent));
   }
 
-  bubble(): string {
-    return this.tex.ensure('bubble', 64, 64, paintBubble());
+  bubble(tail: 'down' | 'downLeft' = 'down'): string {
+    return this.tex.ensure(`bubble:${tail}`, 64, 64, paintBubble(0xffffff, tail));
   }
 
   dot(color: number, radius: number, stroke?: number): string {

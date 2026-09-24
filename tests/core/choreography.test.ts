@@ -61,3 +61,19 @@ describe('level item swaps (the finale serves her favourites)', () => {
     for (const id of ['champagne', 'lemonade', 'cake-slice']) expect(requested.has(id)).toBe(false);
   });
 });
+
+describe('gift placement', () => {
+  it('gifts sit beside seated guests: never above the seat (under the guest) and never on the serving side', async () => {
+    const { giftSpot } = await import('../../src/core/guests/GuestSystem');
+    const venue = loadContent().venues.get('garden-hall');
+    for (const table of venue.tables) {
+      for (const seat of table.seats) {
+        const g = giftSpot(seat.pos, seat.interactPos, table.pos);
+        expect(g.y).toBeGreaterThanOrEqual(seat.pos.y);
+        const toServe = Math.hypot(g.x - seat.interactPos.x, g.y - seat.interactPos.y);
+        expect(toServe).toBeGreaterThan(40);
+        expect(Math.hypot(g.x - seat.pos.x, g.y - seat.pos.y)).toBeLessThan(70);
+      }
+    }
+  });
+});

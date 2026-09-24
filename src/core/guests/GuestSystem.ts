@@ -1,3 +1,4 @@
+import type { Vec2 } from '../../content/types';
 import { stepToward } from '../math/vec';
 import type { SimContext, System } from '../sim/SimContext';
 import { GuestState, MAX_HAPPINESS, type Guest } from '../sim/state';
@@ -54,8 +55,7 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
     if (g.tableId) refreshTableMoods(ctx, g.tableId);
     if (g.bringsGift && g.seatId) {
       const { seat, table } = ctx.venue.seat(g.seatId);
-      // Gift is set down on the table in front of the guest, clear of the guest's own tap area.
-      const pos = { x: seat.pos.x + (table.pos.x - seat.pos.x) * 0.6, y: seat.pos.y + (table.pos.y - seat.pos.y) * 0.6 };
+      const pos = giftSpot(seat.pos, seat.interactPos, table.pos);
       ctx.state.gifts.push({ id: ctx.nextId(), guestKey: g.key, pos, state: 'waiting', age: 0 });
     }
   },
@@ -123,3 +123,24 @@ export const GuestSystem: System = {
 };
 
 export { scheduleNextRequest };
+
+const GIFT_SIDE_OFFSET = 46;
+const GIFT_TABLEWARD_OFFSET = 50;
+const GIFT_DROP = 8;
+
+/**
+ * Where a seated guest sets their gift down: beside them, never under their
+ * head (people are drawn standing up from their seat, so anything placed
+ * above a seat hides behind them) and never on the side the planner serves
+ * from. Guests at the top or bottom of a table put it beside their chair;
+ * guests at the sides put it on the table's edge in front of them.
+ */
+export function giftSpot(seat: Vec2, serveSpot: Vec2, table: Vec2): Vec2 {
+  const dx = seat.x - table.x;
+  const dy = seat.y - table.y;
+  if (Math.abs(dy) >= Math.abs(dx)) {
+    const away = Math.sign(seat.x - serveSpot.x) || 1;
+    return { x: seat.x + away * GIFT_SIDE_OFFSET, y: seat.y + GIFT_DROP };
+  }
+  return { x: seat.x - Math.sign(dx) * GIFT_TABLEWARD_OFFSET, y: seat.y + GIFT_DROP + 2 };
+}

@@ -277,7 +277,7 @@ export class ReceptionScene extends Phaser.Scene {
       case 'coupleRequested':
         if (!e.momentId) {
           const pos = venue.couplePos;
-          this.floating.show({ x: pos.x - 150, y: pos.y - 60 }, `Could we get ${ctx.content.items.get(e.itemId).name}?`, Colors.inkCss, 18);
+          this.floating.show({ x: pos.x + 116, y: pos.y - 40 }, `Could we get ${ctx.content.items.get(e.itemId).name}?`, Colors.inkCss, 18);
         }
         break;
       case 'receptionEnded':

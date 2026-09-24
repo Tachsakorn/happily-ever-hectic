@@ -1,8 +1,8 @@
 import { disc, flat, FONT_DISPLAY, hex, INK, LINE, outline, oval, rrect, shade, toon, type Painter } from './canvas';
 import { heartPath } from './items';
 
-/** Speech bubble, 64×64, tail pointing down at the speaker. */
-export function paintBubble(fill = 0xffffff): Painter {
+/** Speech bubble, 64×64, tail pointing down at the speaker (or down-left, for a speaker beside it). */
+export function paintBubble(fill = 0xffffff, tail: 'down' | 'downLeft' = 'down'): Painter {
   return (c) => {
     const p = new Path2D();
     const x = 5;
@@ -13,9 +13,15 @@ export function paintBubble(fill = 0xffffff): Painter {
     p.moveTo(x + r, y);
     p.arcTo(x + w, y, x + w, y + h, r);
     p.arcTo(x + w, y + h, x, y + h, r);
-    p.lineTo(40, y + h);
-    p.lineTo(32, 60);
-    p.lineTo(26, y + h);
+    if (tail === 'down') {
+      p.lineTo(40, y + h);
+      p.lineTo(32, 60);
+      p.lineTo(26, y + h);
+    } else {
+      p.lineTo(34, y + h);
+      p.lineTo(4, 61);
+      p.lineTo(22, y + h);
+    }
     p.arcTo(x, y + h, x, y, r);
     p.arcTo(x, y, x + w, y, r);
     p.closePath();

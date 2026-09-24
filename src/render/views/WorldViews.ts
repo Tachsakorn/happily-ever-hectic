@@ -13,6 +13,7 @@ import { stationItem } from '../../core/sim/items';
 const COUPLE_SCALE = 1.2;
 const COUPLE_HAPPY = 60;
 const COUPLE_UPSET = 30;
+const COUPLE_BUBBLE_OFFSET = { x: 116, y: -104 };
 
 /** The couple at the sweetheart table and whatever they are asking for. */
 export class CoupleView {
@@ -40,10 +41,14 @@ export class CoupleView {
     this.baseY = y + 8;
     this.a = tex.image(scene, x - 38, this.baseY, art.partner(wedding.partnerA)).setOrigin(0.5, FEET_ORIGIN_Y).setScale(COUPLE_SCALE / tex.scale).setDepth(Depth.actorsBase + y - 40);
     this.b = tex.image(scene, x + 38, this.baseY, art.partner(wedding.partnerB)).setOrigin(0.5, FEET_ORIGIN_Y).setScale(COUPLE_SCALE / tex.scale).setDepth(Depth.actorsBase + y - 40);
-    const bubbleBg = tex.image(scene, 0, 0, art.bubble()).setScale(1.25 / tex.scale);
+    const bubbleBg = tex.image(scene, 0, 0, art.bubble('downLeft')).setScale(1.25 / tex.scale);
     this.bubbleIcon = tex.image(scene, 0, -8, art.icon('menu')).setScale(1.2 / tex.scale);
-    // Beside the couple (left), clear of the HUD row above.
-    this.bubble = scene.add.container(x - 150, y + 2, [bubbleBg, this.bubbleIcon]).setDepth(Depth.bubbles + 400).setVisible(false);
+    // Up and to the right of the couple, tail pointing at them: nowhere near a
+    // guest's chair, so it never reads as a guest's request (playtest, day 1).
+    this.bubble = scene.add
+      .container(x + COUPLE_BUBBLE_OFFSET.x, y + COUPLE_BUBBLE_OFFSET.y, [bubbleBg, this.bubbleIcon])
+      .setDepth(Depth.bubbles + 400)
+      .setVisible(false);
     this.timer = scene.add.graphics().setDepth(Depth.bubbles + 401);
   }
 

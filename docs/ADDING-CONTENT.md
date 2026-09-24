@@ -1,0 +1,69 @@
+# Adding content
+
+All content is data in `src/data/packs/*`. After any change run `pnpm check`: the content
+integrity test reports broken references (unknown ids, missing stations, impossible timings).
+
+## A new guest type
+
+Add to `guestTypes` in `src/data/packs/base/people.ts`:
+
+```ts
+{
+  id: 'influencer',
+  name: 'Influencer',
+  patienceSeconds: 40,          // full → zero happiness while waiting
+  eatSeconds: 8,
+  requestIntervalSeconds: [15, 25],
+  requestPool: [{ itemId: 'champagne', weight: 5 }, { itemId: 'cake-slice', weight: 2, requiresFlag: 'cake-cut' }],
+  traitIds: ['social', 'demanding'],
+  visual: { color: 0xf2c9a8, icon: 'party' },   // icon: guest | grandparent | party | foodie | kid | boss
+}
+```
+
+New behaviour that is just numbers → a new **trait** (`traits`, same file) with `modifiers`,
+`sameGroupBonus` or `otherGroupBonus`. Only genuinely new behaviour needs code: a new state handler in
+`core/guests/GuestSystem.ts` plus its transitions in `guestMachine.ts`.
+
+## A new disaster
+
+Add to `disasters` in `src/data/packs/base/chaos.ts`, then list its id in a level's `disasterIds`:
+
+```ts
+{
+  id: 'wilting-flowers',
+  name: 'Wilting Flowers',
+  hint: 'The centrepiece is wilting! Tap the table to freshen it up.',
+  trigger: { kind: 'random', from: 40, to: 180, chancePerSecond: 0.015 },
+  target: { kind: 'occupiedTable' },
+  warningSeconds: 6, activeSeconds: 10, escalatedSeconds: 8,
+  warning: { moodPerSecond: 0.2 },
+  active: { moodPerSecond: 0.8, guestDrainMultiplier: 1.4, guestScope: 'table' },
+  escalated: { moodPerSecond: 1.5, guestDrainMultiplier: 2, guestScope: 'table' },
+  workSeconds: 1.5,
+  resolvedEarly: { mood: 4, score: 90 }, resolved: { mood: 2, score: 50 }, failed: { mood: -8, score: -40 },
+  maxOccurrences: 1, cooldownSeconds: 60,
+  visual: { color: 0x9dbf6a, icon: 'alert' },
+}
+```
+
+Triggers: `scheduled`, `random`, `seatingConflict`. Targets: `station`, `conflictTable`,
+`occupiedTable`, `floorSpot`. Effects: mood drain, guest patience drain (scoped), planner slow-down,
+music silence. A genuinely new mechanic = one new trigger/target kind in
+`core/disasters/disasterKinds.ts`; a new icon = one case in `render/art/painters.ts`.
+
+## A new wedding and level
+
+1. Add a `WeddingDef` to `weddings` (couple, outfits, what they love, menu, couple requests).
+2. Add a `LevelDef` to `levels` (`src/data/packs/base/weddings.ts`): venue, duration, guest list
+   (use the `guest(key, name, type, group, arriveAt, { bringsGift, likes, dislikes })` helper),
+   disasters, moments (`toast`, `cake-cutting`), kitchen, star scores, coins, unlock chain, dialogue ids.
+3. Add intro/outro lines to `dialogues` in `meta.ts`.
+4. Run `pnpm vitest run tests/balance.test.ts --silent=false` and set `starScores` to roughly
+   45% / 70% / 90% of the autoplayer's median score.
+
+## A new venue
+
+Add a `VenueDef` (stations, tables, waiting spots, pass slots, obstacles, aisle waypoints) and a
+drawing for any new station kind in `render/art/venuePainter.ts`. Required stations: `kitchenPass`,
+`coupleTable`, `giftTable`, `bin`, plus a station providing every item any guest or moment asks for —
+validation tells you what is missing.

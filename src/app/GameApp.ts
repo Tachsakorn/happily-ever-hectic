@@ -41,14 +41,19 @@ export interface GameAppDeps {
 export class GameApp {
   private readonly flow = new AppFlow<FlowContext>({ levelId: null, decorId: null, result: null, outcome: null });
   private readonly audioDirector: AudioDirector;
-  session: ReceptionSession | null = null;
+  private session: ReceptionSession | null = null;
   private save: SaveData;
 
-  constructor(readonly deps: GameAppDeps) {
+  constructor(private readonly deps: GameAppDeps) {
     this.save = deps.saves.load();
     this.audioDirector = new AudioDirector(deps.audio, deps.content);
     this.applySettings(this.save.settings);
     this.flow.subscribe((c) => this.onState(c));
+  }
+
+  /** The running reception, for automated smoke tests only (see main.ts `?debug`). */
+  get activeSession(): ReceptionSession | null {
+    return this.session;
   }
 
   start(): void {

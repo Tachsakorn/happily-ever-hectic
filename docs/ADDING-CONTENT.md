@@ -65,6 +65,20 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
 ## A new venue
 
 Add a `VenueDef` (stations, tables, waiting spots, pass slots, obstacles, aisle waypoints) and a
-drawing for any new station kind in `render/art/venuePainter.ts`. Required stations: `kitchenPass`,
+drawing for any new station kind in `art/venuePainter.ts`. Required stations: `kitchenPass`,
 `coupleTable`, `giftTable`, `bin`, plus a station providing every item any guest or moment asks for —
 validation tells you what is missing.
+
+## Decor and shop upgrades
+
+Decor lives in `data/packs/base/meta.ts` (`decor`). `visual.color` tints tables and flowers in the venue;
+`visual.icon` picks the picture on the preparation screen (`bouquet`, `lantern`, `candles`, `tropical`;
+anything else falls back to the bouquet). Upgrades (`upgrades`) take an optional `icon` from the UI icon
+set (`chair`, `shoe`, `chef`, `walkie`, `violin`, …); unknown names fall back to a heart.
+
+## How a couple looks
+
+A `CharacterDef` may carry a `look` (skin, hair colour, `hairStyle`, `shirt`, `accessory`,
+`signatureMood`). The same look drives the in-game sprite, the dialogue portrait, the title-screen
+couple and the invitation on the preparation screen (`art/characters.ts`). Dialogue speakers who are
+not partners in any wedding get a stable everyday look from their name.

@@ -4,13 +4,24 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  phaser@4.2.1:
+    hash: 163575e79e185809aa39fb9b40a8cc63b633e5a0f03498aaf15225a430f96644
+    path: patches/phaser@4.2.1.patch
+
 importers:
 
   .:
     dependencies:
+      '@fontsource/baloo-2':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/lilita-one':
+        specifier: ^5.3.0
+        version: 5.3.0
       phaser:
         specifier: 4.2.1
-        version: 4.2.1
+        version: 4.2.1(patch_hash=163575e79e185809aa39fb9b40a8cc63b633e5a0f03498aaf15225a430f96644)
     devDependencies:
       eslint:
         specifier: 10.11.0
@@ -71,6 +82,12 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@fontsource/baloo-2@5.3.0':
+    resolution: {integrity: sha512-CBuxZ27jvMmD5+KaaPkMWv/yjdRNppVAd5/002yAyvyQyLNL3aZCbkx6gbAT/bjxPd1A0VMdDQjfcELI8chccQ==}
+
+  '@fontsource/lilita-one@5.3.0':
+    resolution: {integrity: sha512-bNW3tD+m5pOsAQpW/NvtRbFthFe+B73hDJK2DLLCFCtF+1p+UMBgo7ibxdcb9Sftr06LKAVbt080wiMdSqGbOg==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -887,6 +904,10 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
+  '@fontsource/baloo-2@5.3.0': {}
+
+  '@fontsource/lilita-one@5.3.0': {}
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -1379,7 +1400,7 @@ snapshots:
 
   path-key@3.1.1: {}
 
-  phaser@4.2.1:
+  phaser@4.2.1(patch_hash=163575e79e185809aa39fb9b40a8cc63b633e5a0f03498aaf15225a430f96644):
     dependencies:
       eventemitter3: 5.0.4
 

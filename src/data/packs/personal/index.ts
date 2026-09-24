@@ -23,8 +23,8 @@ export const personalPack: ContentPack = {
     {
       id: 'our-wedding',
       title: `${a.name} & ${b.name}`,
-      partnerA: { id: 'partner-a', name: a.name, visual: { color: a.outfitColor, accent: a.hairColor, icon: a.outfit } },
-      partnerB: { id: 'partner-b', name: b.name, visual: { color: b.outfitColor, accent: b.hairColor, icon: b.outfit } },
+      partnerA: { id: 'partner-a', name: a.name, visual: { color: a.outfitColor, accent: a.hairColor, icon: a.outfit }, look: a.look },
+      partnerB: { id: 'partner-b', name: b.name, visual: { color: b.outfitColor, accent: b.hairColor, icon: b.outfit }, look: b.look },
       lovesTags: personal.lovesTags,
       menuItemIds: ['roast-chicken', 'salmon', 'risotto'],
       coupleRequestItemIds: ['champagne', 'lemonade'],

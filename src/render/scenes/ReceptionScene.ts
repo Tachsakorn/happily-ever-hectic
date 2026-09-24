@@ -6,7 +6,7 @@ import type { TargetRef } from '../../core/sim/state';
 import { findGuest } from '../../core/guests/guestMachine';
 import { ArtKit } from '../art/ArtKit';
 import { TextureFactory } from '../art/TextureFactory';
-import { paintVenue, type DecorLook } from '../art/venuePainter';
+import { paintVenue, type DecorLook } from '../../art/venuePainter';
 import { SceneKey } from '../config';
 import { ReceptionInput } from '../input/ReceptionInput';
 import { PhaserHost } from '../PhaserHost';
@@ -19,6 +19,7 @@ import { PlannerView } from '../views/PlannerView';
 import { GuestCard, SeatingOverlay, TapFeedback } from '../views/SeatingViews';
 import { CoupleView, PropsView } from '../views/WorldViews';
 import { KitchenView } from '../views/KitchenView';
+import { Fx } from '../fx/Fx';
 
 export interface ReceptionSceneData {
   readonly session: ReceptionSession;
@@ -51,6 +52,7 @@ export class ReceptionScene extends Phaser.Scene {
   private floating!: FloatingTextLayer;
   private hud!: Hud;
   private banner!: Banner;
+  private fx!: Fx;
   private overlay!: SeatingOverlay;
   private card!: GuestCard;
   private input_!: ReceptionInput;
@@ -76,17 +78,18 @@ export class ReceptionScene extends Phaser.Scene {
     const venue = ctx.venue.def;
     const bgScale = Math.min(renderScale, BACKGROUND_MAX_SCALE);
     const bgKey = `venue:${venue.id}:${data.decor.flower}:${data.decor.cloth}`;
-    this.tex.ensure(bgKey, venue.size.width, venue.size.height, paintVenue(venue, data.decor), bgScale);
+    this.tex.ensure(bgKey, venue.size.width, venue.size.height, paintVenue(venue, data.decor, (id) => session.content.items.get(id).visual.color), bgScale);
     this.tex.image(this, venue.size.width / 2, venue.size.height / 2, bgKey, bgScale).setDepth(0);
 
+    this.fx = new Fx(this, this.tex);
     this.props = new PropsView(this, this.art, this.tex, sim);
-    this.kitchen = new KitchenView(this, this.art, this.tex, sim, renderScale);
-    this.couple = new CoupleView(this, this.art, this.tex, sim, ctx.wedding);
-    this.planner = new PlannerView(this, this.art, this.tex, sim, renderScale, (t) => this.positionOf(t));
+    this.kitchen = new KitchenView(this, this.art, this.tex, sim, renderScale, this.fx);
+    this.couple = new CoupleView(this, this.art, this.tex, sim, ctx.wedding, this.fx);
+    this.planner = new PlannerView(this, this.art, this.tex, sim, renderScale, (t) => this.positionOf(t), this.fx);
     this.disasters = new DisasterLayer(this, this.art, this.tex, sim);
     this.floating = new FloatingTextLayer(this, renderScale);
-    this.hud = new Hud(this, this.art, this.tex, sim, renderScale, ctx.level, ctx.wedding);
-    this.banner = new Banner(this, this.tex, renderScale);
+    this.hud = new Hud(this, this.art, this.tex, sim, renderScale, ctx.level, ctx.wedding, this.fx);
+    this.banner = new Banner(this, this.tex, this.art, renderScale);
     this.overlay = new SeatingOverlay(this, sim, renderScale);
     this.card = new GuestCard(this, sim, this.tex, renderScale);
     const taps = new TapFeedback(this, this.art, this.tex);
@@ -97,7 +100,7 @@ export class ReceptionScene extends Phaser.Scene {
       plannerHit: (p) => this.planner.hitTest(p),
     });
 
-    for (const tip of ctx.level.tutorialTips) this.banner.show(tip, Colors.inkCss, 5);
+    for (const tip of ctx.level.tutorialTips) this.banner.show(tip, 'info', 5);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
   }
@@ -111,15 +114,15 @@ export class ReceptionScene extends Phaser.Scene {
       this.sceneData.onEvents(events);
     }
 
-    this.syncGuests();
-    this.input_.validateSelection();
     const dt = deltaMs / 1000;
+    this.syncGuests(session.paused ? 0 : dt);
+    this.input_.validateSelection();
     this.planner.sync(dt);
     this.couple.sync(dt);
     this.props.sync(time);
     this.kitchen.sync(dt);
     this.disasters.sync(time);
-    this.hud.sync();
+    this.hud.sync(dt);
     // Announcements wait while paused (e.g. during the intro dialogue) so none are missed.
     if (!session.paused) this.banner.update(time);
 
@@ -129,16 +132,16 @@ export class ReceptionScene extends Phaser.Scene {
     }
   }
 
-  private syncGuests(): void {
+  private syncGuests(dt: number): void {
     const selected = this.input_.selectedGuest;
     const state = this.sceneData.session.sim.state;
     for (const g of state.guests) {
       let view = this.guests.get(g.key);
       if (!view) {
-        view = new GuestView(this, this.art, this.tex, g);
+        view = new GuestView(this, this.art, this.tex, this.fx, g);
         this.guests.set(g.key, view);
       }
-      view.sync(g, g.key === selected);
+      view.sync(g, g.key === selected, dt);
     }
     if (this.guests.size !== state.guests.length) {
       for (const [key, view] of this.guests) {
@@ -185,9 +188,10 @@ export class ReceptionScene extends Phaser.Scene {
     }
   }
 
-  /** Turns domain events into readable feedback. */
+  /** Turns domain events into readable feedback: words for what happened, juice for how it felt. */
   private present(e: DomainEvent): void {
     const ctx = this.sceneData.session.sim.context;
+    const venue = ctx.venue.def;
     const moodAnchor = { x: 250, y: 150 };
     switch (e.type) {
       case 'moodChanged':
@@ -195,44 +199,103 @@ export class ReceptionScene extends Phaser.Scene {
         // second would bury the one-off changes the player needs to notice.
         if (!e.ongoing) this.floating.mood(e.pos ?? moodAnchor, e.delta, e.cause);
         this.hud.pushCause(e.delta, e.cause);
+        if (!e.ongoing && e.delta >= 3) this.fx.hearts({ x: venue.couplePos.x, y: venue.couplePos.y - 100 }, 3, 70);
         break;
       case 'scoreChanged':
-        if (e.pos && Math.abs(e.delta) >= 10) this.floating.score(e.pos, e.delta);
+        if (e.pos && Math.abs(e.delta) >= 10) {
+          this.floating.score(e.pos, e.delta);
+          if (e.delta > 0) this.coinsToHud(e.pos, e.delta);
+        }
         break;
       case 'momentStarted': {
         const m = ctx.content.moments.get(e.momentId);
-        this.banner.show(`💍 ${m.announcement}`, Colors.inkCss, 5, true);
+        this.banner.show(m.announcement, 'moment', 5, true);
         break;
       }
       case 'momentCompleted':
-        this.banner.show(`✨ ${ctx.content.moments.get(e.momentId).name}! The guests cheer!`, Colors.goodCss, 3, true);
+        this.banner.show(`${ctx.content.moments.get(e.momentId).name}! The guests cheer!`, 'good', 3, true);
+        this.couple.celebrate();
+        this.fx.confetti({ x: venue.couplePos.x, y: venue.couplePos.y - 40 }, 30, 190);
+        break;
+      case 'momentFailed':
+        this.cameras.main.shake(200, 0.003);
         break;
       case 'disasterStarted':
-        this.banner.show(`⚠️ ${ctx.content.disasters.get(e.defId).hint}`, Colors.badCss, 4.5, true);
+        this.banner.show(ctx.content.disasters.get(e.defId).hint, 'bad', 4.5, true);
+        this.fx.puff(e.pos, 4);
+        break;
+      case 'disasterPhaseChanged':
+        if (e.phase === 'ESCALATED') this.cameras.main.shake(220, 0.004);
+        break;
+      case 'disasterResolved':
+        this.fx.sparkles(e.pos, 10, 60, 0xfff1c4);
+        this.planner.cheer();
+        break;
+      case 'disasterFailed':
+        this.fx.puff(e.pos, 5, 'steam');
+        this.cameras.main.shake(260, 0.006);
         break;
       case 'guestSeated':
-        if (e.neighbourScore > 0.25) this.floating.show(e.pos, '♥ Great seat!', Colors.goodCss, 18);
-        else if (e.neighbourScore < -0.25) this.floating.show(e.pos, 'Uh oh… bad company', Colors.badCss, 18);
+        if (e.neighbourScore > 0.25) {
+          this.floating.show(e.pos, '♥ Great seat!', Colors.goodCss, 20);
+          this.fx.hearts({ x: e.pos.x, y: e.pos.y - 80 }, 3, 30);
+        } else if (e.neighbourScore < -0.25) this.floating.show(e.pos, 'Uh oh… bad company', Colors.badCss, 20);
+        break;
+      case 'orderTaken':
+        this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 120 }, 5, 30);
+        break;
+      case 'itemPickedUp':
+      case 'giftPickedUp':
+        this.planner.notePickup({ x: e.pos.x, y: e.pos.y - 20 });
+        break;
+      case 'itemServed':
+        this.planner.cheer();
+        this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 60 }, 7, 44);
+        if (e.to === 'couple') this.couple.celebrate();
+        break;
+      case 'giftsDelivered':
+        this.planner.cheer();
+        this.fx.sparkles(e.pos, 8, 50, 0xbfe3ff);
+        break;
+      case 'itemDiscarded':
+        this.fx.puff(e.pos, 2);
         break;
       case 'actionSkipped':
-        this.floating.show({ x: e.pos.x, y: e.pos.y - 110 }, e.reason, '#8a7688', 17);
+        this.floating.show({ x: e.pos.x, y: e.pos.y - 110 }, e.reason, '#8a7688', 18);
         break;
       case 'coupleRequested':
         if (!e.momentId) {
-          const pos = ctx.venue.def.couplePos;
-          this.floating.show({ x: pos.x - 150, y: pos.y - 60 }, `Could we get ${ctx.content.items.get(e.itemId).name}?`, Colors.inkCss, 17);
+          const pos = venue.couplePos;
+          this.floating.show({ x: pos.x - 150, y: pos.y - 60 }, `Could we get ${ctx.content.items.get(e.itemId).name}?`, Colors.inkCss, 18);
         }
         break;
       case 'receptionEnded':
-        this.banner.show(
-          e.outcome === 'COMPLETE' ? '🎉 What a wedding! The reception is over.' : '💔 The couple is heartbroken… the reception is over.',
-          e.outcome === 'COMPLETE' ? Colors.goodCss : Colors.badCss,
-          3,
-          true,
-        );
+        if (e.outcome === 'COMPLETE') {
+          this.banner.show('What a wedding! The reception is over.', 'good', 3, true);
+          this.fx.rain(venue.size.width, 80);
+          this.couple.celebrate();
+        } else {
+          this.banner.show('The couple is heartbroken… the reception is over.', 'bad', 3, true);
+          this.cameras.main.shake(300, 0.005);
+        }
         break;
       default:
         break;
+    }
+  }
+
+  /** A few coins arc from where points were earned to the score counter. */
+  private coinsToHud(from: Vec2, points: number): void {
+    const count = Math.min(5, Math.max(1, Math.round(points / 40)));
+    const key = this.art.icon('coin', 0xf2b84b);
+    const to = this.hud.scoreAnchor;
+    for (let i = 0; i < count; i++) {
+      this.fx.fly(key, { x: from.x + (i - count / 2) * 10, y: from.y - 40 }, to, {
+        scale: 0.6,
+        duration: 560,
+        delay: i * 70,
+        onArrive: i === count - 1 ? () => this.fx.sparkles(to, 5, 26, 0xfff1c4) : undefined,
+      });
     }
   }
 
@@ -247,6 +310,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.disasters?.destroy();
     this.overlay?.destroy();
     this.hud?.destroy();
+    this.fx?.destroy();
     this.ghost?.destroy();
     this.ghost = null;
   }

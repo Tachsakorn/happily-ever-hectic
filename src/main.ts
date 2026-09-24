@@ -6,6 +6,7 @@ import { SynthAudioService } from './platform/audio/SynthAudioService';
 import { LocalStorageSaveService } from './platform/save/SaveService';
 import { computeRenderScale } from './platform/viewport/renderScale';
 import { installTouchHardening } from './platform/viewport/touchHardening';
+import { loadGameFonts } from './platform/fonts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH, SceneKey } from './render/config';
 import { PhaserHost } from './render/PhaserHost';
 import { ReceptionScene } from './render/scenes/ReceptionScene';
@@ -32,12 +33,21 @@ const long = Math.max(window.screen.width, window.screen.height);
 const short = Math.min(window.screen.width, window.screen.height);
 const renderScale = computeRenderScale(long, short, window.devicePixelRatio || 1, DESIGN_WIDTH, DESIGN_HEIGHT);
 
+await loadGameFonts();
+
+const audio = new SynthAudioService();
+const uiLayer = requireElement('ui-layer');
+// Every menu button clicks audibly; screens stay free of audio concerns.
+uiLayer.addEventListener('pointerdown', (e) => {
+  if (e.target instanceof Element && e.target.closest('.btn:not(:disabled), .map-node, .decor-tile')) audio.play('tap');
+});
+
 const app = new GameApp({
   content,
   saves: new LocalStorageSaveService(),
-  audio: new SynthAudioService(),
+  audio,
   host: new PhaserHost(requireElement('game-layer'), renderScale, [{ key: SceneKey.RECEPTION, scene: ReceptionScene }]),
-  screens: new ScreenStack(requireElement('ui-layer')),
+  screens: new ScreenStack(uiLayer, requireElement('curtain')),
 });
 app.start();
 // Debug handle for automated smoke tests (?debug in the URL). Not used by the game itself.

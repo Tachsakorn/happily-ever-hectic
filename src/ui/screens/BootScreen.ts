@@ -1,5 +1,8 @@
+import { paintMenuBackdrop } from '../../art/scenery';
 import { DomScreen } from '../Screen';
 import { h } from '../dom';
+import { backdrop, petals } from '../paint';
+import { logo } from './common';
 
 /**
  * First screen. Its tap is the user gesture iOS requires before audio can
@@ -7,7 +10,7 @@ import { h } from '../dom';
  */
 export class BootScreen extends DomScreen {
   constructor(
-    private readonly title: string,
+    private readonly vm: { title: string; tagline: string },
     private readonly onStart: () => void,
   ) {
     super();
@@ -17,10 +20,17 @@ export class BootScreen extends DomScreen {
     const el = h(
       'div',
       { class: 'screen boot-screen' },
-      h('h1', { class: 'title', text: this.title }),
-      h('p', { class: 'subtitle tap-hint', text: 'Tap anywhere to begin' }),
+      backdrop((w, hgt) => paintMenuBackdrop(w, hgt, { seed: 4 }), this.disposer),
+      petals(12),
+      h('div', { class: 'boot__stack' }, logo(this.vm.title), h('p', { class: 'tagline', text: this.vm.tagline })),
+      h('div', { class: 'tap-hint' }, h('span', { class: 'tap-hint__dot' }), 'Tap anywhere to begin'),
     );
-    this.disposer.listen(el, 'click', () => this.onStart());
+    let started = false;
+    this.disposer.listen(el, 'click', () => {
+      if (started) return;
+      started = true;
+      this.onStart();
+    });
     return el;
   }
 }

@@ -8,7 +8,7 @@ import type { SaveService } from '../platform/save/SaveService';
 import { SceneKey } from '../render/config';
 import type { PhaserHost } from '../render/PhaserHost';
 import type { ReceptionSceneData } from '../render/scenes/ReceptionScene';
-import type { Screen, ScreenStack } from '../ui/Screen';
+import type { Screen, ScreenStack, ScreenTransition } from '../ui/Screen';
 import { BootScreen } from '../ui/screens/BootScreen';
 import { DialogueScreen } from '../ui/screens/DialogueScreen';
 import { PauseScreen, PlayingScreen, ResultsScreen } from '../ui/screens/InPlayScreens';
@@ -17,7 +17,8 @@ import { MainMenuScreen } from '../ui/screens/MainMenuScreen';
 import { PrepScreen } from '../ui/screens/PrepScreen';
 import { AppFlow, AppState, type AppStateId, type StateChange } from './AppFlow';
 import { AudioDirector } from './AudioDirector';
-import { decorLook, levelCards, nextLevelId, prepVM, resultsVM, shopItems } from './viewModels';
+import type { UiCue } from '../ui/screens/common';
+import { decorLook, dialogueVM, levelCards, menuVM, nextLevelId, prepVM, resultsVM, shopItems } from './viewModels';
 
 interface FlowContext {
   levelId: string | null;
@@ -68,9 +69,14 @@ export class GameApp {
     this.flow.transition(to, patch);
   }
 
-  private show(screen: Screen | null): void {
-    this.deps.screens.show(screen);
+  /** Menus wipe with the curtain; in-play overlays (playing, pause) cut instantly. */
+  private show(screen: Screen | null, transition: ScreenTransition = 'curtain'): void {
+    this.deps.screens.show(screen, transition);
   }
+
+  private cue = (cue: UiCue): void => {
+    this.deps.audio.play(cue);
+  };
 
   private persist(next: SaveData): void {
     this.save = next;
@@ -88,7 +94,8 @@ export class GameApp {
   };
 
   private screenForBoot(): Screen {
-    return new BootScreen(this.deps.content.info.title, () => {
+    const { info } = this.deps.content;
+    return new BootScreen({ title: info.title, tagline: info.tagline }, () => {
       this.deps.audio.unlock();
       this.deps.audio.play('tap');
       this.go(AppState.MAIN_MENU);
@@ -102,10 +109,7 @@ export class GameApp {
         audio.setMusicPlaying(true);
         audio.setMusicDucked(false);
         this.show(
-          new MainMenuScreen(
-            { title: content.info.title, tagline: content.info.tagline, settings: this.save.settings },
-            { play: () => this.go(AppState.PROGRESSION), settings: this.updateSettings },
-          ),
+          new MainMenuScreen(menuVM(content, this.save), { play: () => this.go(AppState.PROGRESSION), settings: this.updateSettings }),
         );
         break;
 
@@ -128,6 +132,7 @@ export class GameApp {
                 this.persist(next);
                 return { coins: next.coins, shop: shopItems(content, next) };
               },
+              cue: this.cue,
             },
           ),
         );
@@ -140,6 +145,7 @@ export class GameApp {
           new PrepScreen(prepVM(content, this.save, levelId), {
             start: (decorId) => this.go(AppState.RECEPTION_INTRO, { decorId }),
             back: () => this.go(AppState.PROGRESSION),
+            cue: this.cue,
           }),
         );
         break;
@@ -149,7 +155,7 @@ export class GameApp {
         this.startSession();
         const level = content.levels.get(this.requireLevel());
         const intro = level.introDialogueId ? content.dialogues.get(level.introDialogueId).lines : [];
-        this.show(new DialogueScreen(intro, { onDone: () => this.go(AppState.RECEPTION_PLAYING), doneLabel: 'Start the reception!' }));
+        this.show(new DialogueScreen(dialogueVM(content, intro, level.id), { onDone: () => this.go(AppState.RECEPTION_PLAYING), doneLabel: 'Let’s go!' }));
         break;
       }
 
@@ -157,7 +163,7 @@ export class GameApp {
         if (this.session) this.session.paused = false;
         host.resume(SceneKey.RECEPTION);
         audio.setMusicDucked(false);
-        this.show(new PlayingScreen(() => this.go(AppState.PAUSED)));
+        this.show(new PlayingScreen(() => this.go(AppState.PAUSED)), 'cut');
         break;
 
       case AppState.PAUSED:
@@ -174,6 +180,7 @@ export class GameApp {
               settings: this.updateSettings,
             },
           ),
+          'cut',
         );
         break;
 
@@ -209,6 +216,7 @@ export class GameApp {
         retry: () => this.go(AppState.WEDDING_PREPARATION, { levelId: level.id }),
         next: () => next && this.go(AppState.WEDDING_PREPARATION, { levelId: next }),
         map: () => this.go(AppState.PROGRESSION),
+        cue: this.cue,
       });
 
     const isFinal = content.info.finalLevelId === level.id && success;
@@ -218,7 +226,7 @@ export class GameApp {
       audio.play('cheer');
       this.persist({ ...this.save, seenEnding: true });
       this.show(
-        new DialogueScreen(content.dialogues.get(endingId).lines, {
+        new DialogueScreen(dialogueVM(content, content.dialogues.get(endingId).lines, level.id), {
           onDone: () => this.show(results()),
           doneLabel: 'See the results',
           variant: 'ending',
@@ -228,7 +236,7 @@ export class GameApp {
     };
 
     const outro = success && level.outroDialogueId ? content.dialogues.get(level.outroDialogueId).lines : [];
-    if (outro.length) this.show(new DialogueScreen(outro, { onDone: showEnding, doneLabel: 'Continue' }));
+    if (outro.length) this.show(new DialogueScreen(dialogueVM(content, outro, level.id), { onDone: showEnding, doneLabel: 'Continue' }));
     else showEnding();
   }
 

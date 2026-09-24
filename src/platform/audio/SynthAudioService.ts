@@ -72,6 +72,12 @@ const SFX: Record<SfxId, Note[]> = {
     { f: N('C4'), t: 0.6, d: 0.6, type: 'triangle' },
   ],
   coin: [{ f: N('B5'), t: 0, d: 0.06, type: 'square', v: 0.07 }, { f: N('E6'), t: 0.06, d: 0.16, type: 'square', v: 0.07 }],
+  star: [
+    { f: N('E6'), t: 0, d: 0.09, type: 'triangle', v: 0.12 },
+    { f: N('B6'), t: 0.07, d: 0.22, type: 'sine', v: 0.1 },
+  ],
+  whoosh: [{ f: N('C5'), t: 0, d: 0.22, type: 'sine', v: 0.05, slide: 500 }],
+  pop: [{ f: N('A5'), t: 0, d: 0.05, type: 'sine', v: 0.09, slide: 300 }],
 };
 
 /** A gentle waltz (3/4) over I–vi–IV–V: melody on beat one, chord on two and three. */

@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import type { ArtKit } from '../art/ArtKit';
-import { paintPanel } from '../art/painters';
+import { paintPanel } from '../../art/painters';
+import { stovePos } from '../../art/venuePainter';
+import type { Fx } from '../fx/Fx';
 import type { TextureFactory } from '../art/TextureFactory';
 import { Colors, Depth, makeText } from '../ui/text';
 
@@ -26,8 +28,12 @@ export class KitchenView {
   private readonly tickets: Ticket[] = [];
   private readonly bars: Phaser.GameObjects.Graphics;
   private readonly origin: { x: number; y: number };
+  private readonly chefY: number;
   private shownPass = '';
+  private shownOrders = 0;
   private t = 0;
+  private steam = 0;
+  private readonly stove: { x: number; y: number } | null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -35,12 +41,15 @@ export class KitchenView {
     private readonly tex: TextureFactory,
     private readonly sim: ReceptionSimulation,
     renderScale: number,
+    private readonly fx: Fx,
   ) {
     const venue = sim.context.venue.def;
+    this.stove = stovePos(venue);
     const kitchen = venue.stations.find((s) => s.kind === 'kitchenPass');
     const kx = kitchen?.pos.x ?? 0;
     const topSlot = Math.min(...venue.passSlots.map((p) => p.y));
-    this.chef = tex.image(scene, kx + 56, topSlot + 60, art.chef()).setOrigin(0.5, 0.95).setDepth(Depth.props + 2).setFlipX(true);
+    this.chefY = topSlot + 60;
+    this.chef = tex.image(scene, kx + 56, this.chefY, art.chef()).setOrigin(0.5, 0.95).setDepth(Depth.props + 2).setFlipX(true);
     this.origin = { x: kx + 56 + 30 + TICKET.w / 2, y: topSlot - 10 };
 
     this.passImages = venue.passSlots.map((p) => tex.image(scene, p.x, p.y, art.icon('plate')).setDepth(Depth.props + 3).setVisible(false));
@@ -65,6 +74,28 @@ export class KitchenView {
     this.t += dt;
     const busy = kitchen.orders.some((o) => o.cookLeft !== null && o.cookLeft > 0);
     this.chef.setAngle(busy ? Math.sin(this.t * 14) * 4 : 0);
+    this.chef.setY(this.chefY - (busy ? Math.abs(Math.sin(this.t * 7)) * 4 : 0));
+    if (busy && this.stove) {
+      this.steam -= dt;
+      if (this.steam <= 0) {
+        this.steam = 0.55;
+        const side = Math.sin(this.t * 3) > 0 ? -30 : 30;
+        this.fx.puff({ x: this.stove.x + side, y: this.stove.y - 36 }, 2, 'steam');
+      }
+    }
+    if (kitchen.orders.length > this.shownOrders) {
+      // A new ticket slides in from the side.
+      const t = this.tickets[kitchen.orders.length - 1];
+      if (t) {
+        for (const o of [t.bg, t.icon, t.label]) {
+          const x = o.x;
+          this.scene.tweens.killTweensOf(o);
+          o.setX(x + 60);
+          this.scene.tweens.add({ targets: o, x, duration: 260, ease: 'Back.easeOut' });
+        }
+      }
+    }
+    this.shownOrders = kitchen.orders.length;
 
     const passKey = kitchen.pass.join('|');
     if (passKey !== this.shownPass) {
@@ -99,7 +130,7 @@ export class KitchenView {
       }
       ticket.bg.setAlpha(1);
       const done = order.cookLeft <= 0;
-      ticket.label.setText(done && passFull ? 'Pass full!' : 'Cooking').setColor(done && passFull ? Colors.badCss : Colors.inkCss);
+      ticket.label.setText(done && passFull ? 'Pass full!' : done ? 'Ready!' : 'Cooking').setColor(done && passFull ? Colors.badCss : Colors.inkCss);
       const progress = order.cookTotal > 0 ? 1 - order.cookLeft / order.cookTotal : 1;
       this.bars.fillStyle(0x4a3548, 0.12).fillRoundedRect(x, y - 4, 40, 9, 4);
       this.bars.fillStyle(done ? Colors.warn : 0xf08a4b, 1).fillRoundedRect(x, y - 4, Math.max(6, 40 * Math.min(1, progress)), 9, 4);

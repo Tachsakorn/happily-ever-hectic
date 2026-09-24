@@ -42,18 +42,18 @@ export const scoring: ScoringRules = {
 };
 
 export const decor: DecorDef[] = [
-  { id: 'pastel-peonies', name: 'Pastel Peonies', description: 'Soft pink peonies on every table.', tags: ['flowers', 'pastel'], visual: { color: 0xf2a7b8 } },
-  { id: 'fairy-lights', name: 'Fairy Lights', description: 'Warm string lights and lanterns.', tags: ['lights', 'rustic'], visual: { color: 0xf3d46b } },
-  { id: 'classic-white', name: 'Classic White', description: 'White roses, linen and candles.', tags: ['classic', 'elegant'], visual: { color: 0xf4f0ea } },
-  { id: 'tropical', name: 'Tropical Bloom', description: 'Orchids, palms and bright colours.', tags: ['bright', 'tropical'], visual: { color: 0x5fc49a } },
+  { id: 'pastel-peonies', name: 'Pastel Peonies', description: 'Soft pink peonies on every table.', tags: ['flowers', 'pastel'], visual: { color: 0xf2a7b8, icon: 'bouquet' } },
+  { id: 'fairy-lights', name: 'Fairy Lights', description: 'Warm string lights and lanterns.', tags: ['lights', 'rustic'], visual: { color: 0xf3d46b, icon: 'lantern' } },
+  { id: 'classic-white', name: 'Classic White', description: 'White roses, linen and candles.', tags: ['classic', 'elegant'], visual: { color: 0xf4f0ea, icon: 'candles' } },
+  { id: 'tropical', name: 'Tropical Bloom', description: 'Orchids, palms and bright colours.', tags: ['bright', 'tropical'], visual: { color: 0x5fc49a, icon: 'tropical' } },
 ];
 
 export const upgrades: UpgradeDef[] = [
-  { id: 'comfy-chairs', name: 'Comfy Chairs', description: 'Guests lose patience 15% slower.', cost: 150, modifiers: { guestPatienceDrain: 0.85 } },
-  { id: 'running-shoes', name: 'Running Shoes', description: 'Your planner walks 15% faster.', cost: 200, modifiers: { plannerSpeed: 1.15 } },
-  { id: 'extra-chef', name: 'Extra Chef', description: 'The kitchen cooks 25% faster.', cost: 250, modifiers: { kitchenCookTime: 0.75 } },
-  { id: 'early-warning', name: 'Walkie-Talkie', description: 'Disaster warnings last 50% longer.', cost: 200, modifiers: { disasterWarningTime: 1.5 } },
-  { id: 'string-quartet', name: 'String Quartet', description: 'The couple stays calmer: mood losses 15% smaller.', cost: 300, modifiers: { coupleMoodDrain: 0.85 } },
+  { id: 'comfy-chairs', name: 'Comfy Chairs', description: 'Guests lose patience 15% slower.', cost: 150, modifiers: { guestPatienceDrain: 0.85 }, icon: 'chair' },
+  { id: 'running-shoes', name: 'Running Shoes', description: 'Your planner walks 15% faster.', cost: 200, modifiers: { plannerSpeed: 1.15 }, icon: 'shoe' },
+  { id: 'extra-chef', name: 'Extra Chef', description: 'The kitchen cooks 25% faster.', cost: 250, modifiers: { kitchenCookTime: 0.75 }, icon: 'chef' },
+  { id: 'early-warning', name: 'Walkie-Talkie', description: 'Disaster warnings last 50% longer.', cost: 200, modifiers: { disasterWarningTime: 1.5 }, icon: 'walkie' },
+  { id: 'string-quartet', name: 'String Quartet', description: 'The couple stays calmer: mood losses 15% smaller.', cost: 300, modifiers: { coupleMoodDrain: 0.85 }, icon: 'violin' },
 ];
 
 export const dialogues: DialogueDef[] = [

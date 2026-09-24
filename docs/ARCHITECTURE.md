@@ -6,8 +6,9 @@
 main.ts (composition root)
   │
   ├── app/        Game flow: AppFlow state machine, GameApp (state → screen/scene), AudioDirector, view models
-  ├── ui/         DOM screens (menus, prep, dialogue, pause, results). No Phaser.
-  ├── render/     Phaser scenes and views, procedural art, touch input. Reads sim state, sends commands.
+  ├── ui/         DOM screens (menus, map, prep, dialogue, pause, results). No Phaser.
+  ├── render/     Phaser scenes and views, texture baking, effects (fx/), touch input. Reads sim state, sends commands.
+  ├── art/        Pure Canvas2D painters shared by render and ui: people, items, props, flora, scenery, venue, fx.
   ├── platform/   Browser services behind interfaces: SaveService, AudioService, viewport/touch hardening
   ├── core/       Gameplay simulation. Pure TypeScript: no Phaser, no DOM, fully unit tested.
   ├── content/    Content types, ContentRegistry, validation, id contracts
@@ -15,8 +16,9 @@ main.ts (composition root)
 ```
 
 Dependency rule (enforced by ESLint `no-restricted-imports`):
-`data → content ← core ← render/ui/app`. `core`, `content` and `data` never import
+`data → content ← core ← render/ui/app`. `core`, `content`, `data` and `art` never import
 `phaser`, `render`, `ui`, `app` or `platform`. `ui` never imports `phaser` or `render`.
+`art` is the one visual vocabulary: a menu portrait and an in-game sprite are the same painter.
 `madge --circular` reports no cycles.
 
 ## Data flow in a reception
@@ -87,9 +89,33 @@ Hit-testing is done in world space by the simulation (`core/input/picking.ts`) w
 
 - One `Phaser.Game` for the whole session; scenes are started/stopped, never the game.
 - Canvas renders at `renderScale` (≈ physical pixels, max 2×); cameras zoom so code uses design units (1400×1000).
-- All art is drawn once with Canvas2D and baked into textures (`render/art`). The frame loop only moves
-  images; views update display objects only when the underlying value changed.
+- All art is drawn once with Canvas2D (`art/`) and baked into textures (`render/art/TextureFactory`).
+  The frame loop only moves images; views update display objects only when the underlying value changed.
+- Motion (walk bob, breathing, hops, squash) is a few multiplications per sprite per frame; reactions are
+  tweens on small offset objects that the views apply on top of simulated positions.
+- `render/fx/Fx` owns every particle (hearts, sparkles, confetti, dust, steam, flying coins/items) from one
+  fixed pool of images: a chaotic moment can never allocate without bound.
 - Pools for floating text and tap ripples; no per-frame DOM work (HUD is in the canvas).
+
+### Art direction
+
+One ink colour (`INK`) outlines everything; shapes get a two-tone toon shade (`toon()`); glows are
+posterised rings, not gradients. Fonts: Lilita One (display) and Baloo 2 (body), bundled with
+@fontsource and loaded before boot (`platform/fonts.ts`) so canvas text never falls back.
+
+### DOM menus
+
+Screens are small classes over `ui/dom.ts` helpers; painted canvases come from `ui/paint.ts`
+(icons, portraits, full-body figures, resize-aware backdrops). Ambience (petals, confetti, hearts)
+is a fixed number of CSS-animated elements. `ScreenStack` swaps screens with a `cut` or a `curtain`
+wipe; the app picks the transition (in-play overlays cut, menus wipe).
+
+### Vendor patch: Phaser multi-texture selection
+
+`patches/phaser@4.2.1.patch` (applied by pnpm) makes Phaser's fragment shader round the interpolated
+texture id before choosing a texture unit. Unpatched, it compares the float with `==`; on GPUs whose
+interpolation is not exact, rotated sprites lose triangles/tiles (seen as headless characters). Remove
+the patch once Phaser ships an equivalent fix.
 
 ## Audio
 

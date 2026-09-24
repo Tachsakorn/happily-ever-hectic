@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { Painter } from './painters';
+import type { Painter } from '../../art/painters';
 
 /**
  * Bakes painters into textures at the render scale. Textures are cached by key

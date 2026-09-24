@@ -16,6 +16,8 @@
     "build:preview": "pnpm build:single && node scripts/make-preview.mjs"
   },
   "dependencies": {
+    "@fontsource/baloo-2": "^5.3.0",
+    "@fontsource/lilita-one": "^5.3.0",
     "phaser": "4.2.1"
   },
   "devDependencies": {

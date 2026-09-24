@@ -18,7 +18,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/core/**/*.ts', 'src/content/**/*.ts', 'src/data/**/*.ts'],
+    files: ['src/core/**/*.ts', 'src/content/**/*.ts', 'src/data/**/*.ts', 'src/art/**/*.ts'],
     rules: { 'no-restricted-imports': ['error', noEngineOrUi] },
   },
   {

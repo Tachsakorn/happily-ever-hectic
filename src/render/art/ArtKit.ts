@@ -1,19 +1,31 @@
 import type { ContentRegistry } from '../../content/ContentRegistry';
-import type { Id } from '../../content/types';
+import type { CharacterDef, Id } from '../../content/types';
+import { CHEF_LOOK, characterLook, HAIRS, hashString, plannerLook, SKINS } from '../../art/characters';
 import type { Guest } from '../../core/sim/state';
 import type { TextureFactory } from './TextureFactory';
-import { paintBubble, paintDisasterIcon, paintDot, paintIcon, paintPerson, type ItemIcon, type PersonLook } from './painters';
+import {
+  ICON_SIZE,
+  paintBubble,
+  paintDisasterIcon,
+  paintDot,
+  paintIcon,
+  paintPerson,
+  PERSON_FEET,
+  PERSON_H,
+  PERSON_W,
+  type HairStyle,
+  type ItemIcon,
+  type Mood,
+  type PersonLook,
+  type PersonStyle,
+} from '../../art/painters';
 
-const SKINS = [0xf6d7bf, 0xeac3a2, 0xd9a47e, 0xb97c55, 0x8d5a3b, 0xf2cfae];
-const HAIRS = [0x2b1d14, 0x5a3a22, 0x8a5a3a, 0xc9954f, 0x1e1612, 0xa0522d, 0x3b2a20];
+const GUEST_HAIR_STYLES: HairStyle[] = ['short', 'bob', 'long', 'curly', 'side', 'bun'];
 
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
+/** Vertical origin that puts a person sprite's feet on its position. */
+export const FEET_ORIGIN_Y = PERSON_FEET / PERSON_H;
 
-const STYLES = new Set(['guest', 'grandparent', 'party', 'foodie', 'kid', 'boss', 'dress', 'suit', 'planner', 'chef']);
+const STYLES = new Set<string>(['guest', 'grandparent', 'party', 'foodie', 'kid', 'boss', 'dress', 'suit', 'planner', 'chef']);
 
 /** Maps content to baked textures. The only place that knows how content *looks*. */
 export class ArtKit {
@@ -23,34 +35,44 @@ export class ArtKit {
   ) {}
 
   person(look: PersonLook): string {
-    const key = `person:${look.style}:${look.skin}:${look.hair}:${look.outfit}:${look.ring ?? 'x'}`;
-    return this.tex.ensure(key, 60, 104, paintPerson(look));
+    const key = `person:${look.style}:${look.skin}:${look.hair}:${look.outfit}:${look.hairStyle ?? '-'}:${look.mood ?? 'neutral'}`;
+    return this.tex.ensure(key, PERSON_W, PERSON_H, paintPerson(look));
   }
 
-  guest(g: Guest): string {
+  guestLook(g: Pick<Guest, 'key' | 'typeId' | 'groupId'>, mood: Mood = 'neutral'): PersonLook {
     const type = this.content.guestTypes.get(g.typeId);
     const group = this.content.groups.get(g.groupId);
-    const h = hash(g.key);
+    const h = hashString(g.key);
     const icon = type.visual.icon ?? 'guest';
-    return this.person({
-      style: (STYLES.has(icon) ? icon : 'guest') as PersonLook['style'],
+    const style = (STYLES.has(icon) ? icon : 'guest') as PersonStyle;
+    // Styles with a signature hairdo keep it; everyone else gets a varied one.
+    const hairStyle = style === 'guest' || style === 'foodie' ? GUEST_HAIR_STYLES[(h >> 4) % GUEST_HAIR_STYLES.length] : undefined;
+    return {
+      style,
+      hairStyle,
+      mood,
       skin: SKINS[h % SKINS.length] ?? SKINS[0]!,
-      hair: HAIRS[(h >> 8) % HAIRS.length] ?? HAIRS[0]!,
+      hair: style === 'grandparent' ? 0xe6e2de : (HAIRS[(h >> 8) % HAIRS.length] ?? HAIRS[0]!),
       outfit: group.visual.color,
-    });
+    };
+  }
+
+  guest(g: Pick<Guest, 'key' | 'typeId' | 'groupId'>, mood: Mood = 'neutral'): string {
+    return this.person(this.guestLook(g, mood));
   }
 
   chef(): string {
-    return this.person({ style: 'chef', skin: 0xd9a47e, hair: 0x2b1d14, outfit: 0xffffff });
+    return this.person(CHEF_LOOK);
   }
 
-  planner(): string {
-    return this.person({ style: 'planner', skin: 0xf2cfae, hair: 0x6b3f25, outfit: 0xe07a95 });
+  planner(mood: Mood = 'neutral'): string {
+    return this.person(plannerLook(mood));
   }
 
-  partner(visual: { color: number; accent?: number; icon?: string }, skinSeed: string): string {
-    const style = visual.icon === 'suit' ? 'suit' : 'dress';
-    return this.person({ style, skin: SKINS[hash(skinSeed) % SKINS.length] ?? SKINS[0]!, hair: visual.accent ?? 0x2b1d14, outfit: visual.color });
+  partner(def: CharacterDef, mood?: Mood): string {
+    const look = characterLook(def, mood);
+    const key = `partner:${def.id}:${look.mood}:${look.skin}:${look.hair}:${look.hairStyle ?? '-'}:${look.outfit}`;
+    return this.tex.ensure(key, PERSON_W, PERSON_H, paintPerson(look));
   }
 
   item(itemId: Id): string {
@@ -59,8 +81,8 @@ export class ArtKit {
     return this.icon(icon, item.visual.color, item.visual.accent);
   }
 
-  icon(icon: ItemIcon, color = 0xe07a95, accent?: number): string {
-    return this.tex.ensure(`icon:${icon}:${color}:${accent ?? ''}`, 44, 44, paintIcon(icon, color, accent));
+  icon(icon: ItemIcon, color = 0xe86f8e, accent?: number): string {
+    return this.tex.ensure(`icon:${icon}:${color}:${accent ?? ''}`, ICON_SIZE, ICON_SIZE, paintIcon(icon, color, accent));
   }
 
   bubble(): string {

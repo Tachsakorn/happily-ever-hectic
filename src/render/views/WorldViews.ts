@@ -3,9 +3,15 @@ import { GIFT_ITEM_ID } from '../../content/contracts';
 import type { WeddingDef } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import { DisasterPhase } from '../../core/sim/state';
-import type { ArtKit } from '../art/ArtKit';
+import type { Mood } from '../../art/people';
+import { FEET_ORIGIN_Y, type ArtKit } from '../art/ArtKit';
 import type { TextureFactory } from '../art/TextureFactory';
+import type { Fx } from '../fx/Fx';
 import { Colors, Depth } from '../ui/text';
+
+const COUPLE_SCALE = 1.2;
+const COUPLE_HAPPY = 60;
+const COUPLE_UPSET = 30;
 
 /** The couple at the sweetheart table and whatever they are asking for. */
 export class CoupleView {
@@ -17,17 +23,22 @@ export class CoupleView {
   private shownItem: string | null = null;
   private pulse: Phaser.Tweens.Tween | null = null;
   private t = 0;
+  private shownMood: Mood | 'signature' | null = null;
+  private readonly react = { hopA: 0, hopB: 0 };
+  private readonly baseY: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly art: ArtKit,
     private readonly tex: TextureFactory,
     private readonly sim: ReceptionSimulation,
-    wedding: WeddingDef,
+    private readonly wedding: WeddingDef,
+    private readonly fx: Fx,
   ) {
     const { x, y } = sim.context.venue.def.couplePos;
-    this.a = tex.image(scene, x - 38, y + 8, art.partner(wedding.partnerA.visual, wedding.partnerA.id)).setOrigin(0.5, 0.95).setScale(1.2 / tex.scale).setDepth(Depth.actorsBase + y - 40);
-    this.b = tex.image(scene, x + 38, y + 8, art.partner(wedding.partnerB.visual, wedding.partnerB.id)).setOrigin(0.5, 0.95).setScale(1.2 / tex.scale).setDepth(Depth.actorsBase + y - 40);
+    this.baseY = y + 8;
+    this.a = tex.image(scene, x - 38, this.baseY, art.partner(wedding.partnerA)).setOrigin(0.5, FEET_ORIGIN_Y).setScale(COUPLE_SCALE / tex.scale).setDepth(Depth.actorsBase + y - 40);
+    this.b = tex.image(scene, x + 38, this.baseY, art.partner(wedding.partnerB)).setOrigin(0.5, FEET_ORIGIN_Y).setScale(COUPLE_SCALE / tex.scale).setDepth(Depth.actorsBase + y - 40);
     const bubbleBg = tex.image(scene, 0, 0, art.bubble()).setScale(1.25 / tex.scale);
     this.bubbleIcon = tex.image(scene, 0, -8, art.icon('menu')).setScale(1.2 / tex.scale);
     // Beside the couple (left), clear of the HUD row above.
@@ -35,14 +46,35 @@ export class CoupleView {
     this.timer = scene.add.graphics().setDepth(Depth.bubbles + 401);
   }
 
+  /** Both jump for joy (a moment landed, a request was met). */
+  celebrate(): void {
+    const { x, y } = this.sim.context.venue.def.couplePos;
+    this.scene.tweens.add({ targets: this.react, hopA: 18, yoyo: true, duration: 170, ease: 'Quad.easeOut', repeat: 1 });
+    this.scene.tweens.add({ targets: this.react, hopB: 18, yoyo: true, duration: 170, ease: 'Quad.easeOut', repeat: 1, delay: 90 });
+    this.fx.hearts({ x, y: y - 110 }, 6, 90);
+  }
+
   sync(dt: number): void {
     const { couple } = this.sim.state;
     this.t += dt;
-    // Nervous couples fidget; happy ones sway gently.
-    const nervous = couple.mood < 35;
-    const sway = nervous ? Math.sin(this.t * 22) * 1.5 : Math.sin(this.t * 2) * 1.2;
-    this.a.setAngle(sway);
-    this.b.setAngle(-sway);
+    // Nervous couples fidget; happy ones sway gently towards each other.
+    const nervous = couple.mood < COUPLE_UPSET + 5;
+    const sway = nervous ? Math.sin(this.t * 22) * 1.5 : Math.sin(this.t * 2) * 1.6;
+    this.a.setAngle(sway).setY(this.baseY - this.react.hopA);
+    this.b.setAngle(-sway).setY(this.baseY - this.react.hopB);
+
+    const mood: Mood | 'signature' = couple.mood >= COUPLE_HAPPY ? 'signature' : couple.mood >= COUPLE_UPSET ? 'neutral' : 'sad';
+    if (mood !== this.shownMood) {
+      const first = this.shownMood === null;
+      this.shownMood = mood;
+      const m = mood === 'signature' ? undefined : mood;
+      this.a.setTexture(this.art.partner(this.wedding.partnerA, m));
+      this.b.setTexture(this.art.partner(this.wedding.partnerB, m));
+      if (!first) {
+        const s = COUPLE_SCALE / this.tex.scale;
+        this.scene.tweens.add({ targets: [this.a, this.b], scaleX: { from: s * 1.12, to: s }, scaleY: { from: s * 0.9, to: s }, duration: 380, ease: 'Elastic.easeOut' });
+      }
+    }
 
     const req = couple.request;
     const item = req?.itemId ?? null;
@@ -52,24 +84,31 @@ export class CoupleView {
       if (item) this.bubbleIcon.setTexture(this.art.item(item)).setScale(1.2 / this.tex.scale);
       this.pulse?.stop();
       this.pulse = null;
-      this.bubble.setScale(1);
+      this.scene.tweens.killTweensOf(this.bubble);
+      this.bubble.setScale(item ? 0 : 1);
+      if (item) this.scene.tweens.add({ targets: this.bubble, scale: 1, duration: 320, ease: 'Back.easeOut' });
       if (item && req?.momentId) {
-        this.pulse = this.scene.tweens.add({ targets: this.bubble, scale: 1.15, yoyo: true, repeat: -1, duration: 380 });
+        this.pulse = this.scene.tweens.add({ targets: this.bubble, scale: 1.15, yoyo: true, repeat: -1, duration: 380, delay: 320 });
       }
     }
     this.timer.clear();
     if (req) {
       const t = Math.max(0, req.timeLeft / req.total);
       const color = t > 0.5 ? Colors.good : t > 0.25 ? Colors.warn : Colors.bad;
-      this.timer.lineStyle(6, color, 1);
+      const cx = this.bubble.x + 38;
+      const cy = this.bubble.y - 30;
+      this.timer.fillStyle(0xfffaf0, 1).fillCircle(cx, cy, 15);
+      this.timer.lineStyle(2.5, 0x3b2640, 1).strokeCircle(cx, cy, 15);
+      this.timer.lineStyle(7, color, 1);
       this.timer.beginPath();
-      this.timer.arc(this.bubble.x + 38, this.bubble.y - 30, 12, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
+      this.timer.arc(cx, cy, 9, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
       this.timer.strokePath();
     }
   }
 
   destroy(): void {
     this.pulse?.stop();
+    this.scene.tweens.killTweensOf([this.react, this.bubble, this.a, this.b]);
     this.a.destroy();
     this.b.destroy();
     this.bubble.destroy(true);
@@ -81,6 +120,7 @@ export class CoupleView {
 export class PropsView {
   private readonly cake: Phaser.GameObjects.Image;
   private readonly giftImages = new Map<number, Phaser.GameObjects.Image>();
+  private readonly giftBorn = new Map<number, number>();
   private readonly giftPile: Phaser.GameObjects.Image[] = [];
   private readonly cakeBase: { x: number; y: number };
   private readonly cakeStationId: string | null;
@@ -144,18 +184,33 @@ export class PropsView {
       if (!img) {
         img = this.tex.image(this.scene, gift.pos.x, gift.pos.y, this.art.item(GIFT_ITEM_ID)).setDepth(Depth.bubbles - 10);
         this.giftImages.set(gift.id, img);
+        this.giftBorn.set(gift.id, time);
       }
       const danger = gift.age / lostAfter;
-      img.setScale((danger > 0.7 ? 0.95 + Math.sin(time / 110) * 0.12 : 0.9) / this.tex.scale);
+      // New gifts drop in with a bounce; stale ones throb red before they go missing.
+      const born = Math.min(1, (time - (this.giftBorn.get(gift.id) ?? 0)) / 350);
+      const drop = born < 1 ? Math.sin(born * Math.PI) * -26 * (1 - born) : 0;
+      const pop = born < 1 ? 0.5 + born * 0.4 : 0.9;
+      img.setY(gift.pos.y + drop);
+      img.setScale((danger > 0.7 ? 0.95 + Math.sin(time / 110) * 0.12 : pop) / this.tex.scale);
+      img.setAngle(danger > 0.7 ? Math.sin(time / 70) * 8 : 0);
       img.setTint(danger > 0.7 ? 0xffb0b0 : 0xffffff);
     }
     for (const [id, img] of this.giftImages) {
       if (!seen.has(id)) {
         img.destroy();
         this.giftImages.delete(id);
+        this.giftBorn.delete(id);
       }
     }
-    this.giftPile.forEach((g, i) => g.setVisible(i < state.stats.giftsDelivered));
+    this.giftPile.forEach((g, i) => {
+      const show = i < state.stats.giftsDelivered;
+      if (show && !g.visible) {
+        const s = 0.75 / this.tex.scale;
+        this.scene.tweens.add({ targets: g, scale: { from: s * 1.8, to: s }, duration: 320, ease: 'Back.easeOut', delay: i * 60 });
+      }
+      g.setVisible(show);
+    });
   }
 
   destroy(): void {

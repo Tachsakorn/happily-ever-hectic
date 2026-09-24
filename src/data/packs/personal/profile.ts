@@ -10,17 +10,21 @@ export const personal = {
   gameTitle: 'Happily Ever Hectic',
   /** ✏️ Who the player is (the wedding planner character). */
   plannerName: 'Planner',
+  // Looks drawn from a photo the owner shared (short crop for Goji, long dark
+  // side-swept hair for Tanya, her star-print style and cheeky tongue-out face).
   partnerA: {
     name: 'Goji',
     outfit: 'suit' as 'suit' | 'dress',
-    outfitColor: 0x3d4f73,
-    hairColor: 0x2b1d14,
+    outfitColor: 0x34405e,
+    hairColor: 0x1c1512,
+    look: { skin: 0xd9a47e, hairStyle: 'crop', shirt: 0xe4dcf0, signatureMood: 'happy' },
   },
   partnerB: {
     name: 'Tanya',
     outfit: 'dress' as 'suit' | 'dress',
     outfitColor: 0xffffff,
-    hairColor: 0x2b1d14,
+    hairColor: 0x1c1512,
+    look: { skin: 0xe6b48e, hairStyle: 'longSide', accessory: 'star-clip', signatureMood: 'cheeky' },
   },
   /** ✏️ Decor tags the two of you love: flowers, pastel, lights, rustic, classic, elegant, bright, tropical. */
   lovesTags: ['flowers', 'lights'],

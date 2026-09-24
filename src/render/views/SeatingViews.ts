@@ -3,7 +3,7 @@ import type { Id, Vec2 } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import { findGuest, holdsSeat } from '../../core/guests/guestMachine';
 import type { ArtKit } from '../art/ArtKit';
-import { paintPanel } from '../art/painters';
+import { paintPanel } from '../../art/painters';
 import type { TextureFactory } from '../art/TextureFactory';
 import { Colors, Depth, makeText } from '../ui/text';
 

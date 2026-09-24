@@ -222,10 +222,23 @@ export interface MomentDef {
 
 // ---------------------------------------------------------------- weddings & levels
 
+/** Optional detailed appearance for named characters (e.g. the couple in the personal pack). */
+export interface CharacterLook {
+  readonly skin?: number;
+  readonly hair?: number;
+  readonly hairStyle?: string;
+  /** Shirt colour under a suit. */
+  readonly shirt?: number;
+  readonly accessory?: string;
+  /** Mood used on portraits and when they celebrate, e.g. 'happy' or 'cheeky'. */
+  readonly signatureMood?: string;
+}
+
 export interface CharacterDef {
   readonly id: Id;
   readonly name: string;
   readonly visual: VisualHint;
+  readonly look?: CharacterLook;
 }
 
 export interface WeddingDef {
@@ -289,6 +302,8 @@ export interface UpgradeDef {
   readonly description: string;
   readonly cost: number;
   readonly modifiers: Modifiers;
+  /** Shop icon name; presentation falls back to a default for unknown names. */
+  readonly icon?: string;
 }
 
 export interface DialogueLine {

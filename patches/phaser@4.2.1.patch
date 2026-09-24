@@ -1,0 +1,48 @@
+diff --git a/dist/phaser.esm.js b/dist/phaser.esm.js
+index f692e97d34697764597f2d29d7f04e2bf62333a8..ffd5bde2c4d949d7f70258ec91d02f35b111dd06 100644
+--- a/dist/phaser.esm.js
++++ b/dist/phaser.esm.js
+@@ -206303,7 +206303,7 @@ module.exports = [
+     '    #if TEXTURE_COUNT == 1',
+     '    float texId = 0.0;',
+     '    #else',
+-    '    float texId = outTexDatum;',
++    '    float texId = floor(outTexDatum + 0.5);',
+     '    #endif',
+     '    #pragma phaserTemplate(texIdProcess)',
+     '    vec2 texRes = vec2(0.0);',
+@@ -206332,8 +206332,8 @@ module.exports = [
+     '    #if TEXTURE_COUNT == 1',
+     '    return texture2D(uMainSampler[0], texCoord);',
+     '    #else',
+-    '    if (outTexDatum == 0.0) return texture2D(uMainSampler[0], texCoord);',
+-    '    #define ELSE_TEX_CASE(INDEX) else if (outTexDatum == float(INDEX)) return texture2D(uMainSampler[INDEX], texCoord);',
++    '    if (floor(outTexDatum + 0.5) == 0.0) return texture2D(uMainSampler[0], texCoord);',
++    '    #define ELSE_TEX_CASE(INDEX) else if (floor(outTexDatum + 0.5) == float(INDEX)) return texture2D(uMainSampler[INDEX], texCoord);',
+     '    #pragma phaserTemplate(texIdProcess)',
+     '    else return vec4(0.0, 0.0, 0.0, 0.0);',
+     '    #endif',
+diff --git a/dist/phaser.js b/dist/phaser.js
+index 3a84f7db81d309f5956237fee262134f3b4d051a..fbda78806f7e6e465d84444a028cc7608c6f816a 100644
+--- a/dist/phaser.js
++++ b/dist/phaser.js
+@@ -206413,7 +206413,7 @@ module.exports = [
+     '    #if TEXTURE_COUNT == 1',
+     '    float texId = 0.0;',
+     '    #else',
+-    '    float texId = outTexDatum;',
++    '    float texId = floor(outTexDatum + 0.5);',
+     '    #endif',
+     '    #pragma phaserTemplate(texIdProcess)',
+     '    vec2 texRes = vec2(0.0);',
+@@ -206442,8 +206442,8 @@ module.exports = [
+     '    #if TEXTURE_COUNT == 1',
+     '    return texture2D(uMainSampler[0], texCoord);',
+     '    #else',
+-    '    if (outTexDatum == 0.0) return texture2D(uMainSampler[0], texCoord);',
+-    '    #define ELSE_TEX_CASE(INDEX) else if (outTexDatum == float(INDEX)) return texture2D(uMainSampler[INDEX], texCoord);',
++    '    if (floor(outTexDatum + 0.5) == 0.0) return texture2D(uMainSampler[0], texCoord);',
++    '    #define ELSE_TEX_CASE(INDEX) else if (floor(outTexDatum + 0.5) == float(INDEX)) return texture2D(uMainSampler[INDEX], texCoord);',
+     '    #pragma phaserTemplate(texIdProcess)',
+     '    else return vec4(0.0, 0.0, 0.0, 0.0);',
+     '    #endif',

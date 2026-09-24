@@ -19,7 +19,7 @@ export class FloatingTextLayer {
     renderScale: number,
   ) {
     for (let i = 0; i < POOL_SIZE; i++) {
-      const t = makeText(scene, 0, 0, '', renderScale, { size: 22, stroke: '#ffffff', strokeWidth: 6 })
+      const t = makeText(scene, 0, 0, '', renderScale, { size: 22, display: true, stroke: '#fffaf0', strokeWidth: 7 })
         .setOrigin(0.5)
         .setDepth(Depth.floating)
         .setVisible(false);
@@ -46,9 +46,10 @@ export class FloatingTextLayer {
       .setFontSize(size)
       .setPosition(pos.x, y)
       .setAlpha(1)
-      .setScale(0.7)
+      .setScale(0.3)
+      .setAngle((Math.random() - 0.5) * 8)
       .setVisible(true);
-    this.scene.tweens.add({ targets: text, scale: 1, duration: 140, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: text, scale: 1, angle: 0, duration: 260, ease: 'Back.easeOut', easeParams: [2.4] });
     this.scene.tweens.add({
       targets: text,
       y: y - 46,
@@ -64,10 +65,10 @@ export class FloatingTextLayer {
     const rounded = Math.round(delta);
     if (rounded === 0) return;
     const sign = rounded > 0 ? '+' : '−';
-    this.show(pos, `${sign}${Math.abs(rounded)} ♥ ${cause}`, rounded > 0 ? Colors.goodCss : Colors.badCss, 20);
+    this.show(pos, `${sign}${Math.abs(rounded)} ♥ ${cause}`, rounded > 0 ? Colors.goodCss : Colors.badCss, 21);
   }
 
   score(pos: Vec2, delta: number): void {
-    this.show({ x: pos.x, y: pos.y - 30 }, `${delta > 0 ? '+' : '−'}${Math.abs(delta)}`, delta > 0 ? Colors.goldCss : Colors.badCss, 24);
+    this.show({ x: pos.x, y: pos.y - 30 }, `${delta > 0 ? '+' : '−'}${Math.abs(delta)}`, delta > 0 ? '#c98a22' : Colors.badCss, 28);
   }
 }

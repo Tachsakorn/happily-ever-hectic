@@ -47,6 +47,9 @@ export class DisasterLayer {
       const pos = this.iconPos(d);
       if (!e) {
         const icon = this.tex.image(this.scene, pos.x, pos.y, this.art.disaster(d.defId)).setDepth(Depth.disasters + 1);
+        const size = icon.scale;
+        icon.setScale(0);
+        this.scene.tweens.add({ targets: icon, scale: size, duration: 360, ease: 'Back.easeOut', easeParams: [2.2] });
         const bounce = this.scene.tweens.add({ targets: icon, y: pos.y - 10, yoyo: true, repeat: -1, duration: 320, ease: 'Sine.easeInOut' });
         e = { icon, bounce };
         this.entries.set(d.id, e);
@@ -54,12 +57,16 @@ export class DisasterLayer {
       const color = PHASE_COLOR[d.phase] ?? Colors.warn;
       const pulse = 1 + Math.sin(time / (d.phase === DisasterPhase.ESCALATED ? 70 : 140)) * 0.08;
       const r = 50 * pulse;
-      this.rings.lineStyle(5, color, 0.9).strokeCircle(pos.x, pos.y, r);
-      this.rings.fillStyle(color, 0.12).fillCircle(pos.x, pos.y, r);
+      this.rings.fillStyle(color, 0.16).fillCircle(pos.x, pos.y, r);
+      this.rings.lineStyle(4, color, 0.9).strokeCircle(pos.x, pos.y, r);
       const t = d.phaseDuration > 0 ? Math.max(0, 1 - d.phaseTime / d.phaseDuration) : 0;
+      this.rings.lineStyle(12, 0x3b2640, 1);
+      this.rings.beginPath();
+      this.rings.arc(pos.x, pos.y, r + 10, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
+      this.rings.strokePath();
       this.rings.lineStyle(7, color, 1);
       this.rings.beginPath();
-      this.rings.arc(pos.x, pos.y, r + 9, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
+      this.rings.arc(pos.x, pos.y, r + 10, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
       this.rings.strokePath();
     }
     for (const [id, e] of this.entries) {

@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
-    "check": "pnpm typecheck && pnpm lint && pnpm test"
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "build:preview": "pnpm build:single && node scripts/make-preview.mjs"
   },
   "dependencies": {
     "phaser": "4.2.1"

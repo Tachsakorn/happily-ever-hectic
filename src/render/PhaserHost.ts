@@ -33,8 +33,32 @@ export class PhaserHost {
       banner: false,
       audio: { noAudio: true },
     });
+    this.releaseStaleFingers();
     // Registered without auto-start: scenes only run when the app asks, with their data.
     for (const { key, scene } of scenes) this.game.scene.add(key, scene, false);
+  }
+
+  /**
+   * Safety net for touch input. Phaser has a few finger slots and frees one
+   * when it sees that finger's touchend on the window. If that touchend never
+   * arrives (the touched menu element was removed mid-tap), the slot stays
+   * "down" and, once all are used, every new touch is ignored. When a touch
+   * begins and it is the only finger on the screen, no other finger can
+   * really be down, so any slot still marked down is released first.
+   */
+  private releaseStaleFingers(): void {
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      for (const p of this.game.input.pointers) {
+        if (p.id === 0 || !p.active) continue;
+        p.active = false;
+        p.isDown = false;
+        p.primaryDown = false;
+        p.buttons = 0;
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+    this.game.events.once(Phaser.Core.Events.DESTROY, () => window.removeEventListener('touchstart', onTouchStart, { capture: true }));
   }
 
   /**

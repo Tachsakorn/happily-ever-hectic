@@ -55,11 +55,32 @@ export class ReceptionInput {
   }
 
   private onDown(p: Phaser.Input.Pointer): void {
+    // Touches that began on a menu button (pause, dialogue) are not game input.
+    if (p.downElement !== this.scene.game.canvas) return;
+    // Self-heal: if the finger we were tracking is no longer down (its lift was
+    // never delivered), forget it rather than ignoring every touch from now on.
+    if (this.pointerId !== null && !this.isStillDown(this.pointerId)) this.reset();
     if (this.pointerId !== null || this.sim.isOver) return;
     this.pointerId = p.id;
     const pt = this.point(p);
     this.downAt = pt;
     this.candidate = this.sim.pickDraggableGuest(pt);
+  }
+
+  private isStillDown(id: number): boolean {
+    return this.scene.input.manager.pointers.some((q) => q.id === id && q.isDown);
+  }
+
+  private reset(): void {
+    if (this.dragging && this.candidate) {
+      this.feedback.onDragGuest(this.candidate, null);
+      this.overlay.hide();
+      this.card.hide();
+    }
+    this.pointerId = null;
+    this.candidate = null;
+    this.dragging = false;
+    this.downAt = null;
   }
 
   private onMove(p: Phaser.Input.Pointer): void {

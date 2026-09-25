@@ -54,6 +54,8 @@ export class Disposer {
 const TAP_SLOP_PX = 16;
 /** After a handled tap, the browser's own late click is ignored for this long. */
 const GHOST_CLICK_MS = 700;
+/** If a browser sends no touchend after a finger's pointerup, the tap still fires after this. */
+const TOUCHEND_FALLBACK_MS = 120;
 
 let lastTapAt = -Infinity;
 let ghostGuardInstalled = false;
@@ -89,6 +91,19 @@ function installGhostClickGuard(): void {
 export function onTap(el: HTMLElement, handler: (e: Event) => void, disposer: Disposer): void {
   installGhostClickGuard();
   let down: { id: number; x: number; y: number } | null = null;
+  let pendingTouch: { event: Event; timer: number } | null = null;
+  const fire = (e: Event) => {
+    lastTapAt = performance.now();
+    handler(e);
+  };
+  const firePendingTouch = () => {
+    const p = pendingTouch;
+    if (!p) return;
+    pendingTouch = null;
+    clearTimeout(p.timer);
+    fire(p.event);
+  };
+  disposer.add(() => pendingTouch && clearTimeout(pendingTouch.timer));
   disposer.listen(el, 'pointerdown', (e) => {
     if (e.button > 0) return;
     down = { id: e.pointerId, x: e.clientX, y: e.clientY };
@@ -98,14 +113,18 @@ export function onTap(el: HTMLElement, handler: (e: Event) => void, disposer: Di
     const d = down;
     down = null;
     if (!d || d.id !== e.pointerId || Math.hypot(e.clientX - d.x, e.clientY - d.y) > TAP_SLOP_PX) return;
+    if (e.pointerType !== 'touch') {
+      fire(e);
+      return;
+    }
+    // A finger's tap runs on the touchend that follows, not here. The handler
+    // may remove this element (a new screen); removed before touchend, the
+    // touchend would never reach the window, and the game canvas (Phaser),
+    // which tracks fingers there, would think this finger is still down.
     lastTapAt = performance.now();
-    handler(e);
+    pendingTouch = { event: e, timer: window.setTimeout(firePendingTouch, TOUCHEND_FALLBACK_MS) };
   });
-  // Also cancel the touch's own click emulation where the browser allows it.
-  const cancelEmulation = (e: TouchEvent) => {
-    if (performance.now() - lastTapAt < 50 && e.cancelable) e.preventDefault();
-  };
-  disposer.listen(el, 'touchend', cancelEmulation, { passive: false });
+  disposer.listen(el, 'touchend', firePendingTouch);
   // Keyboard, or a browser that sends a click without pointer events.
   disposer.listen(el, 'click', (e) => {
     if (performance.now() - lastTapAt < GHOST_CLICK_MS) return;

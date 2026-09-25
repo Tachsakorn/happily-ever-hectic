@@ -6,6 +6,8 @@
  * CSS viewport units go through `--vw` / `--vh`, which this keeps in step with
  * the frame. Returns a function that removes the listeners.
  */
+import { visibleViewport } from './viewportSize';
+
 export const UI_FRAME_MIN = { width: 1024, height: 700 } as const;
 
 export function uiScaleFor(viewportW: number, viewportH: number, min = UI_FRAME_MIN): number {
@@ -16,8 +18,7 @@ export function installUiScale(layer: HTMLElement, root: HTMLElement = document.
   let frame = 0;
   const apply = () => {
     frame = 0;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const { width: vw, height: vh } = visibleViewport();
     const scale = uiScaleFor(vw, vh);
     const w = vw / scale;
     const h = vh / scale;
@@ -42,7 +43,9 @@ export function installUiScale(layer: HTMLElement, root: HTMLElement = document.
   apply();
   window.addEventListener('resize', schedule);
   window.addEventListener('orientationchange', schedule);
+  window.visualViewport?.addEventListener('resize', schedule);
   return () => {
+    window.visualViewport?.removeEventListener('resize', schedule);
     window.removeEventListener('resize', schedule);
     window.removeEventListener('orientationchange', schedule);
     if (frame) cancelAnimationFrame(frame);

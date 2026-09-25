@@ -37,6 +37,16 @@ export class PhaserHost {
     for (const { key, scene } of scenes) this.game.scene.add(key, scene, false);
   }
 
+  /**
+   * Re-measures the container and refits the canvas now. Phaser would notice
+   * on its own within half a second; after a rotation that half second shows
+   * a wrongly cropped game, so the app calls this as soon as the size changes.
+   */
+  refit(): void {
+    const scale = this.game.scale;
+    if (scale.getParentBounds()) scale.refresh();
+  }
+
   /** Applies the design-space camera to a scene. Call from each scene's create(). */
   static applyDesignCamera(scene: Phaser.Scene, renderScale: number): void {
     const cam = scene.cameras.main;

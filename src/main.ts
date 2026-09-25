@@ -7,6 +7,7 @@ import { LocalStorageSaveService } from './platform/save/SaveService';
 import { computeRenderScale } from './platform/viewport/renderScale';
 import { installTouchHardening } from './platform/viewport/touchHardening';
 import { installUiScale } from './platform/viewport/uiScale';
+import { installViewportSize } from './platform/viewport/viewportSize';
 import { loadGameFonts } from './platform/fonts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH, SceneKey } from './render/config';
 import { PhaserHost } from './render/PhaserHost';
@@ -44,11 +45,15 @@ uiLayer.addEventListener('pointerdown', (e) => {
   if (e.target instanceof Element && e.target.closest('.btn:not(:disabled), .map-node, .decor-tile')) audio.play('tap');
 });
 
+const host = new PhaserHost(requireElement('game-layer'), renderScale, [{ key: SceneKey.RECEPTION, scene: ReceptionScene }]);
+// Size the whole app to what is really visible, and refit the canvas whenever that changes.
+installViewportSize(requireElement('app'), () => host.refit());
+
 const app = new GameApp({
   content,
   saves: new LocalStorageSaveService(),
   audio,
-  host: new PhaserHost(requireElement('game-layer'), renderScale, [{ key: SceneKey.RECEPTION, scene: ReceptionScene }]),
+  host,
   screens: new ScreenStack(uiLayer, requireElement('curtain')),
 });
 app.start();

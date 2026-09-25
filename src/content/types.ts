@@ -439,6 +439,8 @@ export interface TuningDef {
     readonly pauseSeconds: readonly [number, number];
     /** Chance that a guest with extras left asks for one (a drink, a dance) between courses. */
     readonly extraBetweenCoursesChance: number;
+    /** After the meal (and between extras), how long a guest sits before the next wish or goodbye. */
+    readonly lingerSeconds: readonly [number, number];
   };
   readonly coupleRequestPatienceSeconds: number;
   /** Bonus when the chosen decor matches something the couple loves. */

@@ -50,7 +50,7 @@ export const personalPack: ContentPack = {
       name: 'Our Wedding',
       weddingId: 'our-wedding',
       venueId: 'garden-hall',
-      durationSeconds: 330,
+      durationSeconds: 335,
       dancing: true,
       // The finale is hard through variety, not volume: fewer guests than
       // weddings 8–9, but every one is a different personality, the seating is a
@@ -90,7 +90,7 @@ export const personalPack: ContentPack = {
       ],
       kitchen: { burners: 3, cookSeconds: 5 },
       // A forgiving first star: finishing the finale is what unlocks the ending.
-      starScores: [2050, 4050, 4800],
+      starScores: [2000, 3950, 4700],
       coinReward: 400,
       unlockRequiresLevelId: 'big-night',
       introDialogueId: 'intro-our-wedding',

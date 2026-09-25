@@ -27,7 +27,7 @@ export const tuning: TuningDef = {
   danceSeconds: 7,
   danceHappinessPerSecond: 6,
   secretWorkSeconds: 0.4,
-  courses: { appetizerPlateSeconds: 1.5, appetizerEatFactor: 0.6, dessertEatFactor: 0.6, pauseSeconds: [1.5, 3.5], extraBetweenCoursesChance: 0.35 },
+  courses: { appetizerPlateSeconds: 1.5, appetizerEatFactor: 0.6, dessertEatFactor: 0.6, pauseSeconds: [1.5, 3.5], extraBetweenCoursesChance: 0.35, lingerSeconds: [2, 4] },
   coupleRequestPatienceSeconds: 35,
   decorMatchBonus: { startMood: 10, scoreBonus: 0.1 },
 };

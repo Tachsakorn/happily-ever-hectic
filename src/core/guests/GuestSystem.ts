@@ -43,6 +43,16 @@ function chooseWish(ctx: SimContext, guest: Guest): Wish | null {
   return ctx.rng.weighted(options, (o) => o.weight)?.wish ?? null;
 }
 
+/**
+ * Everyone invited is here: guests who have finished their meal skip any
+ * remaining extras and head home, so the reception winds down instead of
+ * waiting on a few lingering guests.
+ */
+function lastCall(ctx: SimContext): boolean {
+  if ((ctx.level.ending ?? 'guestsGone') !== 'guestsGone') return false;
+  return ctx.state.stats.guestsArrived >= ctx.level.guests.length;
+}
+
 /** The visit is over: a happy goodbye frees the seat for the next guest. */
 function leaveHappily(ctx: SimContext, g: Guest): void {
   const tableId = g.tableId;
@@ -95,10 +105,8 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
       g.wantsItemId = null;
       g.course = null;
       transitionGuest(ctx, g, GuestState.SATISFIED);
-      if (hasCourseLeft(ctx, g)) {
-        const [min, max] = ctx.tuning.courses.pauseSeconds;
-        g.nextRequestIn = ctx.rng.range(min, max);
-      } else scheduleNextRequest(ctx, g);
+      const [min, max] = hasCourseLeft(ctx, g) ? ctx.tuning.courses.pauseSeconds : ctx.tuning.courses.lingerSeconds;
+      g.nextRequestIn = ctx.rng.range(min, max);
     }
   },
   SATISFIED(ctx, g, dt) {
@@ -112,7 +120,7 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
         startNextCourse(ctx, g);
         return;
       }
-    } else if (g.requestsLeft === 0) {
+    } else if (g.requestsLeft === 0 || lastCall(ctx)) {
       leaveHappily(ctx, g);
       return;
     }

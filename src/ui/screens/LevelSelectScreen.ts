@@ -246,7 +246,7 @@ export class LevelSelectScreen extends DomScreen {
 
   private openShop(): void {
     this.actions.cue?.('pop');
-    const list = h('div', { class: 'shop-list' });
+    const list = h('div', { class: 'shop-list', 'data-scrollable': '' });
     const paintList = () => {
       list.replaceChildren(
         ...this.vm.shop.map((item) => {

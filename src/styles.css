@@ -1205,6 +1205,8 @@ body {
   gap: 12px;
   overflow-y: auto;
   touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 4px 4px 12px;
 }
 
@@ -1271,6 +1273,8 @@ body {
   gap: 10px;
   overflow-y: auto;
   touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 4px 4px 12px;
 }
 

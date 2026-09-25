@@ -56,6 +56,6 @@ export function achievementsPanel(vm: AchievementsVM, onClose: () => void, dispo
       `${vm.unlocked} of ${vm.total} unlocked`,
       secrets ? ` · ${secrets} secret${secrets === 1 ? '' : 's'} still hidden` : ' · every secret found!',
     ),
-    h('div', { class: 'trophy-list' }, ...vm.items.map(card)),
+    h('div', { class: 'trophy-list', 'data-scrollable': '' }, ...vm.items.map(card)),
   );
 }

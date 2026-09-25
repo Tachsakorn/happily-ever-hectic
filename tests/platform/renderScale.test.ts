@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeRenderScale } from '../../src/platform/viewport/renderScale';
 import { uiScaleFor } from '../../src/platform/viewport/uiScale';
+import { pickViewport } from '../../src/platform/viewport/viewportSize';
 
 describe('computeRenderScale', () => {
   it('renders at 2x on a retina iPad filling the screen', () => {
@@ -36,5 +37,29 @@ describe('UI frame scaling', () => {
     const s = uiScaleFor(844, 390);
     expect(s).toBeCloseTo(390 / 700, 5);
     expect(390 / s).toBeGreaterThanOrEqual(700 - 1e-6);
+  });
+});
+
+describe('visible viewport', () => {
+  const readings = (over: Partial<import('../../src/platform/viewport/viewportSize').ViewportReadings> = {}) => ({
+    visual: { width: 1180, height: 796, left: 0, top: 0 },
+    inner: { width: 1180, height: 796 },
+    client: { width: 1180, height: 796 },
+    screen: { width: 820, height: 1180 },
+    standalone: false,
+    ...over,
+  });
+
+  it('in the browser, follows the visual viewport (toolbars take their share)', () => {
+    expect(pickViewport(readings())).toEqual({ width: 1180, height: 796, left: 0, top: 0 });
+  });
+
+  it('as a home-screen app filling the screen, covers the whole screen (no strip under a translucent status bar)', () => {
+    expect(pickViewport(readings({ standalone: true }))).toEqual({ width: 1180, height: 820, left: 0, top: 0 });
+  });
+
+  it('as a home-screen app in Split View, keeps the window size', () => {
+    const split = readings({ standalone: true, visual: { width: 700, height: 796, left: 0, top: 0 }, inner: { width: 700, height: 796 }, client: { width: 700, height: 796 } });
+    expect(pickViewport(split)).toEqual({ width: 700, height: 796, left: 0, top: 0 });
   });
 });

@@ -3,11 +3,13 @@ import type { ReceptionSession } from '../../core/sim/ReceptionSession';
 import type { Vec2 } from '../../content/types';
 import type { DomainEvent } from '../../core/sim/events';
 import type { TargetRef } from '../../core/sim/state';
-import type { CoupleStateId } from '../../content/types';
+import type { CoupleStateId, VenueDef } from '../../content/types';
 import { findGuest } from '../../core/guests/guestMachine';
 import { ArtKit } from '../art/ArtKit';
 import { TextureFactory } from '../art/TextureFactory';
 import { paintVenue, type DecorLook } from '../../art/venuePainter';
+import { paintSurroundTile, SURROUND_TILE } from '../../art/surround';
+import { venueTheme } from '../../content/venueLayout';
 import { SceneKey } from '../config';
 import { ReceptionInput } from '../input/ReceptionInput';
 import { PhaserHost } from '../PhaserHost';
@@ -86,7 +88,7 @@ export class ReceptionScene extends Phaser.Scene {
     const { session, renderScale } = data;
     const sim = session.sim;
     const ctx = sim.context;
-    PhaserHost.applyDesignCamera(this, renderScale);
+    PhaserHost.applyDesignCamera(this);
 
     this.tex = new TextureFactory(this.textures, renderScale);
     this.art = new ArtKit(this.tex, session.content);
@@ -107,6 +109,7 @@ export class ReceptionScene extends Phaser.Scene {
         dancing,
       }), bgScale);
     this.tex.image(this, venue.size.width / 2, venue.size.height / 2, bgKey, bgScale).setDepth(0);
+    this.paintSurround(venue);
 
     this.fx = new Fx(this, this.tex);
     this.props = new PropsView(this, this.art, this.tex, sim);
@@ -335,7 +338,7 @@ export class ReceptionScene extends Phaser.Scene {
         if (worse && warning) this.banner.show(warning, 'bad', 3, true);
         else if (!worse && (e.to === 'happy' || e.to === 'blissful')) {
           const pos = venue.couplePos;
-          this.floating.show({ x: pos.x, y: pos.y - 150 }, e.to === 'blissful' ? 'Blissful! ♥' : 'Feeling better!', Colors.goodCss, 22);
+          this.floating.show({ x: pos.x, y: pos.y - 105 }, e.to === 'blissful' ? 'Blissful! ♥' : 'Feeling better!', Colors.goodCss, 22);
         }
         break;
       }
@@ -380,6 +383,30 @@ export class ReceptionScene extends Phaser.Scene {
       default:
         break;
     }
+  }
+
+  /**
+   * Fills the screen around the room (phones and monitors are wider than it,
+   * some iPads taller) with a seamless themed tile, plus a soft shadow and an
+   * ink frame so the room reads as the stage.
+   */
+  private paintSurround(venue: VenueDef): void {
+    const theme = venueTheme(venue);
+    const key = `surround:${theme}`;
+    // Baked at the render scale and tiled back down to design units, so it stays crisp.
+    const scale = this.tex.scale;
+    this.tex.ensure(key, SURROUND_TILE, SURROUND_TILE, paintSurroundTile(theme));
+    const m = PhaserHost.SURROUND_MARGIN;
+    const { width, height } = venue.size;
+    this.add
+      .tileSprite(width / 2, height / 2, width + m.x * 2, height + m.y * 2, key)
+      .setTileScale(1 / scale)
+      .setDepth(-20);
+    const frame = this.add.graphics().setDepth(-10);
+    frame.fillStyle(0x3b2640, 0.18).fillRoundedRect(-4, 6, width + 8, height + 10, 14);
+    frame.fillStyle(0x3b2640, 0.12).fillRoundedRect(-14, -8, width + 28, height + 28, 22);
+    const edge = this.add.graphics().setDepth(0.5);
+    edge.lineStyle(6, 0x3b2640, 1).strokeRect(-3, -3, width + 6, height + 6);
   }
 
   /** The failure title card: big, wobbling, impossible to miss. */

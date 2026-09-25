@@ -6,23 +6,28 @@ import { DESIGN_HEIGHT, DESIGN_WIDTH } from './config';
  * for the whole session (re-creating WebGL contexts on iPad leaks memory);
  * scenes are started/stopped as the app state changes.
  *
- * The canvas is rendered at `renderScale` × design size and every scene's
- * camera is zoomed by the same factor, so game code always works in design
- * units while text and shapes stay crisp on retina screens.
+ * The canvas always covers the whole screen, whatever its shape (a phone is
+ * much wider than the room, an iPad Pro a little taller): its aspect follows
+ * the screen, and each scene's camera fits the design area inside it and
+ * centres it. Scenes paint something around the room, so there are never
+ * empty bars. The canvas resolution is chosen so one design unit is about
+ * `renderScale` canvas pixels: game code works in design units while text
+ * and shapes stay crisp on retina screens.
  */
 export class PhaserHost {
   readonly game: Phaser.Game;
 
   constructor(
-    parent: HTMLElement,
+    private readonly parent: HTMLElement,
     readonly renderScale: number,
     scenes: readonly { key: string; scene: Phaser.Types.Scenes.SceneType }[],
   ) {
+    const size = this.canvasSize();
     this.game = new Phaser.Game({
       type: Phaser.AUTO,
       parent,
-      width: DESIGN_WIDTH * renderScale,
-      height: DESIGN_HEIGHT * renderScale,
+      width: size.width,
+      height: size.height,
       backgroundColor: '#f3d9cf',
       scale: {
         mode: Phaser.Scale.FIT,
@@ -68,15 +73,46 @@ export class PhaserHost {
    */
   refit(): void {
     const scale = this.game.scale;
-    if (scale.getParentBounds()) scale.refresh();
+    scale.getParentBounds();
+    const { width, height } = this.canvasSize();
+    // A new screen shape means a new canvas shape; otherwise just re-measure.
+    if (Math.abs(width - scale.gameSize.width) > 1 || Math.abs(height - scale.gameSize.height) > 1) scale.setGameSize(width, height);
+    else scale.refresh();
   }
 
-  /** Applies the design-space camera to a scene. Call from each scene's create(). */
-  static applyDesignCamera(scene: Phaser.Scene, renderScale: number): void {
-    const cam = scene.cameras.main;
-    cam.setZoom(renderScale);
-    cam.centerOn(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2);
+  /**
+   * Canvas pixels for the parent's current size: its aspect, at about
+   * `renderScale` pixels per design unit, never beyond the device's pixels.
+   */
+  private canvasSize(): { width: number; height: number } {
+    const rect = this.parent.getBoundingClientRect();
+    const cssW = Math.max(1, rect.width || window.innerWidth);
+    const cssH = Math.max(1, rect.height || window.innerHeight);
+    const fit = Math.min(cssW / DESIGN_WIDTH, cssH / DESIGN_HEIGHT);
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const pixelsPerCss = Math.min(dpr, Math.max(1, this.renderScale / fit));
+    return { width: Math.round(cssW * pixelsPerCss), height: Math.round(cssH * pixelsPerCss) };
   }
+
+  /**
+   * Applies the design-space camera to a scene and keeps it fitted when the
+   * canvas changes shape. Call from each scene's create().
+   */
+  static applyDesignCamera(scene: Phaser.Scene): void {
+    const fit = () => {
+      const { width, height } = scene.scale.gameSize;
+      const cam = scene.cameras.main;
+      cam.setSize(width, height);
+      cam.setZoom(Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT));
+      cam.centerOn(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2);
+    };
+    fit();
+    scene.scale.on(Phaser.Scale.Events.RESIZE, fit);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.scale.off(Phaser.Scale.Events.RESIZE, fit));
+  }
+
+  /** The part of the world the camera can show on the widest/tallest screens, for painting surroundings. */
+  static readonly SURROUND_MARGIN = { x: DESIGN_WIDTH, y: DESIGN_HEIGHT } as const;
 
   private isLive(scene: Phaser.Scene): boolean {
     const sys = scene.sys;

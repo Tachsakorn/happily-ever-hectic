@@ -148,7 +148,13 @@ Hit-testing is done in world space by the simulation (`core/input/picking.ts`) w
 ## Rendering & performance
 
 - One `Phaser.Game` for the whole session; scenes are started/stopped, never the game.
-- Canvas renders at `renderScale` (≈ physical pixels, max 2×); cameras zoom so code uses design units (1400×1000).
+- The canvas always covers the whole screen, in the screen's shape (`PhaserHost.canvasSize`), at about
+  `renderScale` pixels per design unit (≈ physical pixels, max 2×). Each scene's camera fits the
+  1400×1000 design area inside it and centres it (`PhaserHost.applyDesignCamera`, refitted on every
+  resize/rotation); the reception paints a seamless themed tile around the room (`art/surround.ts`),
+  so wide phones, monitors and 4:3 iPads never show empty bars. Code always uses design units.
+- The DOM menus lay out in a 1024×700+ frame: scaled down on phones, up to 1.5× on big monitors
+  (`platform/viewport/uiScale.ts`). On a computer, Escape or P pauses and resumes.
 - All art is drawn once with Canvas2D (`art/`) and baked into textures (`render/art/TextureFactory`).
   The frame loop only moves images; views update display objects only when the underlying value changed.
 - Motion (walk bob, breathing, hops, squash) is a few multiplications per sprite per frame; reactions are

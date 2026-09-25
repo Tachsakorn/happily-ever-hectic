@@ -62,6 +62,13 @@ export class GameApp {
 
   start(): void {
     this.show(this.screenForBoot());
+    // On a computer, Escape (or P) pauses and resumes; touch devices use the pause button.
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat || (e.key !== 'Escape' && e.key.toLowerCase() !== 'p')) return;
+      const state = this.flow.state;
+      if (state === AppState.RECEPTION_PLAYING) this.go(AppState.PAUSED);
+      else if (state === AppState.PAUSED) this.go(AppState.RECEPTION_PLAYING);
+    });
   }
 
   private get ctx(): Readonly<FlowContext> {

@@ -26,6 +26,12 @@ describe('UI frame scaling', () => {
     expect(uiScaleFor(1180, 820)).toBe(1);
     expect(uiScaleFor(1024, 768)).toBe(1);
   });
+  it('a big desktop monitor grows the UI a little, never beyond the cap', () => {
+    expect(uiScaleFor(1920, 1080)).toBeCloseTo(1080 / 860, 5);
+    expect(uiScaleFor(3840, 2160)).toBe(1.5);
+    expect(uiScaleFor(1366, 768)).toBe(1);
+  });
+
   it('a phone in landscape lays the UI out larger and scales it down', () => {
     const s = uiScaleFor(844, 390);
     expect(s).toBeCloseTo(390 / 700, 5);

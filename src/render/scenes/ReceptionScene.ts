@@ -254,6 +254,12 @@ export class ReceptionScene extends Phaser.Scene {
         this.fx.puff(e.pos, 5, 'steam');
         this.cameras.main.shake(260, 0.006);
         break;
+      case 'chainChanged':
+        if (e.count >= 2 && e.pos) {
+          this.floating.show({ x: e.pos.x, y: e.pos.y - 150 }, `×${e.count} Chain!`, '#c98a22', 20 + Math.min(10, e.count * 2));
+          this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 120 }, 4 + Math.min(6, e.count), 40, 0xf2b84b);
+        }
+        break;
       case 'secretAppeared':
         this.banner.show(`✨ ${ctx.content.secretEvents.get(e.defId).appearText}`, 'secret', 4.5, true);
         break;

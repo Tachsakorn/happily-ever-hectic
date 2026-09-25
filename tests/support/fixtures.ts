@@ -17,6 +17,8 @@ export function testLevel(overrides: Partial<LevelDef> = {}): LevelDef {
     weddingId: 'test-wedding',
     venueId: 'garden-hall',
     durationSeconds: 600,
+    // Unit tests drive time themselves; they end on the clock, not when guests leave.
+    ending: 'timer',
     guests: [guest('g1', 'Guest One', 'regular', 'friends', 0)],
     disasterIds: [],
     moments: [],
@@ -30,7 +32,7 @@ export function testLevel(overrides: Partial<LevelDef> = {}): LevelDef {
 
 export function makeSim(
   level: Partial<LevelDef> = {},
-  opts: { seed?: number; modifiers?: Modifiers[]; coupleRequests?: string[] } = {},
+  opts: { seed?: number; modifiers?: Modifiers[]; coupleRequests?: string[]; courses?: boolean } = {},
 ): { sim: ReceptionSimulation; events: DomainEvent[] } {
   const content = new ContentRegistry([
     basePack,
@@ -42,6 +44,9 @@ export function makeSim(
           id: 'test-wedding',
           coupleRequestItemIds: opts.coupleRequests ?? [],
           menuItemIds: ['roast-chicken'],
+          // Most tests exercise one course; `courses: true` serves the full meal.
+          appetizerItemIds: opts.courses ? ['garden-salad'] : undefined,
+          dessertItemId: opts.courses ? 'cake-slice' : undefined,
         },
       ],
       levels: [testLevel(level)],

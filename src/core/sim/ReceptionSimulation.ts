@@ -65,6 +65,7 @@ export class ReceptionSimulation {
       gifts: [],
       disasters: [],
       secrets: [],
+      chain: { key: null, count: 0 },
       couple: { mood: Math.min(100, tuning.mood.start + modifiers.startMood), request: null, nextRequestIn: 0 },
       flags: new Set(),
       score: 0,
@@ -75,6 +76,9 @@ export class ReceptionSimulation {
         guestsUpset: 0,
         guestsLeftHappy: 0,
         dances: 0,
+        guestsArrived: 0,
+        coursesServed: 0,
+        bestChain: 0,
         giftsDelivered: 0,
         disastersResolved: 0,
         disastersFailed: 0,
@@ -158,7 +162,25 @@ export class ReceptionSimulation {
     mood.tick(dt);
 
     if (state.couple.mood <= 0) this.end('FAILED');
-    else if (state.time >= state.duration) this.end('COMPLETE');
+    else if (this.receptionIsOver()) this.end('COMPLETE');
+  }
+
+  /** Whether the wedding has run its course (see LevelDef.ending). */
+  private receptionIsOver(): boolean {
+    const { state, level } = this.ctx;
+    if ((level.ending ?? 'guestsGone') === 'timer') return state.time >= state.duration;
+    const everyoneCame = state.stats.guestsArrived >= level.guests.length;
+    const everyoneLeft = state.guests.length === 0;
+    // Every wedding moment must have come and gone (a toast still pending keeps the party going).
+    const lastMoment = level.moments.reduce((t, m) => Math.max(t, m.at), 0);
+    const momentsDone = state.time >= lastMoment && !state.couple.request?.momentId;
+    return everyoneCame && everyoneLeft && momentsDone;
+  }
+
+  /** Guests still to finish their visit (arrived or not), for the HUD. */
+  get guestsRemaining(): number {
+    const { state, level } = this.ctx;
+    return level.guests.length - state.stats.guestsArrived + state.guests.filter((g) => g.state !== 'LEAVING').length;
   }
 
   private end(outcome: 'COMPLETE' | 'FAILED', minScore = 0): void {
@@ -189,7 +211,9 @@ export class ReceptionSimulation {
         this.end('FAILED');
         break;
       case 'skipTime': {
-        const steps = Math.round(Math.max(0, Math.min(c.seconds, state.duration - state.time)) / SIM_STEP_SECONDS);
+        const timed = (this.ctx.level.ending ?? 'guestsGone') === 'timer';
+        const seconds = timed ? Math.min(c.seconds, state.duration - state.time) : c.seconds;
+        const steps = Math.round(Math.max(0, seconds) / SIM_STEP_SECONDS);
         for (let i = 0; i < steps && !this.isOver; i++) this.step(SIM_STEP_SECONDS);
         break;
       }

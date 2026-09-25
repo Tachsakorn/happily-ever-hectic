@@ -11,6 +11,7 @@ const MOOD_BAR = { x: 112, y: 50, w: 330, h: 26 };
 const SCORE_BAR = { x: 1004, y: 76, w: 262, h: 14 };
 const SCORE_POS = { x: 1150, y: 38 };
 const TICKER_LINES = 2;
+const CHAIN_POS = { x: 1136, y: 140 };
 /** Bottom, right of the gift table by the entrance and left of the kitchen. */
 const BANNER = { x: 770, y: 948, w: 700 };
 const MOOD_OK = 60;
@@ -38,6 +39,12 @@ export class Hud {
   private shownScore = -1;
   private displayScore = 0;
   private shownSeconds = -1;
+  private shownRemaining = -1;
+  private shownChain = -1;
+  private readonly chainText: Phaser.GameObjects.Text;
+  private readonly chainPanel: Phaser.GameObjects.Image;
+  /** 'guestsGone' levels show how many guests are still to go instead of a clock. */
+  private readonly countsGuests: boolean;
   private heartbeat: Phaser.Tweens.Tween | null = null;
   private clockShake: Phaser.Tweens.Tween | null = null;
 
@@ -64,7 +71,10 @@ export class Hud {
       .setDepth(d + 1);
     this.moodBar = scene.add.graphics().setDepth(d + 1);
     this.scoreBar = scene.add.graphics().setDepth(d + 1);
-    this.clock = tex.image(scene, 1018, 38, tex.ensure('ui:clock', 48, 48, paintUiIcon('clock'))).setScale(0.8 / tex.scale).setDepth(d + 1);
+    this.countsGuests = (level.ending ?? 'guestsGone') === 'guestsGone';
+    this.clock = this.countsGuests
+      ? tex.image(scene, 1018, 38, tex.ensure('ui:guests', 48, 48, paintUiIcon('guests', 0xe86f8e))).setScale(0.8 / tex.scale).setDepth(d + 1)
+      : tex.image(scene, 1018, 38, tex.ensure('ui:clock', 48, 48, paintUiIcon('clock'))).setScale(0.8 / tex.scale).setDepth(d + 1);
     this.timeText = makeText(scene, 1042, 38, '', renderScale, { size: 30, display: true, align: 'left' }).setOrigin(0, 0.5).setDepth(d + 1);
     this.coin = tex.image(scene, SCORE_POS.x - 20, SCORE_POS.y, art.icon('coin', 0xf2b84b)).setScale(0.78 / tex.scale).setDepth(d + 1);
     this.scoreText = makeText(scene, 1272, SCORE_POS.y, '', renderScale, { size: 28, display: true, align: 'right', color: '#c98a22', stroke: '#fffaf0', strokeWidth: 4 })
@@ -79,6 +89,12 @@ export class Hud {
           .setDepth(d + 2),
       );
     }
+    // Chain counter, tucked under the score panel; hidden until a chain reaches 2.
+    this.chainPanel = tex.image(scene, CHAIN_POS.x, CHAIN_POS.y, tex.ensure('panel:chain', 190, 46, paintPanel(190, 46, 0xfff3cf))).setDepth(d).setVisible(false);
+    this.chainText = makeText(scene, CHAIN_POS.x, CHAIN_POS.y - 1, '', renderScale, { size: 22, display: true, color: '#c98a22', stroke: '#fffaf0', strokeWidth: 4 })
+      .setOrigin(0.5)
+      .setDepth(d + 1)
+      .setVisible(false);
     for (let i = 0; i < TICKER_LINES; i++) {
       this.ticker.push(
         makeText(scene, 30, 128 + i * 26, '', renderScale, { size: 18, weight: '800', align: 'left', stroke: '#fffaf0', strokeWidth: 6 })
@@ -143,18 +159,9 @@ export class Hud {
       }
     }
 
-    const secondsLeft = Math.max(0, Math.ceil(s.duration - s.time));
-    if (secondsLeft !== this.shownSeconds) {
-      this.shownSeconds = secondsLeft;
-      const m = Math.floor(secondsLeft / 60);
-      const sec = secondsLeft % 60;
-      const hurry = secondsLeft <= 20;
-      this.timeText.setText(`${m}:${String(sec).padStart(2, '0')}`).setColor(hurry ? Colors.badCss : Colors.inkCss);
-      if (hurry && secondsLeft > 0) {
-        this.clockShake?.stop();
-        this.clockShake = this.scene.tweens.add({ targets: this.clock, angle: { from: -16, to: 0 }, duration: 260, ease: 'Back.easeOut' });
-      }
-    }
+    if (this.countsGuests) this.syncGuestsLeft();
+    else this.syncClock();
+    this.syncChain();
 
     if (s.score !== this.shownScore) {
       this.shownScore = s.score;
@@ -167,6 +174,46 @@ export class Hud {
       this.scoreText.setText(Math.round(this.displayScore).toLocaleString('en-US'));
     } else if (this.scoreText.text === '') {
       this.scoreText.setText('0');
+    }
+  }
+
+  /** Guests still to finish their visit: the reception ends when this reaches zero. */
+  private syncGuestsLeft(): void {
+    const left = this.sim.guestsRemaining;
+    if (left === this.shownRemaining) return;
+    const first = this.shownRemaining < 0;
+    this.shownRemaining = left;
+    this.timeText.setText(String(left)).setColor(Colors.inkCss);
+    if (!first) this.scene.tweens.add({ targets: this.clock, scale: { from: 1.15 / this.tex.scale, to: 0.8 / this.tex.scale }, duration: 260, ease: 'Back.easeOut' });
+  }
+
+  private syncChain(): void {
+    const count = this.sim.state.chain.count;
+    if (count === this.shownChain) return;
+    this.shownChain = count;
+    const show = count >= 2;
+    this.chainPanel.setVisible(show);
+    this.chainText.setVisible(show).setText(`Chain ×${count}`);
+    if (!show) return;
+    this.scene.tweens.killTweensOf([this.chainPanel, this.chainText]);
+    this.chainPanel.setScale(1.2 / this.tex.scale);
+    this.chainText.setScale(1.25);
+    this.scene.tweens.add({ targets: this.chainPanel, scale: 1 / this.tex.scale, duration: 280, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: this.chainText, scale: 1, duration: 280, ease: 'Back.easeOut' });
+  }
+
+  private syncClock(): void {
+    const s = this.sim.state;
+    const secondsLeft = Math.max(0, Math.ceil(s.duration - s.time));
+    if (secondsLeft === this.shownSeconds) return;
+    this.shownSeconds = secondsLeft;
+    const m = Math.floor(secondsLeft / 60);
+    const sec = secondsLeft % 60;
+    const hurry = secondsLeft <= 20;
+    this.timeText.setText(`${m}:${String(sec).padStart(2, '0')}`).setColor(hurry ? Colors.badCss : Colors.inkCss);
+    if (hurry && secondsLeft > 0) {
+      this.clockShake?.stop();
+      this.clockShake = this.scene.tweens.add({ targets: this.clock, angle: { from: -16, to: 0 }, duration: 260, ease: 'Back.easeOut' });
     }
   }
 

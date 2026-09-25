@@ -9,12 +9,14 @@ const TRANSITIONS: Readonly<Record<GuestStateId, readonly GuestStateId[]>> = {
   ARRIVING: ['WAITING_TO_BE_SEATED', 'WALKING_TO_SEAT', 'UPSET'],
   WAITING_TO_BE_SEATED: ['WALKING_TO_SEAT', 'UPSET'],
   WALKING_TO_SEAT: ['SEATED'],
-  SEATED: ['READY_TO_ORDER', 'UPSET'],
+  // A seated guest starts their first course: ordering a main, or waiting for a starter.
+  SEATED: ['READY_TO_ORDER', 'WAITING_FOR_FOOD', 'UPSET'],
   READY_TO_ORDER: ['WAITING_FOR_FOOD', 'UPSET'],
   WAITING_FOR_FOOD: ['EATING', 'UPSET'],
   EATING: ['SATISFIED', 'UPSET'],
-  // SATISFIED → LEAVING is the happy goodbye once the visit is over.
-  SATISFIED: ['REQUESTING', 'WANTS_TO_DANCE', 'LEAVING', 'UPSET'],
+  // Between courses a guest moves on to the next one (order / wait for food);
+  // SATISFIED → LEAVING is the happy goodbye once the meal and extras are over.
+  SATISFIED: ['READY_TO_ORDER', 'WAITING_FOR_FOOD', 'REQUESTING', 'WANTS_TO_DANCE', 'LEAVING', 'UPSET'],
   REQUESTING: ['SATISFIED', 'UPSET'],
   WANTS_TO_DANCE: ['WALKING_TO_DANCE', 'UPSET'],
   WALKING_TO_DANCE: ['DANCING'],

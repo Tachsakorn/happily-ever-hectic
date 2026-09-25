@@ -57,6 +57,19 @@ Guest lifecycle: `ARRIVING → WAITING_TO_BE_SEATED → WALKING_TO_SEAT → SEAT
 WAITING_FOR_FOOD → EATING → SATISFIED ⇄ REQUESTING`, and from any waiting/seated state `→ UPSET →
 LEAVING → GONE`. Illegal transitions throw.
 
+Meal: a guest eats up to three courses in order (`core/guests/courses.ts`), as the wedding's data
+provides: a starter (`appetizerItemIds`, plated by the kitchen as soon as the guest wants it, no
+burner), the main (`menuItemIds`: the guest orders, the kitchen cooks) and dessert (`dessertItemId`,
+from the dessert table). Between courses there is a short pause, sometimes an extra wish.
+
+Chains (`core/scoring/chain.ts`): consecutive jobs of the same kind (`serve:<item>`, `order`, `gift`,
+`fix`, `couple`) grow a chain; the n-th pays (n − 1) × `chainBonusPerStep`. Fetching, binning,
+seating and sending dancers are neutral. Any other kind of job starts a new chain.
+
+Ending: by default (`LevelDef.ending: 'guestsGone'`) a reception is complete once every guest has
+arrived and left and every wedding moment is over; `durationSeconds` is then only an estimate.
+`'timer'` ends it on the clock (unit tests use this).
+
 Turnover: each guest type's `staysFor: [min, max]` is how many follow-up wishes (a drink, a dance)
 a guest has before a happy goodbye (`SATISFIED → LEAVING`, bonus score per heart). Their seat frees
 up, so a level can have more guests than seats — validation requires `staysFor` for every guest in

@@ -27,6 +27,7 @@ export const tuning: TuningDef = {
   danceSeconds: 7,
   danceHappinessPerSecond: 6,
   secretWorkSeconds: 0.4,
+  courses: { appetizerPlateSeconds: 1.5, appetizerEatFactor: 0.6, dessertEatFactor: 0.6, pauseSeconds: [1.5, 3.5], extraBetweenCoursesChance: 0.35 },
   coupleRequestPatienceSeconds: 35,
   decorMatchBonus: { startMood: 10, scoreBonus: 0.1 },
 };
@@ -44,6 +45,9 @@ export const scoring: ScoringRules = {
   danceStarted: 35,
   perHappyGuestHeartAtEnd: 10,
   perMoodPointAtEnd: 4,
+  appetizerServed: 25,
+  dessertServed: 25,
+  chainBonusPerStep: 15,
 };
 
 export const decor: DecorDef[] = [

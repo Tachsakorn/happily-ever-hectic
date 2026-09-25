@@ -7,8 +7,9 @@ import type { SimContext, System } from '../sim/SimContext';
  * prioritisation choice for the player. Burner count limits parallel cooking;
  * a full pass stalls finished dishes until the planner clears a slot.
  */
-export function placeOrder(ctx: SimContext, guestKey: string, itemId: Id): void {
-  ctx.state.kitchen.orders.push({ id: ctx.nextId(), itemId, guestKey, cookLeft: null, cookTotal: 0 });
+/** Queues a dish. With `plateSeconds` it is plated (a starter) and needs no burner. */
+export function placeOrder(ctx: SimContext, guestKey: string, itemId: Id, plateSeconds?: number): void {
+  ctx.state.kitchen.orders.push({ id: ctx.nextId(), itemId, guestKey, cookLeft: null, cookTotal: 0, ...(plateSeconds !== undefined ? { plateSeconds } : {}) });
 }
 
 export function cancelOrdersFor(ctx: SimContext, guestKey: string): void {
@@ -29,8 +30,15 @@ export const KitchenSystem: System = {
     const { orders, pass } = ctx.state.kitchen;
     const cookTime = ctx.level.kitchen.cookSeconds * ctx.modifiers.kitchenCookTime;
 
-    let cooking = orders.filter((o) => o.cookLeft !== null).length;
     for (const o of orders) {
+      if (o.plateSeconds !== undefined && o.cookLeft === null) {
+        o.cookLeft = o.plateSeconds;
+        o.cookTotal = o.plateSeconds;
+      }
+    }
+    let cooking = orders.filter((o) => o.cookLeft !== null && o.plateSeconds === undefined).length;
+    for (const o of orders) {
+      if (o.plateSeconds !== undefined) continue;
       if (cooking >= ctx.level.kitchen.burners + Math.round(ctx.modifiers.kitchenBurners)) break;
       if (o.cookLeft === null) {
         o.cookLeft = cookTime;

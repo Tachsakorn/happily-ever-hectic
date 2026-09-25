@@ -104,7 +104,7 @@ function chooseAction(sim: ReceptionSimulation): TargetRef | null {
       if (slot !== -1) return { kind: 'passSlot', index: slot };
     }
     for (const g of unmet) {
-      if (g.state !== 'REQUESTING') continue;
+      // Drinks and dessert come from stations; starters and mains from the kitchen pass.
       const st = stationFor(g.wantsItemId as string);
       if (st) return { kind: 'station', id: st.id };
     }

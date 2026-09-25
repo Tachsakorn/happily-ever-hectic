@@ -30,6 +30,8 @@ export type DomainEvent =
   | { type: 'secretAppeared'; secretId: number; defId: Id; pos: Vec2 }
   | { type: 'secretFound'; secretId: number; defId: Id; pos: Vec2 }
   | { type: 'secretVanished'; secretId: number; defId: Id; pos: Vec2 }
+  /** A chain grew (count ≥ 2) or a new one started (count 1, after a broken chain of `broken`). */
+  | { type: 'chainChanged'; key: string; count: number; bonus: number; broken: number; pos: Vec2 | null }
   | { type: 'momentStarted'; momentId: Id }
   | { type: 'momentCompleted'; momentId: Id }
   | { type: 'momentFailed'; momentId: Id }

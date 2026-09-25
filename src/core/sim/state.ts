@@ -62,6 +62,18 @@ export interface Guest {
   danceSpot: number | null;
   /** Set when leaving because the visit is over (not upset). */
   happyExit: boolean;
+  /** Index of the next course to start (see core/guests/courses). */
+  nextCourse: number;
+  /** The course being waited for or eaten, if any. */
+  course: CourseKind | null;
+}
+
+export type CourseKind = 'appetizer' | 'main' | 'dessert';
+
+/** The current chain: consecutive actions of the same kind (see core/scoring/chain). */
+export interface Chain {
+  key: string | null;
+  count: number;
 }
 
 export type TargetRef =
@@ -96,6 +108,8 @@ export interface KitchenOrder {
   /** null while waiting for a free burner. */
   cookLeft: number | null;
   cookTotal: number;
+  /** Plated, not cooked (starters): ready after this many seconds, without using a burner. */
+  readonly plateSeconds?: number;
 }
 
 export interface Gift {
@@ -165,6 +179,7 @@ export interface ReceptionState {
   readonly gifts: Gift[];
   readonly disasters: Disaster[];
   readonly secrets: Secret[];
+  readonly chain: Chain;
   readonly couple: Couple;
   readonly flags: Set<string>;
   score: number;
@@ -179,6 +194,10 @@ export interface ReceptionStats {
   guestsUpset: number;
   guestsLeftHappy: number;
   dances: number;
+  /** Guests who have come in through the door so far. */
+  guestsArrived: number;
+  coursesServed: number;
+  bestChain: number;
   giftsDelivered: number;
   disastersResolved: number;
   disastersFailed: number;

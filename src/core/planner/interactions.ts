@@ -10,6 +10,8 @@ import { resolveDisaster } from '../disasters/DisasterSystem';
 import { serveCouple } from '../couple/CoupleSystem';
 import { stationItem } from '../sim/items';
 import { findSecret, liveSecret } from '../secrets/SecretSystem';
+import { extendChain } from '../scoring/chain';
+import { eatSecondsFor, servedCourse } from '../guests/courses';
 
 /**
  * What happens when the planner reaches a tapped target. Resolution happens on
@@ -90,6 +92,7 @@ function resolveGuest(ctx: SimContext, key: string): Resolution {
         transitionGuest(ctx, g, GuestState.WAITING_FOR_FOOD);
         ctx.events.emit({ type: 'orderTaken', guestKey: g.key, itemId: dish, pos: g.pos });
         ctx.score.add(ctx.score.rules.orderTaken, 'Order taken', g.pos);
+        extendChain(ctx, 'order', g.pos);
       },
     };
   }
@@ -106,9 +109,11 @@ function resolveGuest(ctx: SimContext, key: string): Resolution {
         g.happiness = Math.min(MAX_HAPPINESS, g.happiness + ctx.tuning.serveHappinessBoost);
         g.wantsItemId = null;
         if (wasOrder) {
-          transitionGuest(ctx, g, GuestState.EATING, g.eatSeconds);
-          ctx.state.stats.guestsServed++;
-          ctx.score.add(ctx.score.rules.dishServed + tip, 'Dinner served', g.pos);
+          const course = servedCourse(ctx, g);
+          transitionGuest(ctx, g, GuestState.EATING, eatSecondsFor(ctx, g));
+          if (g.course === 'main' || g.course === null) ctx.state.stats.guestsServed++;
+          ctx.state.stats.coursesServed++;
+          ctx.score.add(course.points + tip, course.label, g.pos);
         } else {
           transitionGuest(ctx, g, GuestState.SATISFIED);
           consumeVisit(g);
@@ -116,6 +121,7 @@ function resolveGuest(ctx: SimContext, key: string): Resolution {
           ctx.score.add(ctx.score.rules.requestServed + tip, 'Request served', g.pos);
         }
         ctx.mood.change(ctx.tuning.mood.guestServed, 'Happy guests', g.pos);
+        extendChain(ctx, `serve:${wanted}`, g.pos);
         ctx.events.emit({ type: 'itemServed', to: 'guest', guestKey: g.key, itemId: wanted, wasOrder, happiness: g.happiness, pos: g.pos });
       },
     };
@@ -160,6 +166,7 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
           ctx.state.stats.giftsDelivered += carried.length;
           ctx.events.emit({ type: 'giftsDelivered', count: carried.length, pos: station.pos });
           ctx.score.add(ctx.score.rules.giftDelivered * carried.length, 'Gifts delivered', station.pos);
+          for (let i = 0; i < carried.length; i++) extendChain(ctx, 'gift', station.pos);
           ctx.mood.change(ctx.tuning.mood.giftDelivered * carried.length, 'Gifts on the gift table', station.pos);
         },
       };
@@ -233,7 +240,9 @@ function resolveCouple(ctx: SimContext): Resolution {
   return {
     work: ctx.tuning.work.serve,
     perform: () => {
-      if (removeFromHands(ctx, request.itemId)) serveCouple(ctx);
+      if (!removeFromHands(ctx, request.itemId)) return;
+      serveCouple(ctx);
+      extendChain(ctx, 'couple', ctx.venue.def.couplePos);
     },
   };
 }
@@ -243,7 +252,9 @@ function resolveDisasterWork(ctx: SimContext, d: Disaster): Resolution {
   return {
     work: def.workSeconds,
     perform: () => {
-      if (liveDisaster(ctx, d.id)) resolveDisaster(ctx, d);
+      if (!liveDisaster(ctx, d.id)) return;
+      resolveDisaster(ctx, d);
+      extendChain(ctx, 'fix', d.pos);
     },
   };
 }

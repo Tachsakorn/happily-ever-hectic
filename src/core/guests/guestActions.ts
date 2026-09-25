@@ -39,8 +39,11 @@ export function spawnGuest(ctx: SimContext, spec: LevelGuestSpec): Guest {
     requestsLeft: type.staysFor ? Math.round(ctx.rng.range(type.staysFor[0], type.staysFor[1])) : null,
     danceSpot: null,
     happyExit: false,
+    nextCourse: 0,
+    course: null,
   };
   ctx.state.guests.push(guest);
+  ctx.state.stats.guestsArrived++;
   ctx.events.emit({ type: 'guestArrived', guestKey: guest.key });
   const slot = freeWaitingSlot(ctx);
   if (slot !== null) {

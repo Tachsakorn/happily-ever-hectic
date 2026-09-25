@@ -35,7 +35,10 @@ export const personalPack: ContentPack = {
       partnerA: { id: 'partner-a', name: a.name, visual: { color: a.outfitColor, accent: a.hairColor, icon: a.outfit }, look: a.look },
       partnerB: { id: 'partner-b', name: b.name, visual: { color: b.outfitColor, accent: b.hairColor, icon: b.outfit }, look: b.look },
       lovesTags: personal.lovesTags,
-      menuItemIds: fav.dishes.map((d) => d.id),
+      // Sushi to start, then smoked crying tiger; dragon fruit (via the dessert swap) to finish.
+      appetizerItemIds: [fav.dishes[0]!.id],
+      menuItemIds: fav.dishes.slice(1).map((d) => d.id),
+      dessertItemId: 'cake-slice',
       coupleRequestItemIds: [fav.drink.id, fav.secondDrink.id],
       coupleRequestIntervalSeconds: [40, 58],
     },
@@ -47,7 +50,7 @@ export const personalPack: ContentPack = {
       name: 'Our Wedding',
       weddingId: 'our-wedding',
       venueId: 'garden-hall',
-      durationSeconds: 215,
+      durationSeconds: 330,
       dancing: true,
       // The finale is hard through variety, not volume: fewer guests than
       // weddings 8–9, but every one is a different personality, the seating is a
@@ -56,17 +59,17 @@ export const personalPack: ContentPack = {
       // ✏️ Guest names are placeholders — replace with your real people.
       guests: [
         guest('mom-a', 'Mom', 'grandparent', 'family', 2, { bringsGift: true, likes: ['dad-a'] }),
-        guest('dad-a', 'Dad', 'regular', 'family', 5, { bringsGift: true, likes: ['mom-a'] }),
-        guest('bestie-a', 'Best Friend', 'party-animal', 'friends', 12, { bringsGift: true, likes: ['bestie-b'] }),
-        guest('bestie-b', 'Other Best Friend', 'foodie', 'friends', 18, { bringsGift: true, likes: ['bestie-a'] }),
-        guest('cousin', 'Little Cousin', 'kid', 'family', 30, { dislikes: ['teacher'] }),
-        guest('teacher', 'Favourite Teacher', 'boss', 'work', 40, { bringsGift: true, dislikes: ['cousin'] }),
-        guest('grandma', 'Grandma', 'grandparent', 'family', 52, gift),
-        guest('uncle', 'Uncle', 'regular', 'family', 66, { bringsGift: true, dislikes: ['work'] }),
-        guest('classmate', 'Classmate', 'regular', 'friends', 80, { likes: ['bestie-a'] }),
-        guest('roommate', 'Old Roommate', 'party-animal', 'friends', 96, { likes: ['classmate'] }),
-        guest('aunt', 'Aunt', 'grandparent', 'family', 110, gift),
-        guest('coworker', 'Coworker', 'regular', 'work', 124),
+        guest('dad-a', 'Dad', 'regular', 'family', 6, { bringsGift: true, likes: ['mom-a'] }),
+        guest('bestie-a', 'Best Friend', 'party-animal', 'friends', 14, { bringsGift: true, likes: ['bestie-b'] }),
+        guest('bestie-b', 'Other Best Friend', 'foodie', 'friends', 22, { bringsGift: true, likes: ['bestie-a'] }),
+        guest('cousin', 'Little Cousin', 'kid', 'family', 36, { dislikes: ['teacher'] }),
+        guest('teacher', 'Favourite Teacher', 'boss', 'work', 48, { bringsGift: true, dislikes: ['cousin'] }),
+        guest('grandma', 'Grandma', 'grandparent', 'family', 62, gift),
+        guest('uncle', 'Uncle', 'regular', 'family', 79, { bringsGift: true, dislikes: ['work'] }),
+        guest('classmate', 'Classmate', 'regular', 'friends', 96, { likes: ['bestie-a'] }),
+        guest('roommate', 'Old Roommate', 'party-animal', 'friends', 115, { likes: ['classmate'] }),
+        guest('aunt', 'Aunt', 'grandparent', 'family', 132, gift),
+        guest('coworker', 'Coworker', 'regular', 'work', 149),
       ],
       disasterIds: ['spilled-drink', 'toppled-gifts', 'missing-rings', 'leaning-cake', 'dj-glitch', 'loose-puppy', 'photo-time', 'guest-argument'],
       disasterTriggers: {
@@ -87,7 +90,7 @@ export const personalPack: ContentPack = {
       ],
       kitchen: { burners: 3, cookSeconds: 5 },
       // A forgiving first star: finishing the finale is what unlocks the ending.
-      starScores: [1800, 3450, 4100],
+      starScores: [2050, 4050, 4800],
       coinReward: 400,
       unlockRequiresLevelId: 'big-night',
       introDialogueId: 'intro-our-wedding',

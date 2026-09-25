@@ -32,8 +32,16 @@ describe('level balance (autoplayer)', () => {
         casualStars: casual.map((r) => r.stars).join(''),
         expertScores: expert.map((r) => r.score).join(' '),
         expertStars: expert.map((r) => r.stars).join(''),
-        // Stars: ~55% / 80% / 95% of what a steady casual player scores.
-        suggested: [0.55, 0.8, 0.95].map((f) => Math.round((median(casual.map((r) => r.score)) * f) / 50) * 50).join('/'),
+        // Stars: ~55% / 80% / 95% of what a steady casual player scores; the third star
+        // never above what a quick player always reaches (with no clock to race, speed
+        // alone no longer lifts the score much).
+        suggested: [0.55, 0.8, 0.95]
+          .map((f, i) => {
+            const target = median(casual.map((r) => r.score)) * f;
+            const cap = i === 2 ? Math.min(...expert.map((r) => r.score)) * 0.98 : Infinity;
+            return Math.floor(Math.min(target, cap) / 50) * 50;
+          })
+          .join('/'),
         thresholds: level.starScores.join('/'),
       };
       console.log(JSON.stringify(summary));

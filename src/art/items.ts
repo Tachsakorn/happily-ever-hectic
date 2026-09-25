@@ -20,7 +20,9 @@ export type ItemIcon =
   | 'matcha'
   | 'sushi'
   | 'steak'
-  | 'dragonfruit';
+  | 'dragonfruit'
+  | 'salad'
+  | 'soup';
 
 /** Item icons live in a 44×44 box and are drawn around its centre. */
 export const ICON_SIZE = 44;
@@ -108,6 +110,50 @@ export function paintIcon(icon: ItemIcon, color: number, accent = 0xe86f8e): Pai
         lemon.arc(9, 6, 6, Math.PI, Math.PI * 1.5);
         lemon.closePath();
         flat(c, lemon, 0xf6d860, 1.6);
+        break;
+      }
+      case 'salad': {
+        plate(c);
+        // A leafy heap with tomato and egg on top.
+        for (const [x, y, r, rot] of [
+          [-7, 2, 7, 0.4],
+          [6, 2, 7, -0.4],
+          [0, -3, 7.5, 0],
+          [-2, 4, 6, 0.2],
+        ] as const) {
+          toon(c, oval(x, y, r, r * 0.62, rot), color, { x: x - r, y: y - r, w: r * 2, h: r * 1.3 }, { line: 1.8 });
+        }
+        flat(c, disc(-4, -2, 2.8), 0xe0584f, 1.2);
+        flat(c, disc(5, -3, 2.4), 0xe0584f, 1.2);
+        flat(c, oval(1, 2, 3.2, 2.4), 0xfff7df, 1.2);
+        flat(c, disc(1, 2, 1.3), 0xf2b84b, 0);
+        break;
+      }
+      case 'soup': {
+        c.fillStyle = hex(INK, 0.15);
+        c.fill(oval(0, 11, 17, 5));
+        const bowl = new Path2D();
+        bowl.moveTo(-16, 0);
+        bowl.quadraticCurveTo(-15, 14, 0, 14);
+        bowl.quadraticCurveTo(15, 14, 16, 0);
+        bowl.closePath();
+        toon(c, bowl, 0xffffff, { x: -16, y: 0, w: 32, h: 14 }, { line: 2.2 });
+        flat(c, oval(0, 0, 16, 5), color, 2.2);
+        flat(c, oval(-5, -0.5, 4, 1.4), 0xfff7df, 0);
+        c.fillStyle = hex(0x7fae4f);
+        c.fill(disc(4, 0, 1.6));
+        c.fill(disc(7, -1, 1.2));
+        // Steam.
+        c.strokeStyle = hex(INK, 0.35);
+        c.lineWidth = 1.6;
+        c.lineCap = 'round';
+        for (const x of [-5, 1, 7]) {
+          c.beginPath();
+          c.moveTo(x, -5);
+          c.quadraticCurveTo(x - 3, -9, x, -12);
+          c.quadraticCurveTo(x + 3, -15, x, -18);
+          c.stroke();
+        }
         break;
       }
       case 'risotto': {

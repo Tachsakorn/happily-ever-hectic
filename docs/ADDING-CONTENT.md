@@ -55,7 +55,8 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
 
 ## A new wedding and level
 
-1. Add a `WeddingDef` to `weddings` (couple, outfits, what they love, menu, couple requests).
+1. Add a `WeddingDef` to `weddings` (couple, outfits, what they love, couple requests) and its meal:
+   `appetizerItemIds` (starters), `menuItemIds` (mains) and `dessertItemId` — leave out a course to skip it.
 2. Add a `LevelDef` to `levels` (`src/data/packs/base/weddings.ts`): venue, duration, guest list
    (use the `guest(key, name, type, group, arriveAt, { bringsGift, likes, dislikes })` helper),
    disasters, moments (`toast`, `cake-cutting`), kitchen, star scores, coins, unlock chain, dialogue ids.

@@ -55,6 +55,10 @@ export function validateContent(content: ContentRegistry): string[] {
     }
     for (const i of w.coupleRequestItemIds) check(content.items.has(i), `wedding ${w.id}: unknown couple item ${i}`);
     check(w.menuItemIds.length > 0, `wedding ${w.id}: menu is empty`);
+    for (const i of w.appetizerItemIds ?? []) {
+      check(content.items.has(i) && content.items.get(i).kind === 'dish', `wedding ${w.id}: starter ${i} must be a dish`);
+    }
+    if (w.dessertItemId) check(content.items.has(w.dessertItemId), `wedding ${w.id}: unknown dessert ${w.dessertItemId}`);
   }
 
   const groupIds = new Set(content.groups.all().map((g) => g.id));
@@ -131,6 +135,8 @@ export function validateContent(content: ContentRegistry): string[] {
         check(provided(itemId), `${where}: moment ${m.momentId} needs a station providing ${itemId}`);
       }
       if (content.weddings.has(level.weddingId)) {
+        const dessert = content.weddings.get(level.weddingId).dessertItemId;
+        if (dessert) check(provided(swap(dessert)), `${where}: dessert ${swap(dessert)} has no station providing it`);
         for (const itemId of content.weddings.get(level.weddingId).coupleRequestItemIds) {
           check(provided(itemId), `${where}: couple request ${itemId} has no station providing it`);
         }

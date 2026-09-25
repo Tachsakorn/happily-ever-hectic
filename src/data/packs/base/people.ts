@@ -1,6 +1,8 @@
 import type { GroupDef, GuestTypeDef, ItemDef, TraitDef } from '../../../content/types';
 
 export const items: ItemDef[] = [
+  { id: 'garden-salad', name: 'Garden Salad', kind: 'dish', hands: 1, visual: { color: 0x8cc36a, icon: 'salad' } },
+  { id: 'tomato-soup', name: 'Tomato Soup', kind: 'dish', hands: 1, visual: { color: 0xe06a4a, icon: 'soup' } },
   { id: 'roast-chicken', name: 'Roast Chicken', kind: 'dish', hands: 1, visual: { color: 0xd9a066, icon: 'chicken' } },
   { id: 'salmon', name: 'Grilled Salmon', kind: 'dish', hands: 1, visual: { color: 0xf08a6c, icon: 'fish' } },
   { id: 'risotto', name: 'Garden Risotto', kind: 'dish', hands: 1, visual: { color: 0x7fae4f, icon: 'risotto' } },
@@ -28,8 +30,6 @@ export const traits: TraitDef[] = [
   { id: 'demanding', name: 'Demanding', description: 'Very impatient. Huge tips.', modifiers: { guestPatienceDrain: 1.3, guestTip: 2 } },
 ];
 
-const afterCake = 'cake-cut';
-
 export const guestTypes: GuestTypeDef[] = [
   {
     id: 'regular',
@@ -40,9 +40,8 @@ export const guestTypes: GuestTypeDef[] = [
     requestPool: [
       { itemId: 'champagne', weight: 3 },
       { itemId: 'lemonade', weight: 3 },
-      { itemId: 'cake-slice', weight: 4, requiresFlag: afterCake },
     ],
-    staysFor: [1, 2],
+    staysFor: [0, 1],
     danceWeight: 2,
     traitIds: [],
     visual: { color: 0xf4d3b8, icon: 'guest' },
@@ -55,9 +54,8 @@ export const guestTypes: GuestTypeDef[] = [
     requestIntervalSeconds: [32, 48],
     requestPool: [
       { itemId: 'lemonade', weight: 4 },
-      { itemId: 'cake-slice', weight: 3, requiresFlag: afterCake },
     ],
-    staysFor: [1, 2],
+    staysFor: [0, 1],
     danceWeight: 1,
     traitIds: ['family-first', 'easygoing'],
     visual: { color: 0xe9c8ad, accent: 0xdddddd, icon: 'grandparent' },
@@ -70,9 +68,8 @@ export const guestTypes: GuestTypeDef[] = [
     requestIntervalSeconds: [18, 30],
     requestPool: [
       { itemId: 'champagne', weight: 6 },
-      { itemId: 'cake-slice', weight: 3, requiresFlag: afterCake },
     ],
-    staysFor: [2, 3],
+    staysFor: [1, 2],
     danceWeight: 7,
     traitIds: ['social', 'big-tipper'],
     visual: { color: 0xf2c9a8, accent: 0xb86bd6, icon: 'party' },
@@ -84,11 +81,10 @@ export const guestTypes: GuestTypeDef[] = [
     eatSeconds: 12,
     requestIntervalSeconds: [22, 36],
     requestPool: [
-      { itemId: 'cake-slice', weight: 5, requiresFlag: afterCake },
       { itemId: 'lemonade', weight: 2 },
       { itemId: 'champagne', weight: 1 },
     ],
-    staysFor: [2, 2],
+    staysFor: [1, 1],
     danceWeight: 1,
     traitIds: ['picky'],
     visual: { color: 0xd9b08c, accent: 0xffffff, icon: 'foodie' },
@@ -101,9 +97,8 @@ export const guestTypes: GuestTypeDef[] = [
     requestIntervalSeconds: [18, 30],
     requestPool: [
       { itemId: 'lemonade', weight: 5 },
-      { itemId: 'cake-slice', weight: 6, requiresFlag: afterCake },
     ],
-    staysFor: [1, 2],
+    staysFor: [0, 1],
     danceWeight: 3,
     traitIds: ['restless'],
     visual: { color: 0xf6d7bf, accent: 0x6fc2d6, icon: 'kid' },
@@ -116,9 +111,8 @@ export const guestTypes: GuestTypeDef[] = [
     requestIntervalSeconds: [22, 36],
     requestPool: [
       { itemId: 'champagne', weight: 5 },
-      { itemId: 'cake-slice', weight: 2, requiresFlag: afterCake },
     ],
-    staysFor: [1, 1],
+    staysFor: [0, 1],
     danceWeight: 1,
     traitIds: ['demanding'],
     visual: { color: 0xeac3a2, accent: 0x33384a, icon: 'boss' },
@@ -131,10 +125,9 @@ export const guestTypes: GuestTypeDef[] = [
     requestIntervalSeconds: [20, 32],
     requestPool: [
       { itemId: 'champagne', weight: 3 },
-      { itemId: 'cake-slice', weight: 4, requiresFlag: afterCake },
       { itemId: 'lemonade', weight: 1 },
     ],
-    staysFor: [2, 3],
+    staysFor: [1, 2],
     danceWeight: 1,
     traitIds: ['picky', 'demanding'],
     visual: { color: 0xeac3a2, accent: 0x6a4b6e, icon: 'boss' },

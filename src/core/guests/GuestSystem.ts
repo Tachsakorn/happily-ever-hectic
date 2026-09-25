@@ -6,6 +6,7 @@ import { fillWaitingSlots, makeUpset } from './guestActions';
 import { hearts, isAtTable, isWaiting, transitionGuest } from './guestMachine';
 import { refreshTableMoods } from './seating';
 import { servedItem } from '../sim/items';
+import { hasCourseLeft, startNextCourse } from './courses';
 
 /** Moves a walker along its path. Returns true when the path is complete. */
 export function walk(guest: { pos: Guest['pos']; path: Guest['path'] }, speed: number, dt: number): boolean {
@@ -86,21 +87,32 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
     }
   },
   SEATED(ctx, g) {
-    if (g.stateTime >= g.stateDuration) transitionGuest(ctx, g, GuestState.READY_TO_ORDER);
+    if (g.stateTime >= g.stateDuration) startNextCourse(ctx, g);
   },
   EATING(ctx, g, dt) {
     g.happiness = Math.min(MAX_HAPPINESS, g.happiness + ctx.tuning.eatingRecoveryPerSecond * dt);
     if (g.stateTime >= g.stateDuration) {
       g.wantsItemId = null;
+      g.course = null;
       transitionGuest(ctx, g, GuestState.SATISFIED);
-      scheduleNextRequest(ctx, g);
+      if (hasCourseLeft(ctx, g)) {
+        const [min, max] = ctx.tuning.courses.pauseSeconds;
+        g.nextRequestIn = ctx.rng.range(min, max);
+      } else scheduleNextRequest(ctx, g);
     }
   },
   SATISFIED(ctx, g, dt) {
     g.happiness = Math.min(MAX_HAPPINESS, g.happiness + ctx.tuning.satisfiedRecoveryPerSecond * dt);
     g.nextRequestIn -= dt;
     if (g.nextRequestIn > 0) return;
-    if (g.requestsLeft === 0) {
+    // The meal comes first; now and then an extra wish (a drink, a dance) slips in between courses.
+    if (hasCourseLeft(ctx, g)) {
+      const extra = (g.requestsLeft ?? 1) > 0 && ctx.rng.chance(ctx.tuning.courses.extraBetweenCoursesChance);
+      if (!extra) {
+        startNextCourse(ctx, g);
+        return;
+      }
+    } else if (g.requestsLeft === 0) {
       leaveHappily(ctx, g);
       return;
     }

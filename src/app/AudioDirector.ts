@@ -64,6 +64,9 @@ export class AudioDirector {
           this.audio.play('failed');
           disastersChanged = true;
           break;
+        case 'chainChanged':
+          if (e.count >= 3) this.audio.play('star');
+          break;
         case 'secretAppeared':
           this.audio.play('secret');
           break;

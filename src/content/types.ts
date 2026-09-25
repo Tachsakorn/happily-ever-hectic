@@ -263,7 +263,12 @@ export interface WeddingDef {
   readonly partnerB: CharacterDef;
   /** Decor tags the couple loves; matching decor in preparation pays off. */
   readonly lovesTags: readonly string[];
+  /** Starters, sent out by the kitchen as soon as a guest sits down. Omit for no starter course. */
+  readonly appetizerItemIds?: readonly Id[];
+  /** Main courses: the guest orders one, the kitchen cooks it. */
   readonly menuItemIds: readonly Id[];
+  /** Dessert, picked up from the dessert table. Omit for no dessert course. */
+  readonly dessertItemId?: Id;
   readonly coupleRequestItemIds: readonly Id[];
   readonly coupleRequestIntervalSeconds: readonly [number, number];
 }
@@ -289,11 +294,21 @@ export interface LevelDef {
   readonly name: string;
   readonly weddingId: Id;
   readonly venueId: Id;
+  /**
+   * With ending 'timer', the reception's length. Otherwise roughly how long it
+   * takes (shown before playing); arrivals and moments must happen before it.
+   */
   readonly durationSeconds: number;
   readonly guests: readonly LevelGuestSpec[];
   readonly disasterIds: readonly Id[];
   /** Guests may ask to dance and must be dragged to the dance floor. */
   readonly dancing?: boolean;
+  /**
+   * 'guestsGone' (default): the reception ends once every guest has arrived,
+   * eaten and gone home, and every wedding moment has happened.
+   * 'timer': it ends when durationSeconds runs out.
+   */
+  readonly ending?: 'guestsGone' | 'timer';
   /** Level-wide tuning for every guest, e.g. pickier crowds (guestPatienceDrain > 1). */
   readonly modifiers?: Modifiers;
   /**
@@ -364,6 +379,10 @@ export interface ScoringRules {
   readonly danceStarted: number;
   readonly perHappyGuestHeartAtEnd: number;
   readonly perMoodPointAtEnd: number;
+  readonly appetizerServed: number;
+  readonly dessertServed: number;
+  /** Chain bonus: the n-th action in a chain adds (n − 1) × this. */
+  readonly chainBonusPerStep: number;
 }
 
 /** Game-feel constants shared by all levels. Kept in data so balancing never touches system code. */
@@ -410,6 +429,17 @@ export interface TuningDef {
   readonly danceHappinessPerSecond: number;
   /** How long the planner takes to pick up a secret. */
   readonly secretWorkSeconds: number;
+  readonly courses: {
+    /** Starters are plated, not cooked: they reach the pass this quickly. */
+    readonly appetizerPlateSeconds: number;
+    /** Eating time per course, as a share of the guest type's eatSeconds. */
+    readonly appetizerEatFactor: number;
+    readonly dessertEatFactor: number;
+    /** A short breather between courses. */
+    readonly pauseSeconds: readonly [number, number];
+    /** Chance that a guest with extras left asks for one (a drink, a dance) between courses. */
+    readonly extraBetweenCoursesChance: number;
+  };
   readonly coupleRequestPatienceSeconds: number;
   /** Bonus when the chosen decor matches something the couple loves. */
   readonly decorMatchBonus: Modifiers;

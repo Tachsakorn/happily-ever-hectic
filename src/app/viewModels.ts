@@ -63,7 +63,8 @@ export function prepVM(content: ContentRegistry, save: SaveData, levelId: Id): P
     levelName: level.name,
     couple: wedding.title,
     partners: [characterLook(wedding.partnerA), characterLook(wedding.partnerB)],
-    minutes: secs ? `${mins}:${String(secs).padStart(2, '0')} min` : `${mins} min`,
+    // The reception ends when the guests have gone; this is only an estimate.
+    minutes: `about ${mins + (secs >= 30 ? 1 : 0)} min`,
     guestCount: level.guests.length,
     loves: wedding.lovesTags,
     moments: level.moments.map((m) => content.moments.get(m.momentId).name),
@@ -99,13 +100,14 @@ export function resultsVM(content: ContentRegistry, result: ReceptionResult, out
     coins: outcome.save.coins,
     finalMood: result.finalMood,
     stats: [
-      { label: 'Dinners served', value: String(s.guestsServed) },
+      { label: 'Courses served', value: String(s.coursesServed) },
+      { label: 'Best chain', value: s.bestChain >= 2 ? `×${s.bestChain}` : '—' },
       { label: 'Gifts delivered', value: String(s.giftsDelivered) },
       ...(s.dances ? [{ label: 'Dances', value: String(s.dances) }] : []),
-      { label: 'Happy goodbyes', value: String(s.guestsLeftHappy) },
+
       { label: 'Disasters fixed', value: `${s.disastersResolved} / ${s.disastersResolved + s.disastersFailed}` },
       { label: 'Wedding moments', value: `${s.momentsCompleted} / ${s.momentsCompleted + s.momentsFailed}` },
-      { label: 'Guests who left upset', value: String(s.guestsUpset) },
+      { label: 'Guests: happy · upset', value: `${s.guestsLeftHappy} · ${s.guestsUpset}` },
     ],
     moodBreakdown: result.moodBreakdown,
     unlocked: outcome.newlyUnlocked.map((id) => content.levels.get(id).name),

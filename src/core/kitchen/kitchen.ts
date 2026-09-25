@@ -27,7 +27,9 @@ export function takeFromPass(ctx: SimContext, slot: number): Id | null {
 export const KitchenSystem: System = {
   name: 'kitchen',
   update(ctx, dt) {
-    const { orders, pass } = ctx.state.kitchen;
+    const { orders, pass, stalled } = ctx.state.kitchen;
+    // A disaster in the kitchen (smoke!) stops everything until it is dealt with.
+    if (stalled) return;
     const cookTime = ctx.level.kitchen.cookSeconds * ctx.modifiers.kitchenCookTime;
 
     for (const o of orders) {

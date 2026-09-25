@@ -2,20 +2,22 @@ import Phaser from 'phaser';
 import { danceFloorBounds } from '../../content/venueLayout';
 import type { Id, Vec2 } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
-import { findGuest, holdsSeat } from '../../core/guests/guestMachine';
+import { findGuest } from '../../core/guests/guestMachine';
 import type { ArtKit } from '../art/ArtKit';
 import { paintPanel } from '../../art/painters';
 import type { TextureFactory } from '../art/TextureFactory';
 import { Colors, Depth, makeText } from '../ui/text';
 
 /**
- * While a guest is being seated: how they would feel at each table (green =
- * friends there, red = someone they dislike), and the seat under the finger.
- * This is what makes seating a readable decision instead of a guess.
+ * While a guest is being seated: how they would feel in each free seat (green
+ * heart = someone they like right beside it, red cross = someone they can't
+ * stand), and the seat under the finger. Only side-by-side neighbours count,
+ * so the hint is per seat, not per table. This is what makes seating a
+ * readable decision instead of a guess.
  */
 export class SeatingOverlay {
   private readonly g: Phaser.GameObjects.Graphics;
-  private readonly labels: Phaser.GameObjects.Text[];
+  private readonly labels = new Map<Id, Phaser.GameObjects.Text>();
   private readonly floorLabel: Phaser.GameObjects.Text;
   private preview: Map<Id, number> | null = null;
   /** Set while the held guest wants to dance: then the dance floor is the only target. */
@@ -27,12 +29,17 @@ export class SeatingOverlay {
     renderScale: number,
   ) {
     this.g = scene.add.graphics().setDepth(Depth.overlay - 5);
-    this.labels = sim.context.venue.tables.map((t) =>
-      makeText(scene, t.pos.x, t.pos.y + 4, '', renderScale, { size: 26, weight: '800', stroke: '#ffffff', strokeWidth: 6 })
-        .setOrigin(0.5)
-        .setDepth(Depth.overlay - 4)
-        .setVisible(false),
-    );
+    for (const t of sim.context.venue.tables) {
+      for (const seat of t.seats) {
+        this.labels.set(
+          seat.id,
+          makeText(scene, seat.pos.x, seat.pos.y - 2, '', renderScale, { size: 30, weight: '800', stroke: '#ffffff', strokeWidth: 6 })
+            .setOrigin(0.5)
+            .setDepth(Depth.overlay - 4)
+            .setVisible(false),
+        );
+      }
+    }
     const floor = danceFloorBounds(sim.context.venue.def);
     this.floorLabel = makeText(scene, floor ? floor.x + floor.w / 2 : 0, floor ? floor.y - 26 : 0, 'Dance here!', renderScale, { size: 24, weight: '800', stroke: '#ffffff', strokeWidth: 6 })
       .setOrigin(0.5)
@@ -63,7 +70,7 @@ export class SeatingOverlay {
     this.preview = null;
     this.dancer = false;
     this.g.clear();
-    for (const l of this.labels) l.setVisible(false);
+    for (const l of this.labels.values()) l.setVisible(false);
     this.floorLabel.setVisible(false);
   }
 
@@ -80,27 +87,36 @@ export class SeatingOverlay {
     const preview = this.preview;
     if (!preview) return;
     this.g.clear();
-    const guests = this.sim.state.guests;
-    this.sim.context.venue.tables.forEach((t, i) => {
-      const score = preview.get(t.id) ?? 0;
-      const color = score > 0.25 ? Colors.good : score < -0.25 ? Colors.bad : 0xffffff;
-      const free = t.seats.filter((s) => !guests.some((g) => g.seatId === s.id && holdsSeat(g)));
-      this.g.lineStyle(6, color, free.length ? 0.9 : 0.3).strokeCircle(t.pos.x, t.pos.y, t.radius + 52);
-      this.g.fillStyle(color, free.length ? 0.14 : 0.05).fillCircle(t.pos.x, t.pos.y, t.radius + 52);
-      for (const s of free) {
-        const active = s.id === activeSeat;
-        this.g.lineStyle(active ? 6 : 3, active ? Colors.blush : Colors.ink, active ? 1 : 0.4).strokeCircle(s.pos.x, s.pos.y, active ? 30 : 22);
+    for (const t of this.sim.context.venue.tables) {
+      const open = t.seats.some((s) => preview.has(s.id));
+      this.g.lineStyle(4, 0xffffff, open ? 0.8 : 0.25).strokeCircle(t.pos.x, t.pos.y, t.radius + 52);
+      this.g.fillStyle(0xffffff, open ? 0.1 : 0.04).fillCircle(t.pos.x, t.pos.y, t.radius + 52);
+      for (const seat of t.seats) {
+        const label = this.labels.get(seat.id);
+        const score = preview.get(seat.id);
+        if (score === undefined) {
+          label?.setVisible(false);
+          continue;
+        }
+        const good = score > 0.25;
+        const bad = score < -0.25;
+        const color = good ? Colors.good : bad ? Colors.bad : 0xffffff;
+        const active = seat.id === activeSeat;
+        const r = active ? 36 : 29;
+        this.g.fillStyle(color, good || bad ? 0.45 : 0.3).fillCircle(seat.pos.x, seat.pos.y, r);
+        this.g.lineStyle(active ? 7 : 4, active ? Colors.blush : good || bad ? color : Colors.ink, active ? 1 : 0.7).strokeCircle(seat.pos.x, seat.pos.y, r);
+        label
+          ?.setText(good ? '♥' : bad ? '✕' : '')
+          .setColor(good ? Colors.goodCss : Colors.badCss)
+          .setScale(active ? 1.2 : 1)
+          .setVisible(good || bad);
       }
-      const label = this.labels[i];
-      if (!label) return;
-      const face = score > 0.25 ? '♥ +' + score.toFixed(1).replace('.0', '') : score < -0.25 ? '✕ ' + score.toFixed(1).replace('.0', '') : '';
-      label.setText(free.length ? face : 'Full').setColor(score > 0.25 ? Colors.goodCss : score < -0.25 ? Colors.badCss : Colors.inkCss).setVisible(true);
-    });
+    }
   }
 
   destroy(): void {
     this.g.destroy();
-    for (const l of this.labels) l.destroy();
+    for (const l of this.labels.values()) l.destroy();
     this.floorLabel.destroy();
   }
 }
@@ -138,14 +154,14 @@ export class GuestCard {
       for (const o of [this.bg, this.title, this.body]) o.setVisible(true);
       return;
     }
-    const traits = type.traitIds.map((id) => ctx.content.traits.get(id).name).join(', ');
+    const traits = g.traitIds.map((id) => ctx.content.traits.get(id).name).join(', ');
     const nameOf = (ref: string) =>
       ctx.level.guests.find((s) => s.key === ref)?.name ?? (ctx.content.groups.has(ref) ? `all ${ctx.content.groups.get(ref).name}` : ref);
     const parts: string[] = [];
     if (traits) parts.push(traits);
-    if (g.likes.length) parts.push(`Likes: ${g.likes.map(nameOf).join(', ')}`);
-    if (g.dislikes.length) parts.push(`Dislikes: ${g.dislikes.map(nameOf).join(', ')}`);
-    if (!g.likes.length && !g.dislikes.length) parts.push(`Happiest with other ${group.name.toLowerCase()}`);
+    if (g.likes.length) parts.push(`♥ Sit next to: ${g.likes.map(nameOf).join(', ')}`);
+    if (g.dislikes.length) parts.push(`✕ Not next to: ${g.dislikes.map(nameOf).join(', ')}`);
+    if (!g.likes.length && !g.dislikes.length) parts.push(`Happiest beside other ${group.name.toLowerCase()}`);
     this.title.setText(`${g.name} · ${group.name}`);
     parts.unshift(type.name);
     this.body.setText(parts.join('\n'));

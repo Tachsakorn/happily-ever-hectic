@@ -23,7 +23,11 @@ export class AudioDirector {
           this.audio.play('pickup');
           break;
         case 'itemServed':
+        case 'serviceGranted':
           this.audio.play('serve');
+          break;
+        case 'rescueUsed':
+          this.audio.play('cheer');
           break;
         case 'orderTaken':
           this.audio.play('order');

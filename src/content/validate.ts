@@ -16,6 +16,7 @@ export function validateContent(content: ContentRegistry): string[] {
   for (const type of content.guestTypes.all()) {
     for (const t of type.traitIds) check(content.traits.has(t), `guest type ${type.id}: unknown trait ${t}`);
     for (const r of type.requestPool) check(content.items.has(r.itemId), `guest type ${type.id}: unknown item ${r.itemId}`);
+    for (const s of Object.keys(type.serviceWeights ?? {})) check(content.services.has(s), `guest type ${type.id}: unknown service ${s}`);
     check(type.patienceSeconds > 0, `guest type ${type.id}: patienceSeconds must be > 0`);
     check(
       type.requestIntervalSeconds[0] <= type.requestIntervalSeconds[1],
@@ -40,6 +41,9 @@ export function validateContent(content: ContentRegistry): string[] {
   }
 
   for (const d of content.disasters.all()) {
+    if (d.target.kind === 'seatedGuest' && d.target.prefersTraitId) {
+      check(content.traits.has(d.target.prefersTraitId), `disaster ${d.id}: unknown trait ${d.target.prefersTraitId}`);
+    }
     check(d.warningSeconds >= 0 && d.activeSeconds > 0 && d.escalatedSeconds > 0, `disaster ${d.id}: invalid phase durations`);
     check(d.workSeconds > 0, `disaster ${d.id}: workSeconds must be > 0`);
     check(d.maxOccurrences > 0, `disaster ${d.id}: maxOccurrences must be > 0`);
@@ -70,6 +74,14 @@ export function validateContent(content: ContentRegistry): string[] {
       check((content.venues.get(level.venueId).danceSpots?.length ?? 0) > 0, `${where}: dancing needs a venue with a dance floor`);
     }
     for (const d of level.disasterIds) check(content.disasters.has(d), `${where}: unknown disaster ${d}`);
+    check((level.rescues ?? 0) >= 0 && Number.isInteger(level.rescues ?? 0), `${where}: rescues must be a whole number ≥ 0`);
+    for (const sv of level.services ?? []) {
+      check(content.services.has(sv), `${where}: unknown service ${sv}`);
+      if (content.services.has(sv) && content.venues.has(level.venueId)) {
+        const kind = content.services.get(sv).stationKind;
+        check(content.venues.get(level.venueId).stations.some((st) => st.kind === kind), `${where}: service ${sv} needs a ${kind} station`);
+      }
+    }
     for (const [d, t] of Object.entries(level.disasterTriggers ?? {})) {
       check(level.disasterIds.includes(d), `${where}: trigger set for disaster ${d}, which the level does not use`);
       const start = t.kind === 'scheduled' ? t.at : t.kind === 'random' ? t.from : (t.from ?? 0);
@@ -98,6 +110,7 @@ export function validateContent(content: ContentRegistry): string[] {
       check(content.guestTypes.has(g.typeId), `${where}: guest ${g.key} has unknown type ${g.typeId}`);
       check(groupIds.has(g.groupId), `${where}: guest ${g.key} has unknown group ${g.groupId}`);
       check(g.arriveAt >= 0 && g.arriveAt < level.durationSeconds, `${where}: guest ${g.key} arrives outside the reception`);
+      for (const t of g.traitIds ?? []) check(content.traits.has(t), `${where}: guest ${g.key} has unknown trait ${t}`);
       for (const ref of [...g.likes, ...g.dislikes]) {
         check(keys.has(ref) || groupIds.has(ref), `${where}: guest ${g.key} refers to unknown guest/group ${ref}`);
       }

@@ -120,6 +120,7 @@ export function createDisasterSystem(): System {
     const fx = effectsFor(def, d.phase);
     if (!fx) return;
     if (fx.moodPerSecond) ctx.mood.accumulate(-fx.moodPerSecond * dt, def.name, d.pos);
+    if (fx.stopsKitchen) ctx.state.kitchen.stalled = true;
     const drain = fx.guestDrainMultiplier;
     if (!drain || drain === 1) return;
     const scope = fx.guestScope ?? 'all';
@@ -129,7 +130,8 @@ export function createDisasterSystem(): System {
         (scope === 'table' && d.tableId !== null && g.tableId === d.tableId) ||
         (scope === 'involved' && d.involvedGuestKeys.includes(g.key)) ||
         (scope === 'nearby' && distance(g.pos, d.pos) <= NEARBY_RADIUS);
-      if (inScope) g.disasterDrain *= drain;
+      // Drama-prone guests take it harder; easygoing ones shrug it off.
+      if (inScope) g.disasterDrain *= 1 + (drain - 1) * g.mods.disasterReaction;
     }
   }
 
@@ -137,6 +139,7 @@ export function createDisasterSystem(): System {
     name: 'disasters',
     update(ctx, dt) {
       for (const g of ctx.state.guests) g.disasterDrain = 1;
+      ctx.state.kitchen.stalled = false;
       maybeSpawn(ctx, dt);
       for (const d of ctx.state.disasters) {
         if (d.phase === DisasterPhase.RESOLVED || d.phase === DisasterPhase.FAILED) continue;

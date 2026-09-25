@@ -44,6 +44,8 @@ type TargetFn<K extends DisasterTarget['kind']> = (
   ctx: SimContext,
 ) => TargetSpot | null;
 
+const SEATED_MARKER = { dx: 58, dy: -64 };
+
 const isLive = (d: Disaster) => d.phase !== DisasterPhase.RESOLVED && d.phase !== DisasterPhase.FAILED;
 const tableTaken = (ctx: SimContext, tableId: string) => ctx.state.disasters.some((d) => isLive(d) && d.tableId === tableId);
 
@@ -80,6 +82,22 @@ const targets: { [K in DisasterTarget['kind']]: TargetFn<K> } = {
       stationId: null,
       tableId,
       involvedGuestKeys: guests.map((g) => g.key),
+    };
+  },
+  seatedGuest: (t, ctx) => {
+    // Someone settled at their table (not mid-walk or away dancing), at a table with no other trouble.
+    const candidates = ctx.state.guests.filter((g) => isAtTable(g) && g.seatId && g.tableId && !tableTaken(ctx, g.tableId));
+    const preferred = t.prefersTraitId ? candidates.filter((g) => g.traitIds.includes(t.prefersTraitId as string)) : [];
+    const g = ctx.rng.pick(preferred.length ? preferred : candidates);
+    if (!g?.seatId || !g.tableId) return null;
+    const { seat } = ctx.venue.seat(g.seatId);
+    // The marker floats beside the guest's head, not over their face.
+    return {
+      pos: { x: seat.pos.x + SEATED_MARKER.dx, y: seat.pos.y + SEATED_MARKER.dy },
+      interactPos: seat.interactPos,
+      stationId: null,
+      tableId: g.tableId,
+      involvedGuestKeys: [g.key],
     };
   },
   floorSpot: (_t, ctx) => {

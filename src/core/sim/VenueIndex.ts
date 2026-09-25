@@ -5,12 +5,19 @@ export class VenueIndex {
   private readonly stationsById = new Map<Id, StationDef>();
   private readonly seatsById = new Map<Id, { seat: SeatDef; table: TableDef }>();
   private readonly tablesById = new Map<Id, TableDef>();
+  private readonly neighbours = new Map<Id, readonly Id[]>();
 
   constructor(readonly def: VenueDef) {
     for (const s of def.stations) this.stationsById.set(s.id, s);
     for (const t of def.tables) {
       this.tablesById.set(t.id, t);
       for (const seat of t.seats) this.seatsById.set(seat.id, { seat, table: t });
+      const n = t.seats.length;
+      t.seats.forEach((seat, i) => {
+        // Seats either side around the table (a table for two: each other).
+        const around = n < 2 ? [] : [t.seats[(i + n - 1) % n]!.id, t.seats[(i + 1) % n]!.id];
+        this.neighbours.set(seat.id, [...new Set(around)]);
+      });
     }
   }
 
@@ -38,6 +45,11 @@ export class VenueIndex {
     const s = this.seatsById.get(id);
     if (!s) throw new Error(`Unknown seat ${id} in venue ${this.def.id}`);
     return s;
+  }
+
+  /** The seats right next to this one: the only neighbours that count when seating. */
+  adjacentSeats(id: Id): readonly Id[] {
+    return this.neighbours.get(id) ?? [];
   }
 
   hasSeat(id: Id): boolean {

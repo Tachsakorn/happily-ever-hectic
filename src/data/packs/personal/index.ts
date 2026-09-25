@@ -2,7 +2,6 @@ import type { ContentPack, ItemDef } from '../../../content/types';
 import { guest } from '../base/weddings';
 import { personal } from './profile';
 
-const gift = { bringsGift: true };
 const a = personal.partnerA;
 const b = personal.partnerB;
 const fav = personal.favourites;
@@ -64,25 +63,40 @@ export const personalPack: ContentPack = {
         guest('bestie-b', 'Other Best Friend', 'foodie', 'friends', 22, { bringsGift: true, likes: ['bestie-a'] }),
         guest('cousin', 'Little Cousin', 'kid', 'family', 36, { dislikes: ['teacher'] }),
         guest('teacher', 'Favourite Teacher', 'boss', 'work', 48, { bringsGift: true, dislikes: ['cousin'] }),
-        guest('grandma', 'Grandma', 'grandparent', 'family', 62, gift),
+        guest('grandma', 'Grandma', 'grandparent', 'family', 62, { bringsGift: true, traitIds: ['slow-eater'] }),
         guest('uncle', 'Uncle', 'regular', 'family', 79, { bringsGift: true, dislikes: ['work'] }),
         guest('classmate', 'Classmate', 'regular', 'friends', 96, { likes: ['bestie-a'] }),
         guest('roommate', 'Old Roommate', 'party-animal', 'friends', 115, { likes: ['classmate'] }),
-        guest('aunt', 'Aunt', 'grandparent', 'family', 132, gift),
+        guest('aunt', 'Aunt', 'grandparent', 'family', 132, { bringsGift: true, traitIds: ['drama'] }),
         guest('coworker', 'Coworker', 'regular', 'work', 149),
       ],
-      disasterIds: ['spilled-drink', 'toppled-gifts', 'missing-rings', 'leaning-cake', 'dj-glitch', 'loose-puppy', 'photo-time', 'guest-argument'],
+      disasterIds: [
+        'spilled-drink',
+        'toppled-gifts',
+        'missing-rings',
+        'leaning-cake',
+        'kitchen-smoke',
+        'dj-glitch',
+        'loose-puppy',
+        'bridesmaid-spat',
+        'photo-time',
+        'guest-argument',
+      ],
       disasterTriggers: {
         'spilled-drink': { kind: 'random', from: 28, to: 40, chancePerSecond: 0.15 },
         'toppled-gifts': { kind: 'random', from: 58, to: 72, chancePerSecond: 0.15 },
         'missing-rings': { kind: 'scheduled', at: 88 },
         // Steady the cake just before it is needed for the cutting.
         'leaning-cake': { kind: 'random', from: 100, to: 112, chancePerSecond: 0.2 },
-        'dj-glitch': { kind: 'random', from: 138, to: 152, chancePerSecond: 0.15 },
-        'loose-puppy': { kind: 'random', from: 158, to: 172, chancePerSecond: 0.15 },
-        'photo-time': { kind: 'random', from: 176, to: 190, chancePerSecond: 0.2 },
+        'kitchen-smoke': { kind: 'random', from: 128, to: 136, chancePerSecond: 0.2 },
+        'dj-glitch': { kind: 'random', from: 142, to: 154, chancePerSecond: 0.15 },
+        'loose-puppy': { kind: 'random', from: 160, to: 172, chancePerSecond: 0.15 },
+        'bridesmaid-spat': { kind: 'random', from: 178, to: 188, chancePerSecond: 0.2 },
+        'photo-time': { kind: 'random', from: 194, to: 206, chancePerSecond: 0.2 },
       },
       // Our wedding serves Tanya's favourites instead of the hall's usual menu.
+      services: ['song'],
+      rescues: 3,
       itemSwaps: { champagne: fav.drink.id, lemonade: fav.secondDrink.id, 'cake-slice': fav.dessert.id },
       moments: [
         { momentId: 'toast', at: 48 },
@@ -90,7 +104,7 @@ export const personalPack: ContentPack = {
       ],
       kitchen: { burners: 3, cookSeconds: 5 },
       // A forgiving first star: finishing the finale is what unlocks the ending.
-      starScores: [2000, 3950, 4700],
+      starScores: [2100, 4050, 4850],
       coinReward: 400,
       unlockRequiresLevelId: 'big-night',
       introDialogueId: 'intro-our-wedding',

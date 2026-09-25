@@ -44,7 +44,7 @@ describe('disaster lifecycle', () => {
     const events: DomainEvent[] = [];
     runFor(sim, 0.2);
     sim.command({ type: 'seatGuest', guestKey: 'a', seatId: 'table-1-n' });
-    sim.command({ type: 'seatGuest', guestKey: 'b', seatId: 'table-1-s' });
+    sim.command({ type: 'seatGuest', guestKey: 'b', seatId: 'table-1-e' });
     runUntil(sim, () => events.some((e) => e.type === 'disasterStarted'), 200, events);
     const started = sim.state.disasters[0]!;
     expect(started.involvedGuestKeys).toEqual(expect.arrayContaining(['a', 'b']));
@@ -151,7 +151,7 @@ describe('reception end', () => {
     });
     runFor(sim, 0.2);
     sim.command({ type: 'seatGuest', guestKey: 'b', seatId: 'table-1-n' });
-    sim.command({ type: 'seatGuest', guestKey: 'a', seatId: 'table-1-s' });
+    sim.command({ type: 'seatGuest', guestKey: 'a', seatId: 'table-1-e' });
     runFor(sim, 5);
     expect(guestByKey(sim, 'a').seatingMood).toBeLessThan(0);
   });

@@ -29,8 +29,8 @@ function scheduleNextRequest(ctx: SimContext, guest: Guest): void {
   guest.nextRequestIn = ctx.rng.range(min, max) * guest.mods.guestRequestInterval;
 }
 
-/** A follow-up wish: an item, or (on levels with a dance floor) a dance. */
-type Wish = { kind: 'item'; itemId: string } | { kind: 'dance' };
+/** A follow-up wish: an item, a service (e.g. a song) where the level offers it, or (with a dance floor) a dance. */
+type Wish = { kind: 'item'; itemId: string } | { kind: 'service'; serviceId: string } | { kind: 'dance' };
 
 const canDance = (ctx: SimContext): boolean => !!ctx.level.dancing && (ctx.venue.def.danceSpots?.length ?? 0) > 0;
 
@@ -39,6 +39,10 @@ function chooseWish(ctx: SimContext, guest: Guest): Wish | null {
   const options: { wish: Wish; weight: number }[] = type.requestPool
     .filter((r) => !r.requiresFlag || ctx.state.flags.has(r.requiresFlag))
     .map((r) => ({ wish: { kind: 'item', itemId: servedItem(ctx, r.itemId) } as Wish, weight: r.weight }));
+  for (const serviceId of ctx.level.services ?? []) {
+    const weight = type.serviceWeights?.[serviceId] ?? 0;
+    if (weight > 0) options.push({ wish: { kind: 'service', serviceId }, weight });
+  }
   if (canDance(ctx) && (type.danceWeight ?? 0) > 0) options.push({ wish: { kind: 'dance' }, weight: type.danceWeight ?? 0 });
   return ctx.rng.weighted(options, (o) => o.weight)?.wish ?? null;
 }
@@ -58,6 +62,7 @@ function leaveHappily(ctx: SimContext, g: Guest): void {
   const tableId = g.tableId;
   g.happyExit = true;
   g.wantsItemId = null;
+  g.wantsServiceId = null;
   g.path = ctx.nav.findPath(g.pos, ctx.venue.def.doorPos);
   transitionGuest(ctx, g, GuestState.LEAVING);
   ctx.state.stats.guestsLeftHappy++;
@@ -131,6 +136,11 @@ const behaviours: Partial<Record<Guest['state'], (ctx: SimContext, g: Guest, dt:
     }
     if (wish.kind === 'dance') {
       transitionGuest(ctx, g, GuestState.WANTS_TO_DANCE);
+      return;
+    }
+    if (wish.kind === 'service') {
+      g.wantsServiceId = wish.serviceId;
+      transitionGuest(ctx, g, GuestState.REQUESTING);
       return;
     }
     g.wantsItemId = wish.itemId;

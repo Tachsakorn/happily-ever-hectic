@@ -15,6 +15,10 @@ export type DomainEvent =
   | { type: 'itemPickedUp'; itemId: Id; pos: Vec2 }
   | { type: 'itemDiscarded'; itemIds: Id[]; pos: Vec2 }
   | { type: 'itemServed'; to: 'guest' | 'couple'; guestKey?: string; itemId: Id; wasOrder: boolean; happiness: number; pos: Vec2 }
+  /** A service wish granted at a station (`from`) for the guest at `pos`. */
+  | { type: 'serviceGranted'; serviceId: Id; guestKey: string; from: Vec2; pos: Vec2 }
+  /** Rescue champagne poured: every guest cheered up. */
+  | { type: 'rescueUsed'; left: number }
   | { type: 'giftPickedUp'; giftId: number; pos: Vec2 }
   | { type: 'giftsDelivered'; count: number; pos: Vec2 }
   | { type: 'actionQueued'; actionId: number; target: TargetRef }

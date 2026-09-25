@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import { DisasterPhase, type Disaster } from '../../core/sim/state';
+import { stationDisasterMarker } from '../../core/input/picking';
 import type { ArtKit } from '../art/ArtKit';
 import type { TextureFactory } from '../art/TextureFactory';
 import { Colors, Depth } from '../ui/text';
@@ -35,7 +36,7 @@ export class DisasterLayer {
 
   private iconPos(d: Disaster): { x: number; y: number } {
     // Station disasters float above the station; others sit where they happen.
-    return d.stationId ? { x: d.pos.x, y: d.pos.y - 70 } : { x: d.pos.x, y: d.pos.y - (d.tableId ? 10 : 0) };
+    return d.stationId ? stationDisasterMarker(d.pos) : { x: d.pos.x, y: d.pos.y - (d.tableId ? 10 : 0) };
   }
 
   sync(time: number): void {

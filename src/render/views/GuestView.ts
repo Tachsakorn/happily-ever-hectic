@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Mood } from '../../art/people';
 import { hearts } from '../../core/guests/guestMachine';
 import type { Guest } from '../../core/sim/state';
-import { FEET_ORIGIN_Y, type ArtKit } from '../art/ArtKit';
+import { FEET_ORIGIN_Y, PERSON_CENTRE_Y, type ArtKit } from '../art/ArtKit';
 import type { TextureFactory } from '../art/TextureFactory';
 import type { Fx } from '../fx/Fx';
 import { Depth } from '../ui/text';
@@ -16,6 +16,21 @@ const DANCE_NOTE_EVERY = 0.55;
 /** Bubble sentinels that are not item ids. */
 const WANT_MENU = 'menu';
 const WANT_DANCE = '@dance';
+const WANT_SERVICE = '@service:';
+const WANT_LIKE = '@like:';
+const WANT_DISLIKE = '@dislike:';
+/** A waiting guest with both a friend and a foe shows each in turn. */
+const PREFERENCE_SWAP_SECONDS = 2.4;
+/** Portrait in a preference bubble: the head of the person sprite, scaled down. */
+const FACE_SCALE = 0.78;
+const FACE = { x: 7, y: 3, w: 50, h: 54 };
+const HEAD_CENTRE_Y = 30;
+
+/** Who a like/dislike refers to, as the renderer needs to show them. */
+export type PreferenceRef =
+  | { readonly kind: 'guest'; readonly look: Pick<Guest, 'key' | 'typeId' | 'groupId'> }
+  | { readonly kind: 'group'; readonly color: number };
+export type PreferenceLookup = (ref: string) => PreferenceRef | null;
 
 /**
  * One guest on screen. Reads guest state every frame but only touches
@@ -28,6 +43,9 @@ export class GuestView {
   private readonly bubble: Phaser.GameObjects.Image;
   private readonly bubbleIcon: Phaser.GameObjects.Image;
   private readonly bubbleGroup: Phaser.GameObjects.Container;
+  /** Seating wishes while waiting: a face (or group badge) with a heart or a cross. */
+  private readonly prefFace: Phaser.GameObjects.Image;
+  private readonly prefBadge: Phaser.GameObjects.Image;
   private readonly selection: Phaser.GameObjects.Image;
   private readonly unit: number;
   /** Tweened reaction offsets, applied on top of the simulated position. */
@@ -51,6 +69,7 @@ export class GuestView {
     private readonly tex: TextureFactory,
     private readonly fx: Fx,
     guest: Guest,
+    private readonly lookup: PreferenceLookup,
   ) {
     this.unit = 1 / tex.scale;
     this.phase = (guest.key.length * 1.7) % (Math.PI * 2);
@@ -61,7 +80,9 @@ export class GuestView {
     }
     this.bubble = tex.image(scene, 0, 0, art.bubble());
     this.bubbleIcon = tex.image(scene, 0, -6, art.icon('menu'));
-    this.bubbleGroup = scene.add.container(0, 0, [this.bubble, this.bubbleIcon]).setVisible(false);
+    this.prefFace = tex.image(scene, 0, 0, art.guest(guest)).setVisible(false);
+    this.prefBadge = tex.image(scene, 20, 10, art.uiIcon('heart', 0xe86f8e)).setVisible(false);
+    this.bubbleGroup = scene.add.container(0, 0, [this.bubble, this.bubbleIcon, this.prefFace, this.prefBadge]).setVisible(false);
     // Arrivals pop in at the door.
     scene.tweens.add({ targets: this.react, grow: 1, duration: 320, ease: 'Back.easeOut' });
     this.sync(guest, false, 0);
@@ -141,10 +162,18 @@ export class GuestView {
     if (want !== this.shownWant) {
       this.shownWant = want;
       this.bubbleGroup.setVisible(want !== null);
+      const preference = want?.startsWith(WANT_LIKE) || want?.startsWith(WANT_DISLIKE);
+      this.bubbleIcon.setVisible(!preference);
+      this.prefFace.setVisible(false);
+      this.prefBadge.setVisible(!!preference);
       if (want === WANT_MENU) this.bubbleIcon.setTexture(this.art.icon('menu'));
       else if (want === WANT_DANCE) this.bubbleIcon.setTexture(this.art.uiIcon('music', 0xb49be0));
+      else if (want?.startsWith(WANT_SERVICE)) {
+        const visual = this.art.serviceVisual(want.slice(WANT_SERVICE.length));
+        this.bubbleIcon.setTexture(this.art.uiIcon(visual.icon, visual.color));
+      } else if (preference && want) this.showPreference(want);
       else if (want) this.bubbleIcon.setTexture(this.art.item(want));
-      this.bubbleIcon.setScale(this.unit * (want === WANT_DANCE ? 0.85 : 1));
+      this.bubbleIcon.setScale(this.unit * (want === WANT_DANCE || want?.startsWith(WANT_SERVICE) ? 0.85 : 1));
       this.bubble.setScale(this.unit);
       if (want !== null) {
         this.stopUrgent();
@@ -191,6 +220,12 @@ export class GuestView {
     this.scene.tweens.add({ targets: this.react, squash: 0, duration: 380, ease: 'Elastic.easeOut', easeParams: [1.2, 0.4] });
   }
 
+  /** A happy bounce, for a granted wish or a round of champagne. */
+  cheer(): void {
+    this.hop(14);
+    this.fx.hearts({ x: this.body.x, y: this.body.y - 96 }, 2, 18);
+  }
+
   private hop(height = 16): void {
     this.scene.tweens.add({ targets: this.react, hop: height, yoyo: true, duration: 150, ease: 'Quad.easeOut' });
   }
@@ -225,14 +260,48 @@ export class GuestView {
     this.urgentTween = null;
   }
 
+  /** Fills the bubble with the face (or group badge) a waiting guest wants beside them — or not. */
+  private showPreference(want: string): void {
+    const like = want.startsWith(WANT_LIKE);
+    const ref = this.lookup(want.slice(like ? WANT_LIKE.length : WANT_DISLIKE.length));
+    this.prefBadge
+      .setTexture(like ? this.art.uiIcon('heart', 0xe86f8e) : this.art.uiIcon('close', 0xd9534f))
+      .setScale(this.unit * 0.55)
+      .setPosition(20, 10);
+    if (!ref) return;
+    if (ref.kind === 'group') {
+      this.prefFace.setTexture(this.art.uiIcon('guests', ref.color)).setCrop().setScale(this.unit * 0.9).setPosition(-2, -8).setVisible(true);
+      return;
+    }
+    const s = this.tex.scale;
+    // Only the head, centred in the bubble.
+    this.prefFace
+      .setTexture(this.art.guest(ref.look, like ? 'happy' : 'angry'))
+      .setCrop(FACE.x * s, FACE.y * s, FACE.w * s, FACE.h * s)
+      .setScale(this.unit * FACE_SCALE)
+      .setPosition(-3, -6 + (PERSON_CENTRE_Y - HEAD_CENTRE_Y) * FACE_SCALE)
+      .setVisible(true);
+  }
+
+  private preferenceContent(g: Guest): string | null {
+    const likes = g.likes.map((r) => WANT_LIKE + r);
+    const dislikes = g.dislikes.map((r) => WANT_DISLIKE + r);
+    const all = [...likes, ...dislikes];
+    if (!all.length) return null;
+    return all[Math.floor(this.t / PREFERENCE_SWAP_SECONDS) % all.length] ?? null;
+  }
+
   private bubbleContent(g: Guest): string | null {
     switch (g.state) {
+      case 'WAITING_TO_BE_SEATED':
+        return this.preferenceContent(g);
       case 'READY_TO_ORDER':
         return WANT_MENU;
       case 'WANTS_TO_DANCE':
         return WANT_DANCE;
-      case 'WAITING_FOR_FOOD':
       case 'REQUESTING':
+        return g.wantsServiceId ? WANT_SERVICE + g.wantsServiceId : g.wantsItemId;
+      case 'WAITING_FOR_FOOD':
         return g.wantsItemId;
       default:
         return null;

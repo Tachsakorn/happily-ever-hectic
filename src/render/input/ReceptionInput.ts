@@ -10,6 +10,8 @@ export interface InputFeedback {
   onDragGuest(key: string, p: Vec2 | null): void;
   onCommandFailed(reason: string, p: Vec2): void;
   plannerHit(p: Vec2): boolean;
+  /** A tap on an on-screen button (rescue champagne); true if it was handled. */
+  buttonHit(p: Vec2): boolean;
 }
 
 /**
@@ -120,6 +122,10 @@ export class ReceptionInput {
       // Tap on a waiting guest: select (or deselect) for tap-to-seat.
       this.select(this.selected === candidate ? null : candidate);
       this.taps.ripple(pt, true);
+      return;
+    }
+    if (this.feedback.buttonHit(pt)) {
+      this.select(null);
       return;
     }
     if (this.selected) {

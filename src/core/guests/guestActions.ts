@@ -5,12 +5,13 @@ import type { SimContext } from '../sim/SimContext';
 import { GuestState, MAX_HAPPINESS, type Guest } from '../sim/state';
 import { cancelOrdersFor } from '../kitchen/kitchen';
 import { findGuest, holdsSeat, isDancing, transitionGuest } from './guestMachine';
-import { isSeatFree, refreshTableMoods, tableScore } from './seating';
+import { isSeatFree, refreshTableMoods, seatScore } from './seating';
 
 /** Creates a guest at the door and sends them to a free waiting spot (or queues them outside). */
 export function spawnGuest(ctx: SimContext, spec: LevelGuestSpec): Guest {
   const type = ctx.content.guestTypes.get(spec.typeId);
-  const traitMods = type.traitIds.map((id) => ctx.content.traits.get(id).modifiers);
+  const traitIds = [...new Set([...type.traitIds, ...(spec.traitIds ?? [])])];
+  const traitMods = traitIds.map((id) => ctx.content.traits.get(id).modifiers);
   const mods = combineModifiers([...traitMods, ctx.modifiers]);
   const guest: Guest = {
     key: spec.key,
@@ -20,6 +21,7 @@ export function spawnGuest(ctx: SimContext, spec: LevelGuestSpec): Guest {
     likes: spec.likes,
     dislikes: spec.dislikes,
     bringsGift: spec.bringsGift,
+    traitIds,
     mods,
     patienceSeconds: type.patienceSeconds,
     eatSeconds: type.eatSeconds * mods.guestEatTime,
@@ -33,6 +35,7 @@ export function spawnGuest(ctx: SimContext, spec: LevelGuestSpec): Guest {
     seatId: null,
     tableId: null,
     wantsItemId: null,
+    wantsServiceId: null,
     seatingMood: 0,
     nextRequestIn: 0,
     disasterDrain: 1,
@@ -89,7 +92,7 @@ export function seatGuest(ctx: SimContext, guestKey: string, seatId: Id): Comman
   if (!isSeatFree(ctx, seatId)) return fail('Seat is taken');
 
   const { seat, table } = ctx.venue.seat(seatId);
-  const score = tableScore(ctx, guest, table.id);
+  const score = seatScore(ctx, guest, seatId);
   guest.seatId = seatId;
   guest.tableId = table.id;
   guest.waitingSlot = null;
@@ -132,6 +135,7 @@ export function makeUpset(ctx: SimContext, guest: Guest, cause: string): void {
   const tableId = guest.tableId;
   guest.happiness = 0;
   guest.wantsItemId = null;
+  guest.wantsServiceId = null;
   guest.waitingSlot = null;
   cancelOrdersFor(ctx, guest.key);
   transitionGuest(ctx, guest, GuestState.UPSET, ctx.tuning.upsetSeconds);

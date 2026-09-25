@@ -53,6 +53,8 @@ export interface Modifiers {
   readonly scoreBonus?: number;
   /** Additive: extra dishes the kitchen can cook at once. */
   readonly kitchenBurners?: number;
+  /** How strongly a guest feels nearby disasters: scales the extra patience drain they cause. */
+  readonly disasterReaction?: number;
 }
 
 // ---------------------------------------------------------------- guests
@@ -87,6 +89,8 @@ export interface GuestTypeDef {
   readonly staysFor?: readonly [number, number];
   /** Weight of wanting to dance, compared with the request pool weights (levels with a dance floor only). */
   readonly danceWeight?: number;
+  /** Weights of service requests (e.g. a song), compared with the request pool weights (levels offering them only). */
+  readonly serviceWeights?: Readonly<Record<Id, number>>;
   readonly traitIds: readonly Id[];
   readonly visual: VisualHint;
 }
@@ -132,6 +136,7 @@ export interface TableDef {
   readonly id: Id;
   readonly pos: Vec2;
   readonly radius: number;
+  /** In order around the table: a seat's neighbours are the seats either side of it. */
   readonly seats: readonly SeatDef[];
 }
 
@@ -169,13 +174,15 @@ export interface VenueDef {
 export type DisasterTrigger =
   | { readonly kind: 'scheduled'; readonly at: number }
   | { readonly kind: 'random'; readonly from: number; readonly to: number; readonly chancePerSecond: number }
-  /** Fires when two guests who dislike each other share a table. */
+  /** Fires when two guests who dislike each other sit side by side. */
   | { readonly kind: 'seatingConflict'; readonly chancePerSecond: number; readonly from?: number };
 
 export type DisasterTarget =
   | { readonly kind: 'station'; readonly stationKind: StationKind }
   | { readonly kind: 'conflictTable' }
   | { readonly kind: 'occupiedTable' }
+  /** One seated guest, preferably one with the given trait (e.g. a drama queen). */
+  | { readonly kind: 'seatedGuest'; readonly prefersTraitId?: Id }
   | { readonly kind: 'floorSpot' };
 
 export interface DisasterEffects {
@@ -187,6 +194,8 @@ export interface DisasterEffects {
   readonly plannerSpeedMultiplier?: number;
   /** Stops the background music while active (audio reads this from the event). */
   readonly silencesMusic?: boolean;
+  /** The kitchen stops cooking while in this phase. */
+  readonly stopsKitchen?: boolean;
 }
 
 export interface DisasterOutcome {
@@ -199,7 +208,7 @@ export interface DisasterOutcome {
 export interface DisasterDef {
   readonly id: Id;
   readonly name: string;
-  /** Player-facing hint shown when the disaster appears. */
+  /** Player-facing hint shown when the disaster appears. `{guest}` is replaced by the involved guest's name. */
   readonly hint: string;
   readonly trigger: DisasterTrigger;
   readonly target: DisasterTarget;
@@ -281,9 +290,11 @@ export interface LevelGuestSpec {
   readonly groupId: Id;
   readonly arriveAt: number;
   readonly bringsGift: boolean;
-  /** Guest keys or group ids this guest likes / dislikes as table neighbours. */
+  /** Guest keys or group ids this guest wants / refuses to sit next to. */
   readonly likes: readonly string[];
   readonly dislikes: readonly string[];
+  /** Personality traits of this guest on top of their type's (e.g. a fast eater). */
+  readonly traitIds?: readonly Id[];
 }
 
 export type VenueTheme = 'garden' | 'beach' | 'ballroom' | 'night';
@@ -303,6 +314,10 @@ export interface LevelDef {
   readonly disasterIds: readonly Id[];
   /** Guests may ask to dance and must be dragged to the dance floor. */
   readonly dancing?: boolean;
+  /** Service requests guests may make here (e.g. 'song', played at the DJ booth). */
+  readonly services?: readonly Id[];
+  /** Bottles of rescue champagne: one tap cheers up every guest. Unused bottles pay a bonus. */
+  readonly rescues?: number;
   /**
    * 'guestsGone' (default): the reception ends once every guest has arrived,
    * eaten and gone home, and every wedding moment has happened.
@@ -383,6 +398,8 @@ export interface ScoringRules {
   readonly dessertServed: number;
   /** Chain bonus: the n-th action in a chain adds (n − 1) × this. */
   readonly chainBonusPerStep: number;
+  /** End bonus per bottle of rescue champagne left unopened. */
+  readonly rescueUnused: number;
 }
 
 /** Game-feel constants shared by all levels. Kept in data so balancing never touches system code. */
@@ -397,6 +414,8 @@ export interface TuningDef {
     readonly pickUp: number;
     readonly dropGifts: number;
     readonly discard: number;
+    /** Asking the DJ (or any service station) to handle requests. */
+    readonly service: number;
   };
   readonly settleSeconds: readonly [number, number];
   readonly upsetSeconds: number;
@@ -442,6 +461,8 @@ export interface TuningDef {
     /** After the meal (and between extras), how long a guest sits before the next wish or goodbye. */
     readonly lingerSeconds: readonly [number, number];
   };
+  /** Rescue champagne: happiness every guest gains, and the couple's mood lift. */
+  readonly rescue: { readonly guestHappiness: number; readonly mood: number };
   readonly coupleRequestPatienceSeconds: number;
   /** Bonus when the chosen decor matches something the couple loves. */
   readonly decorMatchBonus: Modifiers;
@@ -457,7 +478,23 @@ export interface GameInfo {
   readonly finalLevelId?: Id;
 }
 
-/** One data pack. Packs are merged into a registry; later packs may add but not silently replace. */
+// ---------------------------------------------------------------- service requests
+
+/**
+ * A wish a guest has that is granted at a station rather than by carrying
+ * something over, e.g. a song at the DJ booth. Going to the station grants
+ * every guest waiting on that service at once.
+ */
+export interface ServiceDef {
+  readonly id: Id;
+  readonly name: string;
+  readonly stationKind: StationKind;
+  /** Shown when a guest is tapped: how to grant the wish. */
+  readonly hint: string;
+  /** Bubble icon (a UI icon name) and its colour. */
+  readonly visual: VisualHint;
+}
+
 // ---------------------------------------------------------------- secrets
 
 export type SecretIcon = 'golden-bouquet' | 'shooting-star' | 'bottle' | 'clover' | 'cat' | 'disco';
@@ -528,6 +565,7 @@ export interface AchievementDef {
   readonly condition: AchievementCondition;
 }
 
+/** One data pack. Packs are merged into a registry; later packs may add but not silently replace. */
 export interface ContentPack {
   readonly id: Id;
   readonly info?: GameInfo;
@@ -540,6 +578,7 @@ export interface ContentPack {
   readonly venues?: readonly VenueDef[];
   readonly disasters?: readonly DisasterDef[];
   readonly moments?: readonly MomentDef[];
+  readonly services?: readonly ServiceDef[];
   readonly weddings?: readonly WeddingDef[];
   readonly levels?: readonly LevelDef[];
   readonly decor?: readonly DecorDef[];

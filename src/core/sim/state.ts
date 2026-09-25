@@ -34,6 +34,8 @@ export interface Guest {
   readonly likes: readonly string[];
   readonly dislikes: readonly string[];
   readonly bringsGift: boolean;
+  /** Personality: the guest type's traits plus the guest's own. */
+  readonly traitIds: readonly Id[];
   /** Per-guest tuning from type + traits (+ level-wide modifiers). */
   readonly mods: ResolvedModifiers;
   readonly patienceSeconds: number;
@@ -51,6 +53,8 @@ export interface Guest {
   tableId: Id | null;
   /** Current wish: ordered dish or follow-up request item. */
   wantsItemId: Id | null;
+  /** Current wish granted at a station instead (e.g. a song at the DJ booth). */
+  wantsServiceId: Id | null;
   /** Happiness change per second from table neighbours (can be negative). */
   seatingMood: number;
   nextRequestIn: number;
@@ -175,12 +179,15 @@ export interface ReceptionState {
   outcome: ReceptionOutcome;
   readonly guests: Guest[];
   readonly planner: Planner;
-  readonly kitchen: { orders: KitchenOrder[]; pass: (Id | null)[] };
+  /** `stalled`: a disaster has stopped the cooking (recomputed every tick). */
+  readonly kitchen: { orders: KitchenOrder[]; pass: (Id | null)[]; stalled: boolean };
   readonly gifts: Gift[];
   readonly disasters: Disaster[];
   readonly secrets: Secret[];
   readonly chain: Chain;
   readonly couple: Couple;
+  /** Bottles of rescue champagne still unopened. */
+  rescuesLeft: number;
   readonly flags: Set<string>;
   score: number;
   /** Mood gained/lost per cause label, for the results breakdown. */
@@ -203,6 +210,9 @@ export interface ReceptionStats {
   disastersFailed: number;
   momentsCompleted: number;
   momentsFailed: number;
+  /** Service wishes granted (songs played for a guest). */
+  servicesGranted: number;
+  rescuesUsed: number;
 }
 
 export const MAX_MOOD = 100;

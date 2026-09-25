@@ -6,7 +6,8 @@ import { createDisasterSystem } from '../disasters/DisasterSystem';
 import { GiftSystem } from '../gifts/GiftSystem';
 import { seatGuest, sendToDance } from '../guests/guestActions';
 import { GuestSystem } from '../guests/GuestSystem';
-import { tableScore } from '../guests/seating';
+import { useRescue } from '../guests/rescue';
+import { isSeatFree, seatScore } from '../guests/seating';
 import { findGuest } from '../guests/guestMachine';
 import { isOnDanceFloor, pickDraggableGuest, pickSeat, pickTarget, pickWaitingGuest } from '../input/picking';
 import { KitchenSystem } from '../kitchen/kitchen';
@@ -61,12 +62,13 @@ export class ReceptionSimulation {
       outcome: 'RUNNING',
       guests: [],
       planner: { pos: venueDef.plannerStart, path: [], hands: [], queue: [], current: null, facing: 1 },
-      kitchen: { orders: [], pass: venueDef.passSlots.map(() => null) },
+      kitchen: { orders: [], pass: venueDef.passSlots.map(() => null), stalled: false },
       gifts: [],
       disasters: [],
       secrets: [],
       chain: { key: null, count: 0 },
       couple: { mood: Math.min(100, tuning.mood.start + modifiers.startMood), request: null, nextRequestIn: 0 },
+      rescuesLeft: level.rescues ?? 0,
       flags: new Set(),
       score: 0,
       moodLedger: new Map(),
@@ -84,6 +86,8 @@ export class ReceptionSimulation {
         disastersFailed: 0,
         momentsCompleted: 0,
         momentsFailed: 0,
+        servicesGranted: 0,
+        rescuesUsed: 0,
       },
     };
 
@@ -151,6 +155,8 @@ export class ReceptionSimulation {
         return clearQueue(this.ctx);
       case 'sendToDance':
         return sendToDance(this.ctx, cmd.guestKey);
+      case 'useRescue':
+        return useRescue(this.ctx);
     }
   }
 
@@ -189,6 +195,7 @@ export class ReceptionSimulation {
     if (outcome === 'COMPLETE') {
       const rules = content.scoring;
       score.add(endBonus(state, rules.perHappyGuestHeartAtEnd, rules.perMoodPointAtEnd), 'Wedding day bonus');
+      if (state.rescuesLeft > 0) score.add(rules.rescueUnused * state.rescuesLeft, 'Champagne saved');
       if (state.score < minScore) {
         const delta = minScore - state.score;
         state.score = minScore;
@@ -257,12 +264,14 @@ export class ReceptionSimulation {
     return pickWaitingGuest(this.ctx, p);
   }
 
-  /** How a waiting guest would feel at each table right now (for the seating hint overlay). */
+  /** How a waiting guest would feel in each free seat right now (for the seating hint overlay). */
   seatingPreview(guestKey: string): Map<Id, number> {
     const out = new Map<Id, number>();
     const guest = findGuest(this.ctx, guestKey);
     if (!guest) return out;
-    for (const t of this.ctx.venue.tables) out.set(t.id, tableScore(this.ctx, guest, t.id));
+    for (const t of this.ctx.venue.tables) {
+      for (const seat of t.seats) if (isSeatFree(this.ctx, seat.id)) out.set(seat.id, seatScore(this.ctx, guest, seat.id));
+    }
     return out;
   }
 }

@@ -90,6 +90,7 @@ export function nextLevelId(content: ContentRegistry, save: SaveData, levelId: I
 
 export function resultsVM(content: ContentRegistry, result: ReceptionResult, outcome: ResultOutcome, hasNext: boolean): ResultsVM {
   const s = result.stats;
+  const rescues = content.levels.get(result.levelId).rescues ?? 0;
   return {
     levelName: content.levels.get(result.levelId).name,
     success: result.outcome === 'COMPLETE',
@@ -103,7 +104,8 @@ export function resultsVM(content: ContentRegistry, result: ReceptionResult, out
       { label: 'Courses served', value: String(s.coursesServed) },
       { label: 'Best chain', value: s.bestChain >= 2 ? `×${s.bestChain}` : '—' },
       { label: 'Gifts delivered', value: String(s.giftsDelivered) },
-      ...(s.dances ? [{ label: 'Dances', value: String(s.dances) }] : []),
+      ...(s.dances || s.servicesGranted ? [{ label: 'Dances · songs', value: `${s.dances} · ${s.servicesGranted}` }] : []),
+      ...(rescues ? [{ label: 'Champagne saved', value: `${rescues - s.rescuesUsed} / ${rescues}` }] : []),
 
       { label: 'Disasters fixed', value: `${s.disastersResolved} / ${s.disastersResolved + s.disastersFailed}` },
       { label: 'Wedding moments', value: `${s.momentsCompleted} / ${s.momentsCompleted + s.momentsFailed}` },

@@ -1,4 +1,4 @@
-import type { GroupDef, GuestTypeDef, ItemDef, TraitDef } from '../../../content/types';
+import type { GroupDef, GuestTypeDef, ItemDef, ServiceDef, TraitDef } from '../../../content/types';
 
 export const items: ItemDef[] = [
   { id: 'garden-salad', name: 'Garden Salad', kind: 'dish', hands: 1, visual: { color: 0x8cc36a, icon: 'salad' } },
@@ -28,6 +28,25 @@ export const traits: TraitDef[] = [
   { id: 'picky', name: 'Picky', description: 'Impatient, but tips well when treated right.', modifiers: { guestPatienceDrain: 1.15, guestTip: 1.3 } },
   { id: 'restless', name: 'Restless', description: 'Loses patience fast and asks for more.', modifiers: { guestPatienceDrain: 1.2, guestRequestInterval: 0.8 } },
   { id: 'demanding', name: 'Demanding', description: 'Very impatient. Huge tips.', modifiers: { guestPatienceDrain: 1.3, guestTip: 2 } },
+  { id: 'fast-eater', name: 'Fast eater', description: 'Clears every plate in no time.', modifiers: { guestEatTime: 0.6 } },
+  { id: 'slow-eater', name: 'Slow eater', description: 'Savours every bite (and every minute).', modifiers: { guestEatTime: 1.5, guestPatienceDrain: 0.92 } },
+  {
+    id: 'drama',
+    name: 'Drama-prone',
+    description: 'Takes every hiccup personally — and tends to start a scene.',
+    modifiers: { disasterReaction: 1.8, guestPatienceDrain: 1.05 },
+  },
+];
+
+/** Wishes granted at a station instead of carried over. */
+export const services: ServiceDef[] = [
+  {
+    id: 'song',
+    name: 'Song request',
+    stationKind: 'djBooth',
+    hint: 'They want a song! Tap the DJ booth to play it.',
+    visual: { color: 0x7b6fd6, icon: 'record' },
+  },
 ];
 
 export const guestTypes: GuestTypeDef[] = [
@@ -43,6 +62,7 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [0, 1],
     danceWeight: 2,
+    serviceWeights: { song: 2 },
     traitIds: [],
     visual: { color: 0xf4d3b8, icon: 'guest' },
   },
@@ -57,6 +77,7 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [0, 1],
     danceWeight: 1,
+    serviceWeights: { song: 2 },
     traitIds: ['family-first', 'easygoing'],
     visual: { color: 0xe9c8ad, accent: 0xdddddd, icon: 'grandparent' },
   },
@@ -71,6 +92,7 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [1, 2],
     danceWeight: 7,
+    serviceWeights: { song: 4 },
     traitIds: ['social', 'big-tipper'],
     visual: { color: 0xf2c9a8, accent: 0xb86bd6, icon: 'party' },
   },
@@ -86,6 +108,7 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [1, 1],
     danceWeight: 1,
+    serviceWeights: { song: 1 },
     traitIds: ['picky'],
     visual: { color: 0xd9b08c, accent: 0xffffff, icon: 'foodie' },
   },
@@ -100,7 +123,8 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [0, 1],
     danceWeight: 3,
-    traitIds: ['restless'],
+    serviceWeights: { song: 3 },
+    traitIds: ['restless', 'fast-eater'],
     visual: { color: 0xf6d7bf, accent: 0x6fc2d6, icon: 'kid' },
   },
   {
@@ -114,6 +138,7 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [0, 1],
     danceWeight: 1,
+    serviceWeights: { song: 1 },
     traitIds: ['demanding'],
     visual: { color: 0xeac3a2, accent: 0x33384a, icon: 'boss' },
   },
@@ -129,7 +154,8 @@ export const guestTypes: GuestTypeDef[] = [
     ],
     staysFor: [1, 2],
     danceWeight: 1,
-    traitIds: ['picky', 'demanding'],
+    serviceWeights: { song: 1 },
+    traitIds: ['picky', 'demanding', 'slow-eater'],
     visual: { color: 0xeac3a2, accent: 0x6a4b6e, icon: 'boss' },
   },
 ];

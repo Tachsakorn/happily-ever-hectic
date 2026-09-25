@@ -15,6 +15,7 @@ const IDENTITY: Resolved = {
   startMood: 0,
   scoreBonus: 0,
   kitchenBurners: 0,
+  disasterReaction: 1,
 };
 
 const ADDITIVE = new Set<keyof Modifiers>(['startMood', 'scoreBonus', 'kitchenBurners']);

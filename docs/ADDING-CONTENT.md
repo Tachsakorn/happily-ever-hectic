@@ -17,10 +17,13 @@ Add to `guestTypes` in `src/data/packs/base/people.ts`:
   requestPool: [{ itemId: 'champagne', weight: 5 }, { itemId: 'cake-slice', weight: 2, requiresFlag: 'cake-cut' }],
   staysFor: [1, 2],              // follow-up wishes before a happy goodbye (frees the seat)
   danceWeight: 5,                // how likely a follow-up wish is a dance (dancing levels only)
+  serviceWeights: { song: 3 },   // how likely it is a song request (levels with services: ['song'])
   traitIds: ['social', 'demanding'],
   visual: { color: 0xf2c9a8, icon: 'party' },   // icon: guest | grandparent | party | foodie | kid | boss
 }
 ```
+
+A single guest can have extra personality on top of their type: `guest(..., { traitIds: ['drama'] })`.
 
 New behaviour that is just numbers → a new **trait** (`traits`, same file) with `modifiers`,
 `sameGroupBonus` or `otherGroupBonus`. Only genuinely new behaviour needs code: a new state handler in
@@ -49,9 +52,10 @@ Add to `disasters` in `src/data/packs/base/chaos.ts`, then list its id in a leve
 ```
 
 Triggers: `scheduled`, `random`, `seatingConflict`. Targets: `station`, `conflictTable`,
-`occupiedTable`, `floorSpot`. Effects: mood drain, guest patience drain (scoped), planner slow-down,
-music silence. A genuinely new mechanic = one new trigger/target kind in
-`core/disasters/disasterKinds.ts`; a new icon = one case in `render/art/painters.ts`.
+`occupiedTable`, `seatedGuest` (optionally `prefersTraitId`, e.g. a drama-prone guest), `floorSpot`.
+Effects: mood drain, guest patience drain (scoped; scaled per guest by `disasterReaction`), planner
+slow-down, music silence, `stopsKitchen`. `{guest}` in the hint is replaced by the involved guest's name. A genuinely new mechanic = one new trigger/target kind in
+`core/disasters/disasterKinds.ts`; a new icon = one case in `paintDisasterIcon` (`src/art/props.ts`).
 
 ## A new wedding and level
 
@@ -60,7 +64,8 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
 2. Add a `LevelDef` to `levels` (`src/data/packs/base/weddings.ts`): venue, duration, guest list
    (use the `guest(key, name, type, group, arriveAt, { bringsGift, likes, dislikes })` helper),
    disasters, moments (`toast`, `cake-cutting`), kitchen, star scores, coins, unlock chain, dialogue ids.
-   Optional: `dancing: true` (needs a venue with `danceSpots`) and `modifiers` for pickier guests
+   Optional: `dancing: true` (needs a venue with `danceSpots`), `services: ['song']` (song requests
+   at the DJ booth), `rescues: 2` (bottles of rescue champagne) and `modifiers` for pickier guests
    (e.g. `{ guestPatienceDrain: 1.15, guestRequestInterval: 0.9 }`). Level ids are save keys —
    never rename a shipped one; change `order` to move it on the map.
 3. Add intro/outro lines to `dialogues` in `meta.ts`.
@@ -73,6 +78,12 @@ music silence. A genuinely new mechanic = one new trigger/target kind in
 A level can override when each of its disasters may fire with `disasterTriggers`
 (`{ 'missing-rings': { kind: 'scheduled', at: 88 } }`). Use it to make a level hard through
 variety — one new kind of surprise at a time — instead of piling on guests. The finale does this.
+
+## A new service request
+
+Add to `services` in `people.ts` — `{ id, name, stationKind, hint, visual: { color, icon } }` where
+`icon` is a UI icon name (`render` shows it in the guest's bubble). Give guest types a weight in
+`serviceWeights` and list it in a level's `services`. Validation checks the venue has the station.
 
 ## A new secret event
 

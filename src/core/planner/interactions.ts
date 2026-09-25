@@ -12,6 +12,7 @@ import { stationItem } from '../sim/items';
 import { findSecret, liveSecret } from '../secrets/SecretSystem';
 import { extendChain } from '../scoring/chain';
 import { eatSecondsFor, servedCourse } from '../guests/courses';
+import { grantServicesAt, guestsWaitingAt, serviceStation } from '../guests/services';
 
 /**
  * What happens when the planner reaches a tapped target. Resolution happens on
@@ -55,6 +56,9 @@ export function targetPosition(ctx: SimContext, target: TargetRef): Vec2 | null 
     case 'guest': {
       const g = findGuest(ctx, target.id);
       if (!g || g.state === GuestState.GONE || g.state === GuestState.LEAVING) return null;
+      // A song request is granted at the DJ booth, so that is where she goes.
+      const service = serviceStation(ctx, g);
+      if (service) return service.interactPos;
       return g.seatId ? ctx.venue.seat(g.seatId).seat.interactPos : g.pos;
     }
     case 'couple':
@@ -96,6 +100,10 @@ function resolveGuest(ctx: SimContext, key: string): Resolution {
       },
     };
   }
+
+  const service = serviceStation(ctx, g);
+  if (service) return resolveService(ctx, service.id);
+  if (g.state === GuestState.REQUESTING && g.wantsServiceId) return { skip: ctx.content.services.get(g.wantsServiceId).hint };
 
   const wanted = g.wantsItemId;
   const serving = g.state === GuestState.WAITING_FOR_FOOD || g.state === GuestState.REQUESTING;
@@ -148,6 +156,7 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
   const station = ctx.venue.station(stationId);
   const disaster = disasterAtStation(ctx, stationId);
   if (disaster) return resolveDisasterWork(ctx, disaster);
+  if (guestsWaitingAt(ctx, station.kind).length) return resolveService(ctx, stationId);
   const w = ctx.tuning.work;
   const hands = ctx.state.planner.hands;
 
@@ -202,6 +211,17 @@ function resolveStation(ctx: SimContext, stationId: string): Resolution {
     default:
       return { skip: 'All calm here' };
   }
+}
+
+/** Grants the service wishes waiting on a station — after fixing any disaster there first. */
+function resolveService(ctx: SimContext, stationId: string): Resolution {
+  const station = ctx.venue.station(stationId);
+  const disaster = disasterAtStation(ctx, stationId);
+  if (disaster) return resolveDisasterWork(ctx, disaster);
+  return {
+    work: ctx.tuning.work.service,
+    perform: () => grantServicesAt(ctx, station),
+  };
 }
 
 function resolvePassSlot(ctx: SimContext, slot: number): Resolution {

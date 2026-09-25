@@ -27,6 +27,8 @@ const result = (levelId: string, score: number, stars: 0 | 1 | 2 | 3, outcome: '
     disastersFailed: 0,
     momentsCompleted: 0,
     momentsFailed: 0,
+    servicesGranted: 0,
+    rescuesUsed: 0,
   },
   moodBreakdown: [],
   secretsFound: [],

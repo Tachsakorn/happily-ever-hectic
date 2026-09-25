@@ -7,4 +7,4 @@
 export { FONT_BODY, FONT_DISPLAY, groundShadow as softShadow, hex, INK, roundRect, shade, type Painter } from './canvas';
 export { heartPath, paintIcon, starPath, ICON_SIZE, type ItemIcon } from './items';
 export { paintPerson, PERSON_FEET, PERSON_H, PERSON_W, type HairStyle, type Mood, type PersonLook, type PersonStyle } from './people';
-export { isUiIcon, paintBubble, paintDisasterIcon, paintDot, paintMedal, paintPanel, paintUiIcon, UI_ICONS, type UiIcon } from './props';
+export { isUiIcon, paintBubble, paintDisasterIcon, paintDot, paintMedal, paintPanel, paintRescueButton, paintUiIcon, UI_ICONS, type UiIcon } from './props';

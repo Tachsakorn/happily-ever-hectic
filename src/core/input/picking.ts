@@ -22,7 +22,12 @@ const RADIUS = {
   passSlot: 42,
   couple: 80,
   secret: 64,
+  stationDisaster: 56,
 } as const;
+
+/** Where a station disaster's marker floats: above the station (the renderer draws it here). */
+export const STATION_DISASTER_LIFT = 70;
+export const stationDisasterMarker = (p: Vec2): Vec2 => ({ x: p.x, y: p.y - STATION_DISASTER_LIFT });
 
 export function pickTarget(ctx: SimContext, p: Vec2): TargetRef | null {
   let best: { target: TargetRef; d: number; priority: number } | null = null;
@@ -34,8 +39,14 @@ export function pickTarget(ctx: SimContext, p: Vec2): TargetRef | null {
 
   for (const dis of ctx.state.disasters) {
     if (dis.phase === DisasterPhase.RESOLVED || dis.phase === DisasterPhase.FAILED) continue;
-    // Station disasters are fixed by tapping the station itself.
-    if (dis.stationId) continue;
+    if (dis.stationId) {
+      // Station disasters are fixed through the station; their marker floats above it
+      // (over the kitchen's plates, say), and tapping the marker must reach the problem.
+      const station = ctx.venue.station(dis.stationId);
+      const target: TargetRef = station.kind === 'coupleTable' ? { kind: 'couple' } : { kind: 'station', id: station.id };
+      consider(target, stationDisasterMarker(dis.pos), RADIUS.stationDisaster, 0);
+      continue;
+    }
     consider({ kind: 'disaster', id: dis.id }, dis.pos, RADIUS.disaster, 0);
   }
   for (const secret of ctx.state.secrets) {

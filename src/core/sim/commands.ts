@@ -7,7 +7,9 @@ export type Command =
   | { type: 'queueAction'; target: TargetRef }
   | { type: 'clearQueue' }
   /** Send a guest who wants to dance onto the dance floor. */
-  | { type: 'sendToDance'; guestKey: string };
+  | { type: 'sendToDance'; guestKey: string }
+  /** Pop a bottle of rescue champagne: every guest cheers up. */
+  | { type: 'useRescue' };
 
 export type CommandResult = { ok: true } | { ok: false; reason: string };
 

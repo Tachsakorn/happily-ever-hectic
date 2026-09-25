@@ -14,12 +14,13 @@ import { Colors, Depth } from '../ui/text';
 import { DisasterLayer } from '../views/DisasterLayer';
 import { SecretLayer } from '../views/SecretLayer';
 import { FloatingTextLayer } from '../views/FloatingTextLayer';
-import { GuestView } from '../views/GuestView';
+import { GuestView, type PreferenceLookup } from '../views/GuestView';
 import { Banner, Hud } from '../views/Hud';
 import { PlannerView } from '../views/PlannerView';
 import { GuestCard, SeatingOverlay, TapFeedback } from '../views/SeatingViews';
 import { CoupleView, PropsView } from '../views/WorldViews';
 import { KitchenView } from '../views/KitchenView';
+import { RescueButton } from '../views/RescueButton';
 import { Fx } from '../fx/Fx';
 import { servedItem, stationItem } from '../../core/sim/items';
 
@@ -54,6 +55,7 @@ export class ReceptionScene extends Phaser.Scene {
   private secrets!: SecretLayer;
   private floating!: FloatingTextLayer;
   private hud!: Hud;
+  private rescue!: RescueButton;
   private banner!: Banner;
   private fx!: Fx;
   private overlay!: SeatingOverlay;
@@ -105,6 +107,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.floating = new FloatingTextLayer(this, renderScale);
     this.hud = new Hud(this, this.art, this.tex, sim, renderScale, ctx.level, ctx.wedding, this.fx);
     this.banner = new Banner(this, this.tex, this.art, renderScale);
+    this.rescue = new RescueButton(this, this.tex, sim, this.fx, renderScale);
     this.overlay = new SeatingOverlay(this, sim, renderScale);
     this.card = new GuestCard(this, sim, this.tex, renderScale);
     const taps = new TapFeedback(this, this.art, this.tex);
@@ -113,6 +116,16 @@ export class ReceptionScene extends Phaser.Scene {
       onDragGuest: (key, p) => this.updateGhost(key, p),
       onCommandFailed: (reason, p) => this.floating.show(p, reason, Colors.inkCss, 18),
       plannerHit: (p) => this.planner.hitTest(p),
+      buttonHit: (p) => {
+        if (!this.rescue.hitTest(p)) return false;
+        const result = sim.command({ type: 'useRescue' });
+        taps.ripple(p, result.ok);
+        if (!result.ok) {
+          this.rescue.refuse();
+          this.floating.show({ x: p.x - 40, y: p.y - 90 }, result.reason, Colors.inkCss, 18);
+        }
+        return true;
+      },
     });
 
     for (const tip of ctx.level.tutorialTips) this.banner.show(tip, 'info', 5);
@@ -139,6 +152,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.disasters.sync(time);
     this.secrets.sync(session.paused ? 0 : dt);
     this.hud.sync(dt);
+    this.rescue.sync(dt);
     // Announcements wait while paused (e.g. during the intro dialogue) so none are missed.
     if (!session.paused) this.banner.update(time);
 
@@ -154,7 +168,7 @@ export class ReceptionScene extends Phaser.Scene {
     for (const g of state.guests) {
       let view = this.guests.get(g.key);
       if (!view) {
-        view = new GuestView(this, this.art, this.tex, this.fx, g);
+        view = new GuestView(this, this.art, this.tex, this.fx, g, this.preferenceLookup);
         this.guests.set(g.key, view);
       }
       view.sync(g, g.key === selected, dt);
@@ -168,6 +182,14 @@ export class ReceptionScene extends Phaser.Scene {
       }
     }
   }
+
+  /** Resolves a like/dislike reference (a guest key or a group id) for preference bubbles. */
+  private readonly preferenceLookup: PreferenceLookup = (ref) => {
+    const ctx = this.sceneData.session.sim.context;
+    const spec = ctx.level.guests.find((s) => s.key === ref);
+    if (spec) return { kind: 'guest', look: spec };
+    return ctx.content.groups.has(ref) ? { kind: 'group', color: ctx.content.groups.get(ref).visual.color } : null;
+  };
 
   private updateGhost(guestKey: string, p: Vec2 | null): void {
     if (!p) {
@@ -239,10 +261,13 @@ export class ReceptionScene extends Phaser.Scene {
       case 'momentFailed':
         this.cameras.main.shake(200, 0.003);
         break;
-      case 'disasterStarted':
-        this.banner.show(ctx.content.disasters.get(e.defId).hint, 'bad', 4.5, true);
+      case 'disasterStarted': {
+        const who = this.sceneData.session.sim.state.disasters.find((d) => d.id === e.disasterId)?.involvedGuestKeys[0];
+        const name = (who && findGuest(ctx, who)?.name) || 'A guest';
+        this.banner.show(ctx.content.disasters.get(e.defId).hint.replace('{guest}', name), 'bad', 4.5, true);
         this.fx.puff(e.pos, 4);
         break;
+      }
       case 'disasterPhaseChanged':
         if (e.phase === 'ESCALATED') this.cameras.main.shake(220, 0.004);
         break;
@@ -280,6 +305,17 @@ export class ReceptionScene extends Phaser.Scene {
           this.floating.show(e.pos, '♥ Great seat!', Colors.goodCss, 20);
           this.fx.hearts({ x: e.pos.x, y: e.pos.y - 80 }, 3, 30);
         } else if (e.neighbourScore < -0.25) this.floating.show(e.pos, 'Uh oh… bad company', Colors.badCss, 20);
+        break;
+      case 'serviceGranted':
+        for (let i = 0; i < 3; i++) this.fx.note({ x: e.from.x + (i - 1) * 26, y: e.from.y - 80 - i * 10 });
+        this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 70 }, 6, 40, 0xb49be0);
+        this.floating.show({ x: e.pos.x, y: e.pos.y - 150 }, '♪ Their song!', '#7a5bb5', 20);
+        this.guests.get(e.guestKey)?.cheer();
+        break;
+      case 'rescueUsed':
+        this.banner.show('Pop! Champagne for everyone — the whole room perks up!', 'good', 3, true);
+        for (const view of this.guests.values()) view.cheer();
+        this.fx.confetti({ x: venue.size.width / 2, y: 380 }, 40, 420);
         break;
       case 'orderTaken':
         this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 120 }, 5, 30);
@@ -351,6 +387,7 @@ export class ReceptionScene extends Phaser.Scene {
     this.secrets?.destroy();
     this.overlay?.destroy();
     this.hud?.destroy();
+    this.rescue?.destroy();
     this.fx?.destroy();
     this.ghost?.destroy();
     this.ghost = null;

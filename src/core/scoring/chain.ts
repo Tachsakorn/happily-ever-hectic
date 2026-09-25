@@ -8,7 +8,8 @@ import type { SimContext } from '../sim/SimContext';
  * binning), seating guests and sending dancers are neutral: they neither
  * extend nor break a chain, because they are how the next link gets done.
  *
- * Chain keys: `serve:<itemId>`, `order`, `gift`, `fix`, `couple`.
+ * Chain keys: `serve:<itemId>`, `service:<serviceId>`, `order`, `gift`, `fix`, `couple`.
+ * Rescue champagne is neutral too: it is an emergency, not a job.
  */
 export function extendChain(ctx: SimContext, key: string, pos: Vec2 | null): void {
   const chain = ctx.state.chain;

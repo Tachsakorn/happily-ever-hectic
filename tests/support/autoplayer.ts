@@ -18,6 +18,7 @@ export function autoplay(sim: ReceptionSimulation, reactionSeconds = 0.35): void
     cooldown = reactionSeconds;
     seatEveryone(sim);
     sendDancers(sim);
+    popChampagneIfNeeded(sim);
     const p = sim.state.planner;
     if (p.current || p.queue.length) continue;
     const target = chooseAction(sim);
@@ -26,21 +27,21 @@ export function autoplay(sim: ReceptionSimulation, reactionSeconds = 0.35): void
 }
 
 function seatEveryone(sim: ReceptionSimulation): void {
-  const ctx = sim.context;
   for (const g of sim.state.guests) {
     if (g.state !== 'WAITING_TO_BE_SEATED' && g.state !== 'ARRIVING') continue;
-    const preview = sim.seatingPreview(g.key);
     let best: { seat: string; score: number } | null = null;
-    for (const table of ctx.venue.tables) {
-      for (const seat of table.seats) {
-        const taken = sim.state.guests.some((o) => o.seatId === seat.id && o.state !== 'UPSET' && o.state !== 'LEAVING' && o.state !== 'GONE');
-        if (taken) continue;
-        const score = preview.get(table.id) ?? 0;
-        if (!best || score > best.score) best = { seat: seat.id, score };
-      }
+    for (const [seat, score] of sim.seatingPreview(g.key)) {
+      if (!best || score > best.score) best = { seat, score };
     }
     if (best) sim.command({ type: 'seatGuest', guestKey: g.key, seatId: best.seat });
   }
+}
+
+/** Opens a bottle only in a real emergency: several guests about to storm off. */
+function popChampagneIfNeeded(sim: ReceptionSimulation): void {
+  if (sim.state.rescuesLeft <= 0) return;
+  const desperate = sim.state.guests.filter((g) => g.happiness < 22 && g.state !== 'UPSET' && g.state !== 'LEAVING').length;
+  if (desperate >= 2) sim.command({ type: 'useRescue' });
 }
 
 function sendDancers(sim: ReceptionSimulation): void {
@@ -83,6 +84,10 @@ function chooseAction(sim: ReceptionSimulation): TargetRef | null {
     .sort((a, b) => a.happiness - b.happiness);
   const serveable = waiting.find((g) => hands.includes(g.wantsItemId as string));
   if (serveable) return { kind: 'guest', id: serveable.key };
+
+  // Songs: one trip to the DJ plays every requested song.
+  const song = s.guests.find((g) => g.state === 'REQUESTING' && g.wantsServiceId);
+  if (song) return { kind: 'guest', id: song.key };
 
   const ordering = s.guests.filter((g) => g.state === 'READY_TO_ORDER').sort((a, b) => a.happiness - b.happiness)[0];
   if (ordering) return { kind: 'guest', id: ordering.key };

@@ -5,6 +5,7 @@ import type { Guest } from '../../core/sim/state';
 import type { TextureFactory } from './TextureFactory';
 import {
   ICON_SIZE,
+  isUiIcon,
   paintBubble,
   paintDisasterIcon,
   paintDot,
@@ -27,6 +28,8 @@ const GUEST_HAIR_STYLES: HairStyle[] = ['short', 'bob', 'long', 'curly', 'side',
 
 /** Vertical origin that puts a person sprite's feet on its position. */
 export const FEET_ORIGIN_Y = PERSON_FEET / PERSON_H;
+/** The middle of a person sprite, in design units from its top. */
+export const PERSON_CENTRE_Y = PERSON_H / 2;
 
 const STYLES = new Set<string>(['guest', 'grandparent', 'party', 'foodie', 'kid', 'boss', 'dress', 'suit', 'planner', 'chef']);
 
@@ -91,6 +94,12 @@ export class ArtKit {
   /** Interface icons (48×48) for use inside the world, such as a guest's music-note wish. */
   uiIcon(icon: UiIcon, color = 0xe86f8e): string {
     return this.tex.ensure(`ui:${icon}:${color}`, 48, 48, paintUiIcon(icon, color));
+  }
+
+  /** A service request's bubble icon (a UI icon) and colour. */
+  serviceVisual(serviceId: Id): { icon: UiIcon; color: number } {
+    const v = this.content.services.get(serviceId).visual;
+    return { icon: isUiIcon(v.icon) ? v.icon : 'music', color: v.color };
   }
 
   secret(defId: Id): string {

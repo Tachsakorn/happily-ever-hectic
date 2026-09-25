@@ -13,6 +13,7 @@ import type {
   MomentDef,
   ScoringRules,
   SecretEventDef,
+  ServiceDef,
   TuningDef,
   TraitDef,
   UpgradeDef,
@@ -61,6 +62,7 @@ export class ContentRegistry {
   readonly venues = new Catalog<VenueDef>('venue');
   readonly disasters = new Catalog<DisasterDef>('disaster');
   readonly moments = new Catalog<MomentDef>('moment');
+  readonly services = new Catalog<ServiceDef>('service');
   readonly weddings = new Catalog<WeddingDef>('wedding');
   readonly levels = new Catalog<LevelDef>('level');
   readonly decor = new Catalog<DecorDef>('decor');
@@ -110,6 +112,7 @@ export class ContentRegistry {
     add(this.venues, pack.venues);
     add(this.disasters, pack.disasters);
     add(this.moments, pack.moments);
+    add(this.services, pack.services);
     add(this.weddings, pack.weddings);
     add(this.levels, pack.levels);
     add(this.decor, pack.decor);

@@ -67,11 +67,15 @@ export function paintPanel(w: number, h: number, fill = 0xfffaf0, alpha = 1): Pa
   };
 }
 
+const LARGE_MARKERS = new Set(['tissue', 'hiccup', 'spat', 'bees', 'smoke']);
+
 /** Disaster markers, 80×80, readable at a glance. */
 export function paintDisasterIcon(icon: string, color: number): Painter {
   return (c) => {
     c.save();
     c.translate(40, 40);
+    // The newer markers are drawn smaller; scaled up they read at a glance like the rest.
+    if (LARGE_MARKERS.has(icon)) c.scale(1.25, 1.25);
     switch (icon) {
       case 'puddle': {
         const puddle = new Path2D();
@@ -226,6 +230,162 @@ export function paintDisasterIcon(icon: string, color: number): Painter {
         c.stroke();
         break;
       }
+      case 'tissue': {
+        // A tissue box with a tissue popping out, and a big tear.
+        c.translate(-4, 2);
+        toon(c, rrect(-22, -2, 36, 24, 5), 0xfffaf0, { x: -22, y: -2, w: 36, h: 24 }, { line: 2.6 });
+        flat(c, rrect(-16, 6, 24, 9, 3), 0xf7b7c6, 1.6);
+        const tissue = new Path2D();
+        tissue.moveTo(-12, -2);
+        tissue.quadraticCurveTo(-14, -18, -4, -22);
+        tissue.quadraticCurveTo(0, -12, 6, -24);
+        tissue.quadraticCurveTo(10, -10, 4, -2);
+        tissue.closePath();
+        flat(c, tissue, 0xffffff, 2.2);
+        const tear = new Path2D();
+        tear.moveTo(22, -24);
+        tear.quadraticCurveTo(32, -8, 22, -2);
+        tear.quadraticCurveTo(12, -8, 22, -24);
+        tear.closePath();
+        toon(c, tear, color, { x: 12, y: -24, w: 20, h: 22 }, { line: 2.2 });
+        c.fillStyle = 'rgba(255,255,255,0.7)';
+        c.fill(oval(19, -10, 2, 3.5));
+        break;
+      }
+      case 'hiccup': {
+        // A tipsy, tilted glass with hiccup bubbles.
+        c.save();
+        c.rotate(0.35);
+        const glass = new Path2D();
+        glass.moveTo(-12, -22);
+        glass.lineTo(12, -22);
+        glass.quadraticCurveTo(12, 2, 2, 4);
+        glass.lineTo(2, 16);
+        glass.lineTo(10, 20);
+        glass.lineTo(-10, 20);
+        glass.lineTo(-2, 16);
+        glass.lineTo(-2, 4);
+        glass.quadraticCurveTo(-12, 2, -12, -22);
+        glass.closePath();
+        c.fillStyle = 'rgba(255,255,255,0.8)';
+        c.fill(glass);
+        const wine = new Path2D();
+        wine.moveTo(-11, -12);
+        wine.lineTo(11, -12);
+        wine.quadraticCurveTo(10, 1, 0, 2);
+        wine.quadraticCurveTo(-10, 1, -11, -12);
+        wine.closePath();
+        c.fillStyle = hex(color);
+        c.fill(wine);
+        outline(c, glass, 2.4);
+        c.restore();
+        for (const [x, y, r] of [
+          [-20, -16, 5],
+          [-26, -28, 3.6],
+          [-17, -32, 2.6],
+        ] as const) {
+          c.fillStyle = 'rgba(255,255,255,0.85)';
+          c.fill(disc(x, y, r));
+          outline(c, disc(x, y, r), 1.6);
+        }
+        c.font = `16px ${FONT_DISPLAY}`;
+        c.textAlign = 'center';
+        c.fillStyle = hex(INK);
+        c.fillText('hic!', 18, -20);
+        break;
+      }
+      case 'spat': {
+        // A bouquet in a tug of war, with an angry spark.
+        for (const s of [-1, 1]) {
+          c.save();
+          c.translate(s * 13, 6);
+          c.rotate(s * 0.5);
+          toon(c, rrect(-3, -2, 6, 20, 2), 0x7fb08a, { x: -3, y: -2, w: 6, h: 20 }, { line: 2 });
+          c.restore();
+        }
+        for (const [x, y, r, tone] of [
+          [-8, -8, 9, color],
+          [8, -8, 9, 0xfff1f5],
+          [0, -18, 9, color],
+        ] as const) {
+          toon(c, disc(x, y, r), tone, { x: x - r, y: y - r, w: r * 2, h: r * 2 }, { line: 2.2 });
+          c.fillStyle = hex(shade(tone, -0.2));
+          c.fill(disc(x, y, r * 0.35));
+        }
+        const bolt = new Path2D();
+        bolt.moveTo(20, -30);
+        bolt.lineTo(13, -18);
+        bolt.lineTo(19, -18);
+        bolt.lineTo(14, -6);
+        bolt.lineTo(27, -22);
+        bolt.lineTo(21, -22);
+        bolt.lineTo(26, -30);
+        bolt.closePath();
+        flat(c, bolt, 0xf6d860, 2);
+        break;
+      }
+      case 'bees': {
+        // A little swarm: three bees on a looping flight path.
+        c.setLineDash([3, 4]);
+        c.strokeStyle = hex(INK, 0.55);
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(-28, 16);
+        c.bezierCurveTo(-30, -20, 4, 8, 0, -12);
+        c.bezierCurveTo(-4, -30, 26, -24, 26, -4);
+        c.stroke();
+        c.setLineDash([]);
+        const bee = (x: number, y: number, k: number) => {
+          c.save();
+          c.translate(x, y);
+          c.scale(k, k);
+          flat(c, oval(-3, -8, 6, 4.5, -0.4), 0xeaf6ff, 1.6);
+          flat(c, oval(4, -8, 6, 4.5, 0.4), 0xeaf6ff, 1.6);
+          toon(c, oval(0, 0, 11, 8), color, { x: -11, y: -8, w: 22, h: 16 }, { line: 2.2 });
+          c.fillStyle = hex(INK);
+          c.fillRect(-4, -7, 3, 14);
+          c.fillRect(2, -7, 3, 14);
+          c.fill(disc(-8, -1, 1.6));
+          c.restore();
+        };
+        bee(-16, 10, 1);
+        bee(12, 14, 0.8);
+        bee(14, -18, 0.9);
+        break;
+      }
+      case 'smoke': {
+        // A frying pan under a big grey cloud.
+        c.translate(-3, 0);
+        c.lineCap = 'round';
+        c.strokeStyle = hex(INK);
+        c.lineWidth = 7;
+        c.beginPath();
+        c.moveTo(10, 18);
+        c.lineTo(30, 26);
+        c.stroke();
+        c.strokeStyle = hex(0x5a4a44);
+        c.lineWidth = 3.6;
+        c.stroke();
+        toon(c, oval(-6, 16, 20, 7), 0x4a4250, { x: -26, y: 9, w: 40, h: 14 }, { line: 2.4 });
+        const cloud = new Path2D();
+        for (const [x, y, r] of [
+          [-14, -6, 11],
+          [-2, -16, 14],
+          [13, -8, 11],
+          [-4, -2, 10],
+        ] as const) {
+          cloud.moveTo(x + r, y);
+          cloud.arc(x, y, r, 0, Math.PI * 2);
+        }
+        c.lineWidth = LINE * 2;
+        c.strokeStyle = hex(INK);
+        c.stroke(cloud);
+        c.fillStyle = hex(color);
+        c.fill(cloud);
+        c.fillStyle = 'rgba(255,255,255,0.35)';
+        c.fill(oval(-6, -20, 7, 4, -0.3));
+        break;
+      }
       default: {
         const tri = new Path2D();
         tri.moveTo(0, -26);
@@ -242,7 +402,71 @@ export function paintDisasterIcon(icon: string, color: number): Painter {
   };
 }
 
-export const UI_ICONS = ['music', 'sound', 'pause', 'back', 'lock', 'shop', 'chair', 'shoe', 'chef', 'walkie', 'violin', 'clock', 'heart', 'play', 'replay', 'map', 'close', 'check', 'warning', 'guests', 'next', 'wrench', 'trophy', 'star', 'gift', 'sparkle', 'moon', 'question'] as const;
+/**
+ * The rescue champagne button (size × size): a bottle in an ice bucket on a
+ * round plaque. `count` bottles left are shown as a badge; none left greys it out.
+ */
+export function paintRescueButton(size: number, empty: boolean): Painter {
+  return (c) => {
+    const r = size / 2 - 6;
+    c.save();
+    c.translate(size / 2, size / 2);
+    c.fillStyle = hex(INK, 0.22);
+    c.fill(disc(0, 5, r));
+    toon(c, disc(0, 0, r), empty ? 0xd9d2d6 : 0xfff3cf, { x: -r, y: -r, w: r * 2, h: r * 2 }, { line: 3.2 });
+    c.setLineDash([5, 5]);
+    c.lineWidth = 1.8;
+    c.strokeStyle = hex(empty ? 0xa89ea5 : 0xd9a441);
+    c.stroke(disc(0, 0, r - 8));
+    c.setLineDash([]);
+    const k = size / 110;
+    c.scale(k, k);
+    const glassTone = empty ? 0x9d97a0 : 0x3f7a55;
+    // Bottle
+    const bottle = new Path2D();
+    bottle.moveTo(-6, -40);
+    bottle.lineTo(6, -40);
+    bottle.lineTo(6, -22);
+    bottle.quadraticCurveTo(15, -16, 15, -4);
+    bottle.lineTo(15, 18);
+    bottle.lineTo(-15, 18);
+    bottle.lineTo(-15, -4);
+    bottle.quadraticCurveTo(-15, -16, -6, -22);
+    bottle.closePath();
+    toon(c, bottle, glassTone, { x: -15, y: -40, w: 30, h: 58 }, { line: 2.6 });
+    flat(c, rrect(-7, -46, 14, 9, 3), empty ? 0xc9c3c7 : 0xf2b84b, 2.2);
+    flat(c, rrect(-12, -8, 24, 16, 3), empty ? 0xeeeaec : 0xfffaf0, 2);
+    c.fillStyle = hex(empty ? 0xb7b0b4 : 0xe86f8e);
+    c.fill(heartPath(0.28, 0, 0));
+    c.fillStyle = 'rgba(255,255,255,0.45)';
+    c.fill(rrect(-11, -18, 4, 30, 2));
+    // Ice bucket
+    const bucket = new Path2D();
+    bucket.moveTo(-26, 6);
+    bucket.lineTo(26, 6);
+    bucket.lineTo(20, 36);
+    bucket.lineTo(-20, 36);
+    bucket.closePath();
+    toon(c, bucket, empty ? 0xc9c3c7 : 0xd9dde6, { x: -26, y: 6, w: 52, h: 30 }, { line: 2.6 });
+    flat(c, rrect(-28, 2, 56, 8, 3), empty ? 0xb7b0b4 : 0xb8bfcc, 2.2);
+    if (!empty) {
+      // Bubbles fizzing up.
+      for (const [x, y, rr] of [
+        [-22, -30, 4],
+        [22, -36, 3],
+        [-28, -46, 2.6],
+        [28, -22, 2.4],
+      ] as const) {
+        c.fillStyle = 'rgba(255,255,255,0.9)';
+        c.fill(disc(x, y, rr));
+        outline(c, disc(x, y, rr), 1.4, 0xd9a441);
+      }
+    }
+    c.restore();
+  };
+}
+
+export const UI_ICONS = ['music', 'sound', 'pause', 'back', 'lock', 'shop', 'chair', 'shoe', 'chef', 'walkie', 'violin', 'clock', 'heart', 'play', 'replay', 'map', 'close', 'check', 'warning', 'guests', 'next', 'wrench', 'trophy', 'star', 'gift', 'sparkle', 'moon', 'question', 'record'] as const;
 export type UiIcon = (typeof UI_ICONS)[number];
 
 export function isUiIcon(name: string | undefined): name is UiIcon {
@@ -570,6 +794,29 @@ export function paintUiIcon(icon: UiIcon, color = 0xffffff): Painter {
         };
         toon(c, burst(-3, 2, 15), color, { x: -18, y: -13, w: 30, h: 30 }, { line: 2.4 });
         flat(c, burst(12, -11, 6), color, 2);
+        break;
+      }
+      case 'record': {
+        // A vinyl record with a coloured label and a little note: "play my song".
+        toon(c, disc(-2, 3, 16), 0x3a3348, { x: -18, y: -13, w: 32, h: 32 }, { line: 2.4 });
+        c.strokeStyle = 'rgba(255,255,255,0.28)';
+        c.lineWidth = 1.2;
+        for (const r of [8.5, 12.5]) {
+          c.beginPath();
+          c.arc(-2, 3, r, -2.4, -0.9);
+          c.stroke();
+        }
+        flat(c, disc(-2, 3, 5.5), color, 1.6);
+        c.fillStyle = hex(INK);
+        c.fill(disc(-2, 3, 1.4));
+        flat(c, oval(11, -6, 4.6, 3.6, -0.3), color, 2);
+        c.strokeStyle = hex(INK);
+        c.lineWidth = 2.6;
+        c.beginPath();
+        c.moveTo(15, -7);
+        c.lineTo(15, -20);
+        c.quadraticCurveTo(19, -16, 22, -15);
+        c.stroke();
         break;
       }
       case 'moon': {

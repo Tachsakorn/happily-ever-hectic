@@ -83,21 +83,35 @@ describe('seating relationships', () => {
     runFor(sim, 0.2);
     sim.command({ type: 'seatGuest', guestKey: 'star', seatId: 'table-1-n' });
     sim.command({ type: 'seatGuest', guestKey: 'fan', seatId: 'table-1-e' });
-    sim.command({ type: 'seatGuest', guestKey: 'grump', seatId: 'table-1-s' });
+    // Beside the star (north): west is next to north, south is across the table.
+    sim.command({ type: 'seatGuest', guestKey: 'grump', seatId: 'table-1-w' });
     runFor(sim, 8);
     expect(guestByKey(sim, 'fan').seatingMood).toBeGreaterThan(0);
     expect(guestByKey(sim, 'grump').seatingMood).toBeLessThan(0);
   });
 
-  it('previews how a waiting guest would feel at each table', () => {
+  it('only the seats either side count: across the table is not a neighbour', () => {
+    const { sim } = makeSim({
+      guests: [guest('a', 'A', 'regular', 'work', 0), guest('b', 'B', 'regular', 'family', 0, { dislikes: ['a'] })],
+    });
+    runFor(sim, 0.2);
+    sim.command({ type: 'seatGuest', guestKey: 'a', seatId: 'table-1-n' });
+    const preview = sim.seatingPreview('b');
+    expect(preview.get('table-1-e')).toBeLessThan(0);
+    expect(preview.get('table-1-w')).toBeLessThan(0);
+    expect(preview.get('table-1-s')).toBe(0);
+    expect(preview.has('table-1-n')).toBe(false); // taken
+  });
+
+  it('previews how a waiting guest would feel in each seat', () => {
     const { sim } = makeSim({
       guests: [guest('a', 'A', 'regular', 'family', 0), guest('b', 'B', 'regular', 'family', 0, { dislikes: ['a'] })],
     });
     runFor(sim, 0.2);
     sim.command({ type: 'seatGuest', guestKey: 'a', seatId: 'table-2-n' });
     const preview = sim.seatingPreview('b');
-    expect(preview.get('table-2')).toBeLessThan(0);
-    expect(preview.get('table-1')).toBe(0);
+    expect(preview.get('table-2-e')).toBeLessThan(0);
+    expect(preview.get('table-1-e')).toBe(0);
   });
 });
 

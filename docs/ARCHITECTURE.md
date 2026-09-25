@@ -32,7 +32,7 @@ touch ──► ReceptionInput ──► Command ──► ReceptionSimulation �
 
 - `ReceptionSession` (core) owns the simulation and a `FixedStepRunner` (60 Hz). The scene feeds
   real frame time in; pause = stop feeding. Same speed on 60 Hz and 120 Hz iPads.
-- Commands: `seatGuest`, `queueAction`, `clearQueue`. Views never mutate state.
+- Commands: `seatGuest`, `queueAction`, `clearQueue`, `sendToDance`, `useRescue`. Views never mutate state.
 - Events carry positions so feedback appears where things happen.
 
 ## Simulation (core/)
@@ -45,7 +45,7 @@ touch ──► ReceptionInput ──► Command ──► ReceptionSimulation �
 | Disasters | Trigger → WARNING → ACTIVE → ESCALATED → FAILED, or RESOLVED by the planner |
 | Planner | Action queue, walking (visibility-graph nav), work timers, interactions on arrival |
 | Guests | Per-state behaviour handlers + validated transition table, patience, seating mood |
-| Kitchen | Burners, cook time, pass slots |
+| Kitchen | Burners, cook time, pass slots; stops while a disaster `stopsKitchen` (set each tick by Disasters) |
 | Gifts | Gifts left too long go missing |
 | Secrets | Rare surprises: armed by chance, appear when their conditions hold, found by tapping (own random stream) |
 | Couple | Couple requests, moment timers, calm recovery |
@@ -81,9 +81,25 @@ patience drains) → the player drags the guest onto the floor (`sendToDance`) �
 DANCING` (happiness rises) `→ RETURNING_TO_SEAT → SATISFIED`. Dancers keep their seat. The floor's
 rectangle comes from `content/danceFloor.ts`, shared by the painter, the drop test and the highlight.
 
-Seating: a guest's comfort at a table = Σ affinity with each neighbour (likes/dislikes by guest key
-or group, same-group familiarity, trait bonuses). It changes happiness continuously and can trigger
-the argument disaster.
+Seating ("sit next to", `core/guests/seating.ts`): only the seats either side count — a table's
+`seats` are listed in order around it and `VenueIndex.adjacentSeats` gives each seat's two
+neighbours (across the table is not a neighbour). A guest's comfort = Σ affinity with each side
+neighbour (likes/dislikes by guest key or group, same-group familiarity, trait bonuses). It changes
+happiness continuously; side-by-side enemies can start the argument disaster. Waiting guests show
+their wishes as bubbles (a face with ♥ or ✕), and while a guest is held every free seat is tinted.
+
+Service requests (`core/guests/services.ts`, `ServiceDef`): a wish granted at a station instead of
+carried, e.g. a song at the DJ booth. Levels opt in with `services`, guest types weigh them with
+`serviceWeights`. The guest is `REQUESTING` with `wantsServiceId`; tapping the station — or the
+guest, which sends the planner there — grants every waiting request at that station at once.
+
+Rescue champagne (`core/guests/rescue.ts`): `LevelDef.rescues` bottles; the `useRescue` command
+adds `tuning.rescue.guestHappiness` to every guest and a little couple mood. No walking, chain-neutral.
+Each unopened bottle pays `scoring.rescueUnused` at the end, so it is a decision, not a free heal.
+
+Personalities are traits: a guest's `traitIds` = their type's plus their own (`LevelGuestSpec.traitIds`),
+e.g. `fast-eater`, `slow-eater`, `drama` (modifier `disasterReaction` scales how hard disasters hit
+them, and `seatedGuest` disasters prefer them).
 
 Interactions resolve **on arrival and again on completion**, because the world changes while the
 planner walks (Dash-genre contract).

@@ -20,11 +20,12 @@ import { AppFlow, AppState, type AppStateId, type StateChange } from './AppFlow'
 import { AudioDirector } from './AudioDirector';
 import type { SettingsVM, UiCue } from '../ui/screens/common';
 import type { Cheat } from '../core/sim/cheats';
-import { achievementsVM, decorLook, dialogueVM, levelCards, menuVM, nextLevelId, prepVM, resultsVM, shopItems } from './viewModels';
+import { achievementsVM, decorLook, dialogueVM, levelCards, menuVM, nextLevelId, planNote, prepVM, resultsVM, shopItems } from './viewModels';
+import { defaultPlan, type Plan } from '../core/progression/plan';
 
 interface FlowContext {
   levelId: string | null;
-  decorId: string | null;
+  plan: Plan | null;
   result: ReceptionResult | null;
   outcome: ResultOutcome | null;
 }
@@ -42,7 +43,7 @@ export interface GameAppDeps {
  * small handler; gameplay rules live in core, visuals in render/ui.
  */
 export class GameApp {
-  private readonly flow = new AppFlow<FlowContext>({ levelId: null, decorId: null, result: null, outcome: null });
+  private readonly flow = new AppFlow<FlowContext>({ levelId: null, plan: null, result: null, outcome: null });
   private readonly audioDirector: AudioDirector;
   private session: ReceptionSession | null = null;
   private save: SaveData;
@@ -191,7 +192,7 @@ export class GameApp {
         const levelId = this.requireLevel();
         this.show(
           new PrepScreen(prepVM(content, this.save, levelId), {
-            start: (decorId) => this.go(AppState.RECEPTION_INTRO, { decorId }),
+            start: (plan) => this.go(AppState.RECEPTION_INTRO, { plan }),
             back: () => this.go(AppState.PROGRESSION),
             cue: this.cue,
           }),
@@ -237,7 +238,7 @@ export class GameApp {
         const session = this.session;
         if (!session) throw new Error('Wedding completed without a session');
         const result = session.sim.result();
-        const outcome = applyResult(content, this.save, result, new Date());
+        const outcome = applyResult(content, this.save, result, new Date(), session.plan);
         this.persist(outcome.save);
         this.flow.transition(AppState.RESULTS, { result, outcome });
         break;
@@ -261,7 +262,7 @@ export class GameApp {
     const next = nextLevelId(content, this.save, level.id);
 
     const results = () =>
-      new ResultsScreen(resultsVM(content, result, outcome, next !== null), {
+      new ResultsScreen(resultsVM(content, result, outcome, next !== null, this.session?.plan ?? this.ctx.plan), {
         retry: () => this.go(AppState.WEDDING_PREPARATION, { levelId: level.id }),
         next: () => next && this.go(AppState.WEDDING_PREPARATION, { levelId: next }),
         map: () => this.go(AppState.PROGRESSION),
@@ -298,15 +299,16 @@ export class GameApp {
   private startSession(): void {
     const { content, host } = this.deps;
     const levelId = this.requireLevel();
-    const decorId = this.ctx.decorId;
+    const plan = this.ctx.plan ?? defaultPlan(content, content.levels.get(levelId).weddingId);
     this.endSession();
-    const session = new ReceptionSession(content, levelId, decorId, receptionModifiers(content, this.save, levelId, decorId), Date.now() >>> 0);
+    const session = new ReceptionSession(content, levelId, plan, receptionModifiers(content, this.save, levelId, plan), Date.now() >>> 0);
     session.paused = true;
     this.session = session;
     const data: ReceptionSceneData = {
       session,
       renderScale: host.renderScale,
-      decor: decorLook(content, decorId),
+      decor: decorLook(content, plan),
+      planNote: planNote(content, levelId, plan),
       onEvents: (events) => this.audioDirector.handle(events, session.sim.state),
       onEnded: () => {
         if (this.session === session && this.flow.canTransition(AppState.WEDDING_COMPLETE)) this.go(AppState.WEDDING_COMPLETE);

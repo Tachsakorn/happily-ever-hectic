@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import type { LevelDef, WeddingDef } from '../../content/types';
+import type { CoupleStateId, LevelDef, WeddingDef } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
+import { coupleStateFor } from '../../core/couple/coupleState';
 import type { ArtKit } from '../art/ArtKit';
 import { paintPanel, paintUiIcon } from '../../art/painters';
 import type { Fx } from '../fx/Fx';
@@ -14,8 +15,21 @@ const TICKER_LINES = 2;
 const CHAIN_POS = { x: 1136, y: 140 };
 /** Bottom, right of the gift table by the entrance and left of the kitchen. */
 const BANNER = { x: 770, y: 948, w: 700 };
-const MOOD_OK = 60;
-const MOOD_DANGER = 30;
+/** Mood bar colour per mood band. */
+const BAR_COLOR: Record<CoupleStateId, number> = {
+  blissful: 0x6fbf7e,
+  happy: 0x7fb08a,
+  worried: 0xf2b84b,
+  stressed: 0xf08a4c,
+  meltdown: 0xe0584f,
+};
+const STATE_CSS: Record<CoupleStateId, string> = {
+  blissful: '#3f8f52',
+  happy: '#3f8f52',
+  worried: '#b7852a',
+  stressed: '#d0602a',
+  meltdown: '#c0392b',
+};
 
 /**
  * Heads-up display: couple mood (with the latest reasons it changed), time
@@ -41,6 +55,8 @@ export class Hud {
   private shownSeconds = -1;
   private shownRemaining = -1;
   private shownChain = -1;
+  private shownState: CoupleStateId | null = null;
+  private readonly stateText: Phaser.GameObjects.Text;
   private readonly chainText: Phaser.GameObjects.Text;
   private readonly chainPanel: Phaser.GameObjects.Image;
   /** 'guestsGone' levels show how many guests are still to go instead of a clock. */
@@ -68,6 +84,9 @@ export class Hud {
       .setDepth(d + 3);
     makeText(scene, MOOD_BAR.x, 30, `${wedding.partnerA.name} & ${wedding.partnerB.name}`, renderScale, { size: 20, display: true, align: 'left' })
       .setOrigin(0, 0.5)
+      .setDepth(d + 1);
+    this.stateText = makeText(scene, MOOD_BAR.x + MOOD_BAR.w, 30, '', renderScale, { size: 18, weight: '800', align: 'right', stroke: '#fffaf0', strokeWidth: 4 })
+      .setOrigin(1, 0.5)
       .setDepth(d + 1);
     this.moodBar = scene.add.graphics().setDepth(d + 1);
     this.scoreBar = scene.add.graphics().setDepth(d + 1);
@@ -149,7 +168,8 @@ export class Hud {
       this.shownMood = mood;
       this.drawMood(mood);
       this.moodText.setText(String(Math.round(mood)));
-      const danger = mood <= MOOD_DANGER;
+      const band = coupleStateFor(this.sim.context.tuning, mood).id;
+      const danger = band === 'stressed' || band === 'meltdown';
       if (danger && !this.heartbeat) {
         this.heartbeat = this.scene.tweens.add({ targets: [this.heart], scale: 1.85 / this.tex.scale, yoyo: true, repeat: -1, duration: 300 });
       } else if (!danger && this.heartbeat) {
@@ -159,6 +179,7 @@ export class Hud {
       }
     }
 
+    this.syncCoupleState();
     if (this.countsGuests) this.syncGuestsLeft();
     else this.syncClock();
     this.syncChain();
@@ -175,6 +196,17 @@ export class Hud {
     } else if (this.scoreText.text === '') {
       this.scoreText.setText('0');
     }
+  }
+
+  /** The couple's mood band beside their names: why the bar matters, in words. */
+  private syncCoupleState(): void {
+    const id = this.sim.state.couple.state;
+    if (id === this.shownState) return;
+    const first = this.shownState === null;
+    this.shownState = id;
+    const band = this.sim.context.tuning.coupleStates.find((b) => b.id === id);
+    this.stateText.setText(band?.label ?? '').setColor(STATE_CSS[id]);
+    if (!first) this.scene.tweens.add({ targets: this.stateText, scale: { from: 1.35, to: 1 }, duration: 320, ease: 'Back.easeOut' });
   }
 
   /** Guests still to finish their visit: the reception ends when this reaches zero. */
@@ -218,7 +250,7 @@ export class Hud {
   }
 
   private drawMood(mood: number): void {
-    const color = mood > MOOD_OK ? 0x7fb08a : mood > MOOD_DANGER ? 0xf2b84b : 0xe0584f;
+    const color = BAR_COLOR[coupleStateFor(this.sim.context.tuning, mood).id];
     const b = MOOD_BAR;
     const g = this.moodBar;
     g.clear();
@@ -227,7 +259,7 @@ export class Hud {
     g.fillStyle(color, 1).fillRoundedRect(b.x, b.y, w, b.h, b.h / 2);
     g.fillStyle(0xffffff, 0.35).fillRoundedRect(b.x + 8, b.y + 4, Math.max(0, w - 16), 6, 3);
     g.lineStyle(2, 0x3b2640, 0.25);
-    for (const t of [MOOD_DANGER, MOOD_OK]) g.lineBetween(b.x + (b.w * t) / 100, b.y + 5, b.x + (b.w * t) / 100, b.y + b.h - 5);
+    for (const t of this.sim.context.tuning.coupleStates.map((st) => st.minMood).filter((m) => m > 0)) g.lineBetween(b.x + (b.w * t) / 100, b.y + 5, b.x + (b.w * t) / 100, b.y + b.h - 5);
     g.lineStyle(3, 0x3b2640, 1).strokeRoundedRect(b.x, b.y, b.w, b.h, b.h / 2);
   }
 

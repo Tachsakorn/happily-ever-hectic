@@ -3,6 +3,7 @@ import type { ReceptionSession } from '../../core/sim/ReceptionSession';
 import type { Vec2 } from '../../content/types';
 import type { DomainEvent } from '../../core/sim/events';
 import type { TargetRef } from '../../core/sim/state';
+import type { CoupleStateId } from '../../content/types';
 import { findGuest } from '../../core/guests/guestMachine';
 import { ArtKit } from '../art/ArtKit';
 import { TextureFactory } from '../art/TextureFactory';
@@ -10,7 +11,7 @@ import { paintVenue, type DecorLook } from '../../art/venuePainter';
 import { SceneKey } from '../config';
 import { ReceptionInput } from '../input/ReceptionInput';
 import { PhaserHost } from '../PhaserHost';
-import { Colors, Depth } from '../ui/text';
+import { Colors, Depth, makeText } from '../ui/text';
 import { DisasterLayer } from '../views/DisasterLayer';
 import { SecretLayer } from '../views/SecretLayer';
 import { FloatingTextLayer } from '../views/FloatingTextLayer';
@@ -28,6 +29,8 @@ export interface ReceptionSceneData {
   readonly session: ReceptionSession;
   readonly renderScale: number;
   readonly decor: DecorLook;
+  /** Announced as the reception starts: how the wedding plan went down with the couple. */
+  readonly planNote: string | null;
   /** Every domain event, for audio and anything else outside the scene. */
   readonly onEvents: (events: readonly DomainEvent[]) => void;
   /** Called once, shortly after the reception ends. */
@@ -37,6 +40,14 @@ export interface ReceptionSceneData {
 /** Background textures are big; they are baked at a capped scale (the floor is soft anyway). */
 const BACKGROUND_MAX_SCALE = 1.5;
 const END_DELAY_MS = 1600;
+/** A lost wedding lingers on the Bridezilla scene a little longer. */
+const FAIL_DELAY_MS = 3200;
+/** Worse moods announced with a warning, so a failure never comes out of nowhere. */
+const STATE_WARNINGS: Partial<Record<CoupleStateId, string>> = {
+  stressed: 'The couple is getting stressed! Calm things down!',
+  meltdown: 'Meltdown incoming! Help the couple, fast!',
+};
+const STATE_RANK: Record<CoupleStateId, number> = { blissful: 0, happy: 1, worried: 2, stressed: 3, meltdown: 4 };
 
 /**
  * Presents one reception. Owns only view objects: every rule lives in the
@@ -128,6 +139,7 @@ export class ReceptionScene extends Phaser.Scene {
       },
     });
 
+    if (data.planNote) this.banner.show(data.planNote, 'moment', 4);
     for (const tip of ctx.level.tutorialTips) this.banner.show(tip, 'info', 5);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
@@ -158,7 +170,7 @@ export class ReceptionScene extends Phaser.Scene {
 
     if (sim.isOver && !this.endScheduled) {
       this.endScheduled = true;
-      this.time.delayedCall(END_DELAY_MS, () => this.sceneData.onEnded());
+      this.time.delayedCall(sim.state.outcome === 'FAILED' ? FAIL_DELAY_MS : END_DELAY_MS, () => this.sceneData.onEnded());
     }
   }
 
@@ -317,6 +329,16 @@ export class ReceptionScene extends Phaser.Scene {
         for (const view of this.guests.values()) view.cheer();
         this.fx.confetti({ x: venue.size.width / 2, y: 380 }, 40, 420);
         break;
+      case 'coupleStateChanged': {
+        const worse = STATE_RANK[e.to] > STATE_RANK[e.from];
+        const warning = STATE_WARNINGS[e.to];
+        if (worse && warning) this.banner.show(warning, 'bad', 3, true);
+        else if (!worse && (e.to === 'happy' || e.to === 'blissful')) {
+          const pos = venue.couplePos;
+          this.floating.show({ x: pos.x, y: pos.y - 150 }, e.to === 'blissful' ? 'Blissful! ♥' : 'Feeling better!', Colors.goodCss, 22);
+        }
+        break;
+      }
       case 'orderTaken':
         this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 120 }, 5, 30);
         break;
@@ -351,13 +373,42 @@ export class ReceptionScene extends Phaser.Scene {
           this.fx.rain(venue.size.width, 80);
           this.couple.celebrate();
         } else {
-          this.banner.show('The couple is heartbroken… the reception is over.', 'bad', 3, true);
-          this.cameras.main.shake(300, 0.005);
+          this.couple.bridezilla();
+          this.showBridezilla();
         }
         break;
       default:
         break;
     }
+  }
+
+  /** The failure title card: big, wobbling, impossible to miss. */
+  private showBridezilla(): void {
+    const { width, height } = this.sceneData.session.sim.context.venue.def.size;
+    const title = makeText(this, width / 2, height / 2 - 40, 'BRIDEZILLA!', this.sceneData.renderScale, {
+      size: 110,
+      display: true,
+      color: '#ffffff',
+      stroke: '#b4466a',
+      strokeWidth: 14,
+    })
+      .setOrigin(0.5)
+      .setDepth(Depth.banner + 10)
+      .setScale(0)
+      .setAngle(-8);
+    const sub = makeText(this, width / 2, height / 2 + 50, 'The couple had a meltdown…', this.sceneData.renderScale, {
+      size: 34,
+      weight: '800',
+      stroke: '#fffaf0',
+      strokeWidth: 8,
+    })
+      .setOrigin(0.5)
+      .setDepth(Depth.banner + 10)
+      .setAlpha(0);
+    this.tweens.add({ targets: title, scale: 1, angle: 4, duration: 520, ease: 'Back.easeOut', easeParams: [2.6], delay: 500 });
+    this.tweens.add({ targets: title, angle: { from: 4, to: -4 }, yoyo: true, repeat: -1, duration: 260, delay: 1020 });
+    this.tweens.add({ targets: sub, alpha: 1, duration: 300, delay: 1000 });
+    this.time.delayedCall(700, () => this.cameras.main.shake(600, 0.012));
   }
 
   /** A few coins arc from where points were earned to the score counter. */

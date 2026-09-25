@@ -1657,6 +1657,111 @@ body {
   margin-top: 16px;
 }
 
+/* The wedding plan: one choice per step, with the couple's clue. */
+.plan-steps {
+  display: flex;
+  gap: 8px;
+}
+
+.plan-steps__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  background: var(--paper-deep);
+}
+
+.plan-steps__dot.is-done {
+  background: var(--sage);
+}
+
+.plan-steps__dot.is-current {
+  background: var(--rose);
+  transform: scale(1.25);
+}
+
+.plan-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding: 8px 14px;
+  max-width: 100%;
+  border: 2.5px solid var(--ink);
+  border-radius: 16px 16px 16px 4px;
+  background: #fff;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.plan-hint canvas {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+}
+
+.plan-nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-nav .prep__start {
+  margin-top: 12px;
+}
+
+.plan-nav .btn--small {
+  margin-top: 12px;
+}
+
+.invite__goals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.invite__goals-title {
+  width: 100%;
+  font: 16px var(--font-display);
+  color: var(--ink-soft);
+}
+
+.goal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 5px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #fff6dc;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.goal-chip canvas {
+  width: 20px;
+  height: 20px;
+}
+
+.goal-chip.is-done {
+  background: #eaf6e5;
+}
+
+.goal-chip b {
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--rose);
+  color: #fff;
+  font: 13px var(--font-display);
+  font-weight: 400;
+}
+
 /* ---------- Dialogue ---------- */
 
 .dialogue-screen {
@@ -1993,6 +2098,56 @@ body {
     0 4px 0 var(--ink), -3px 3px 0 var(--ink), -4px 0 0 var(--ink), -3px -3px 0 var(--ink),
     0 9px 0 var(--gold-edge), 0 12px 0 var(--ink);
   margin: 4px 0 8px;
+}
+
+.results__goals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.results__goals > * {
+  animation: pop-in 0.38s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.fail-summary {
+  width: 100%;
+  margin: 10px 0 4px;
+  text-align: left;
+}
+
+.fail-summary h3 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--bad);
+}
+
+.fail-summary ul {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.fail-summary__tip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border: 2px dashed var(--cream-edge);
+  border-radius: 14px;
+  background: #fffaf0;
+  font-size: 16px;
+}
+
+.fail-summary__tip canvas {
+  flex: none;
+  width: 22px;
+  height: 22px;
 }
 
 .results__chips {

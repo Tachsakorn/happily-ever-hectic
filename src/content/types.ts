@@ -280,6 +280,10 @@ export interface WeddingDef {
   readonly dessertItemId?: Id;
   readonly coupleRequestItemIds: readonly Id[];
   readonly coupleRequestIntervalSeconds: readonly [number, number];
+  /** Invitation clues for the plan, in the couple's words; matching picks are in `lovesTags`. */
+  readonly planHints?: Readonly<Partial<Record<PlanCategory, string>>>;
+  /** The menu is part of the wedding itself (the finale): no menu choice in the plan. */
+  readonly menuLocked?: boolean;
 }
 
 export interface LevelGuestSpec {
@@ -347,16 +351,51 @@ export interface LevelDef {
   readonly introDialogueId?: Id;
   readonly outroDialogueId?: Id;
   readonly tutorialTips: readonly string[];
+  /** Optional bonus goals (coins the first time each is met). */
+  readonly goals?: readonly GoalDef[];
 }
 
 // ---------------------------------------------------------------- meta
 
-export interface DecorDef {
+/** The wedding plan the player makes before each reception, one pick per category. */
+export type PlanCategory = 'decor' | 'menu' | 'cake' | 'honeymoon';
+export const PLAN_CATEGORIES: readonly PlanCategory[] = ['decor', 'menu', 'cake', 'honeymoon'];
+
+export interface PlanOptionDef {
   readonly id: Id;
+  readonly category: PlanCategory;
   readonly name: string;
   readonly description: string;
+  /** Matched against the wedding's `lovesTags`: a match is one of the couple's wishes come true. */
   readonly tags: readonly string[];
   readonly visual: VisualHint;
+  /** Menu options: the mains the kitchen serves (instead of the wedding's default menu). */
+  readonly menuItemIds?: readonly Id[];
+}
+
+/** One bonus goal for a level; each pays coins the first time it is met in a completed wedding. */
+export type GoalDef =
+  | { readonly kind: 'maxUpset'; readonly count: number }
+  | { readonly kind: 'minChain'; readonly count: number }
+  | { readonly kind: 'minFinalMood'; readonly value: number }
+  | { readonly kind: 'noDisasterFailed' }
+  | { readonly kind: 'allMoments' }
+  | { readonly kind: 'minSongs'; readonly count: number }
+  | { readonly kind: 'noRescue' }
+  | { readonly kind: 'minHappyGoodbyes'; readonly count: number }
+  | { readonly kind: 'minGifts'; readonly count: number };
+
+/** How the couple feels, from blissful down to a meltdown. Ordered from best to worst. */
+export type CoupleStateId = 'blissful' | 'happy' | 'worried' | 'stressed' | 'meltdown';
+
+export interface CoupleStateDef {
+  readonly id: CoupleStateId;
+  /** Shown beside the couple's names in the HUD. */
+  readonly label: string;
+  /** The state holds while mood ≥ this. */
+  readonly minMood: number;
+  /** Couple requests are this much less patient in this state (1 = normal). */
+  readonly requestPatience: number;
 }
 
 export interface UpgradeDef {
@@ -464,8 +503,12 @@ export interface TuningDef {
   /** Rescue champagne: happiness every guest gains, and the couple's mood lift. */
   readonly rescue: { readonly guestHappiness: number; readonly mood: number };
   readonly coupleRequestPatienceSeconds: number;
-  /** Bonus when the chosen decor matches something the couple loves. */
-  readonly decorMatchBonus: Modifiers;
+  /** Bonus for each plan pick that matches something the couple loves. */
+  readonly planMatchBonus: Modifiers;
+  /** Coins for meeting a level's bonus goal for the first time. */
+  readonly goalCoinReward: number;
+  /** Couple mood bands, best first; the last should start at 0. */
+  readonly coupleStates: readonly CoupleStateDef[];
 }
 
 export interface GameInfo {
@@ -548,6 +591,10 @@ export type AchievementCondition =
   | { readonly kind: 'secretFound'; readonly secretId: Id }
   | { readonly kind: 'allSecretsFound' }
   | { readonly kind: 'allUpgradesOwned' }
+  /** Bonus goals met across all levels. */
+  | { readonly kind: 'goalsCompleted'; readonly count: number }
+  /** A completed wedding whose plan got every offered wish right (at least three offered). */
+  | { readonly kind: 'perfectPlan' }
   /** A wedding completed while the device clock reads between these hours (local, [from, to)). */
   | { readonly kind: 'completedDuringHours'; readonly from: number; readonly to: number };
 
@@ -581,7 +628,7 @@ export interface ContentPack {
   readonly services?: readonly ServiceDef[];
   readonly weddings?: readonly WeddingDef[];
   readonly levels?: readonly LevelDef[];
-  readonly decor?: readonly DecorDef[];
+  readonly planOptions?: readonly PlanOptionDef[];
   readonly upgrades?: readonly UpgradeDef[];
   readonly dialogues?: readonly DialogueDef[];
   readonly secretEvents?: readonly SecretEventDef[];

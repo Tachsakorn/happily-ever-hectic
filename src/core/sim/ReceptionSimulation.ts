@@ -1,7 +1,8 @@
 import type { ContentRegistry } from '../../content/ContentRegistry';
 import type { Id, Modifiers, Vec2 } from '../../content/types';
 import { MoodLedger } from '../couple/MoodLedger';
-import { createCoupleSystem } from '../couple/CoupleSystem';
+import { createCoupleSystem, syncCoupleState } from '../couple/CoupleSystem';
+import { coupleStateFor } from '../couple/coupleState';
 import { createDisasterSystem } from '../disasters/DisasterSystem';
 import { GiftSystem } from '../gifts/GiftSystem';
 import { seatGuest, sendToDance } from '../guests/guestActions';
@@ -30,8 +31,10 @@ export interface ReceptionSetup {
   readonly content: ContentRegistry;
   readonly levelId: Id;
   readonly seed: number;
-  /** Upgrades, decor bonuses, etc. Combined into one level-wide modifier set. */
+  /** Upgrades, plan bonuses, etc. Combined into one level-wide modifier set. */
   readonly modifiers?: readonly Modifiers[];
+  /** The mains chosen in the wedding plan, replacing the wedding's default menu. */
+  readonly menuItemIds?: readonly Id[];
 }
 
 /** Fixed simulation step. 60 Hz keeps walking smooth; the renderer interpolates nothing heavier than positions. */
@@ -50,11 +53,13 @@ export class ReceptionSimulation {
   constructor(setup: ReceptionSetup) {
     const { content } = setup;
     const level = content.levels.get(setup.levelId);
-    const wedding = content.weddings.get(level.weddingId);
+    const baseWedding = content.weddings.get(level.weddingId);
+    const wedding = setup.menuItemIds?.length ? { ...baseWedding, menuItemIds: setup.menuItemIds } : baseWedding;
     const venueDef = content.venues.get(level.venueId);
     const venue = new VenueIndex(venueDef);
     const modifiers = combineModifiers([...(setup.modifiers ?? []), level.modifiers]);
     const tuning = content.tuning;
+    const startMood = Math.min(100, tuning.mood.start + modifiers.startMood);
 
     const state: ReceptionState = {
       time: 0,
@@ -67,7 +72,7 @@ export class ReceptionSimulation {
       disasters: [],
       secrets: [],
       chain: { key: null, count: 0 },
-      couple: { mood: Math.min(100, tuning.mood.start + modifiers.startMood), request: null, nextRequestIn: 0 },
+      couple: { mood: startMood, state: coupleStateFor(tuning, startMood).id, request: null, nextRequestIn: 0 },
       rescuesLeft: level.rescues ?? 0,
       flags: new Set(),
       score: 0,
@@ -88,6 +93,7 @@ export class ReceptionSimulation {
         momentsFailed: 0,
         servicesGranted: 0,
         rescuesUsed: 0,
+        coupleRequestsMissed: 0,
       },
     };
 
@@ -166,6 +172,7 @@ export class ReceptionSimulation {
     state.time += dt;
     for (const system of this.systems) system.update(this.ctx, dt);
     mood.tick(dt);
+    syncCoupleState(this.ctx);
 
     if (state.couple.mood <= 0) this.end('FAILED');
     else if (this.receptionIsOver()) this.end('COMPLETE');

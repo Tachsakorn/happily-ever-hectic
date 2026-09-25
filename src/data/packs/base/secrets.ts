@@ -115,6 +115,8 @@ export const achievements: AchievementDef[] = [
   { id: 'cool-under-pressure', name: 'Cool Under Pressure', description: 'Fix 30 disasters.', icon: 'wrench', color: 0x8fd0e8, condition: { kind: 'lifetime', stat: 'disastersFixed', count: 30 } },
   { id: 'come-again', name: 'Come Again!', description: 'Wave 100 happy guests goodbye.', icon: 'guests', color: 0xe0a44a, condition: { kind: 'lifetime', stat: 'happyGoodbyes', count: 100 } },
   { id: 'fully-equipped', name: 'Fully Equipped', description: 'Own every upgrade in the shop.', icon: 'shop', color: 0xf2b84b, condition: { kind: 'allUpgradesOwned' } },
+  { id: 'overachiever', name: 'Overachiever', description: 'Meet 10 bonus goals.', icon: 'star', color: 0xe0a44a, condition: { kind: 'goalsCompleted', count: 10 } },
+  { id: 'perfect-planner', name: 'Perfect Planner', description: 'Guess all four of a couple’s wishes in the wedding plan.', icon: 'heart', color: 0xe86f8e, condition: { kind: 'perfectPlan' } },
   { id: 'star-planner', name: 'Star Planner', description: 'Earn 3 stars on every wedding.', icon: 'trophy', color: 0xf2b84b, condition: { kind: 'threeStarLevels', count: 'all' } },
   { id: 'happily-ever-after', name: 'Happily Ever After', description: 'Finish the final wedding.', icon: 'heart', color: 0xe86f8e, condition: { kind: 'finalLevelCompleted' } },
 

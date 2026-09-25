@@ -45,6 +45,15 @@ export const personal = {
   },
   /** ✏️ Decor tags the two of you love: flowers, pastel, lights, rustic, classic, elegant, bright, tropical. */
   lovesTags: ['flowers', 'lights'],
+  /**
+   * ✏️ Clues on the final invitation, one per plan choice. Only the choices with
+   * a clue are offered: add `cake` and `honeymoon` clues (and their tags to
+   * lovesTags — e.g. 'strawberry', 'chocolate', 'lemon', 'vanilla' for the cake;
+   * 'beach', 'paris', 'mountains', 'city' for the honeymoon) to offer those too.
+   */
+  planHints: {
+    decor: 'Tanya: “Flowers and fairy lights. Both. Obviously.”',
+  } as { decor?: string; cake?: string; honeymoon?: string },
   /** ✏️ Intro before the final wedding. */
   introLines: [
     { speaker: 'Goji', text: 'Everyone we love, in one room. Are you ready?' },

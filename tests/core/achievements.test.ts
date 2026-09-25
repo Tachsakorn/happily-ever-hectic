@@ -35,6 +35,7 @@ function result(over: Partial<ReceptionResult> = {}, stats: Partial<ReceptionSta
       momentsFailed: 0,
       servicesGranted: 0,
       rescuesUsed: 0,
+      coupleRequestsMissed: 0,
       ...stats,
     },
     ...over,

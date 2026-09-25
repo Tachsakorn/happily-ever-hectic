@@ -97,6 +97,23 @@ Rescue champagne (`core/guests/rescue.ts`): `LevelDef.rescues` bottles; the `use
 adds `tuning.rescue.guestHappiness` to every guest and a little couple mood. No walking, chain-neutral.
 Each unopened bottle pays `scoring.rescueUnused` at the end, so it is a decision, not a free heal.
 
+Couple mood bands (`tuning.coupleStates`, `core/couple/coupleState.ts`): blissful → happy → worried →
+stressed → meltdown. `couple.state` follows the mood (with a small margin on the way back up) and
+each change emits `coupleStateChanged`; the HUD names the band, stressed couples sweat and are less
+patient with requests (`requestPatience`). Mood 0 ends the wedding: the Bridezilla scene plays and the
+results explain why (`resultsVM` failure summary: upset guests, failed disasters, missed moments and
+ignored requests, ranked by damage, plus one tip).
+
+Wedding plan (`core/progression/plan.ts`): before each reception the player picks one option per
+category — decor, menu, cake, honeymoon (`PlanOptionDef`) — guided by the invitation's clues
+(`WeddingDef.planHints`). Only categories with a clue are offered, the menu not when `menuLocked`.
+Each pick whose tags meet the wedding's `lovesTags` adds `tuning.planMatchBonus`; the menu pick also
+sets the mains the kitchen cooks (`ReceptionSetup.menuItemIds`). The decor pick colours the room.
+
+Bonus goals (`LevelDef.goals`, `core/progression/goals.ts`): optional per-level challenges checked
+against the result of a completed wedding; each pays `tuning.goalCoinReward` once and is remembered
+in `LevelProgress.goals` by a key derived from the goal.
+
 Personalities are traits: a guest's `traitIds` = their type's plus their own (`LevelGuestSpec.traitIds`),
 e.g. `fast-eater`, `slow-eater`, `drama` (modifier `disasterReaction` scales how hard disasters hit
 them, and `seatedGuest` disasters prefer them).

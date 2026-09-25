@@ -53,6 +53,18 @@ export function validateContent(content: ContentRegistry): string[] {
     check(content.items.has(m.itemId), `moment ${m.id}: unknown item ${m.itemId}`);
   }
 
+  for (const o of content.planOptions.all()) {
+    check(o.tags.length > 0, `plan option ${o.id}: needs at least one tag`);
+    for (const i of o.menuItemIds ?? []) {
+      check(content.items.has(i) && content.items.get(i).kind === 'dish', `plan option ${o.id}: menu item ${i} must be a dish`);
+    }
+    if (o.category !== 'menu') check(!o.menuItemIds, `plan option ${o.id}: only menu options set menuItemIds`);
+  }
+
+  const bands = content.tuning.coupleStates;
+  check(bands.length > 0 && bands[bands.length - 1]?.minMood === 0, 'tuning: the last couple state must start at mood 0');
+  check(bands.every((b, i) => i === 0 || b.minMood < (bands[i - 1]?.minMood ?? Infinity)), 'tuning: couple states must be ordered best first');
+
   for (const w of content.weddings.all()) {
     for (const i of w.menuItemIds) {
       check(content.items.has(i) && content.items.get(i).kind === 'dish', `wedding ${w.id}: menu item ${i} must be a dish`);
@@ -63,6 +75,12 @@ export function validateContent(content: ContentRegistry): string[] {
       check(content.items.has(i) && content.items.get(i).kind === 'dish', `wedding ${w.id}: starter ${i} must be a dish`);
     }
     if (w.dessertItemId) check(content.items.has(w.dessertItemId), `wedding ${w.id}: unknown dessert ${w.dessertItemId}`);
+    // Every clue must have an answer: some option in that category the couple loves.
+    for (const [category, hint] of Object.entries(w.planHints ?? {})) {
+      if (!hint) continue;
+      const answers = content.planOptions.all().filter((o) => o.category === category && o.tags.some((t) => w.lovesTags.includes(t)));
+      check(answers.length > 0, `wedding ${w.id}: the ${category} clue has no matching option (check lovesTags)`);
+    }
   }
 
   const groupIds = new Set(content.groups.all().map((g) => g.id));
@@ -103,6 +121,8 @@ export function validateContent(content: ContentRegistry): string[] {
       `${where}: star scores must be strictly ascending`,
     );
     check(level.kitchen.burners > 0 && level.kitchen.cookSeconds > 0, `${where}: invalid kitchen settings`);
+    const goalKinds = (level.goals ?? []).map((g) => g.kind);
+    check(new Set(goalKinds).size === goalKinds.length, `${where}: each bonus goal kind may appear once`);
 
     const keys = new Set(level.guests.map((g) => g.key));
     check(keys.size === level.guests.length, `${where}: guest keys must be unique`);
@@ -192,6 +212,7 @@ export function validateContent(content: ContentRegistry): string[] {
     if (c.kind === 'weddingsCompleted' || c.kind === 'lifetime') check(c.count > 0, `${where}: count must be > 0`);
     if (c.kind === 'completedDuringHours') check(c.from >= 0 && c.to <= 24 && c.from < c.to, `${where}: invalid hours`);
     if (a.secret) check(!!a.hint, `${where}: secret achievements need a hint`);
+    if (c.kind === 'goalsCompleted') check(c.count > 0, `${where}: count must be > 0`);
   }
 
   // Systems rely on these ids existing (gifts are carried as the 'gift' item).

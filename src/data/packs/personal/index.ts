@@ -34,6 +34,9 @@ export const personalPack: ContentPack = {
       partnerA: { id: 'partner-a', name: a.name, visual: { color: a.outfitColor, accent: a.hairColor, icon: a.outfit }, look: a.look },
       partnerB: { id: 'partner-b', name: b.name, visual: { color: b.outfitColor, accent: b.hairColor, icon: b.outfit }, look: b.look },
       lovesTags: personal.lovesTags,
+      planHints: personal.planHints,
+      // Tanya's favourites are the menu; the plan doesn't change it.
+      menuLocked: true,
       // Sushi to start, then smoked crying tiger; dragon fruit (via the dessert swap) to finish.
       appetizerItemIds: [fav.dishes[0]!.id],
       menuItemIds: fav.dishes.slice(1).map((d) => d.id),
@@ -109,6 +112,7 @@ export const personalPack: ContentPack = {
       unlockRequiresLevelId: 'big-night',
       introDialogueId: 'intro-our-wedding',
       tutorialTips: ['This one is ours. Fewer guests, but expect a new surprise every few moments!'],
+      goals: [{ kind: 'allMoments' }, { kind: 'maxUpset', count: 0 }, { kind: 'minFinalMood', value: 80 }],
     },
   ],
   dialogues: [

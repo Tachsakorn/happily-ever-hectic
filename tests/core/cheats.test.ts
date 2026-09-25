@@ -6,7 +6,7 @@ import { loadContent } from '../../src/data';
 
 const content = loadContent();
 const firstLevel = content.orderedLevels()[0]!;
-const session = () => new ReceptionSession(content, firstLevel.id, null, [], 7);
+const session = () => new ReceptionSession(content, firstLevel.id, {}, [], 7);
 
 describe('test tools: reception shortcuts', () => {
   it('finish ends the wedding as a success with at least the requested stars', () => {
@@ -55,7 +55,7 @@ describe('test tools: reception shortcuts', () => {
 
 describe('test tools: progression shortcuts', () => {
   it('unlockAll opens every wedding and keeps earned stars', () => {
-    const save = { ...newSave(), levels: { [firstLevel.id]: { bestScore: 900, stars: 2 as const, completed: true } } };
+    const save = { ...newSave(), levels: { [firstLevel.id]: { bestScore: 900, stars: 2 as const, completed: true, goals: [] } } };
     const next = unlockAllLevels(content, save);
     for (const l of content.orderedLevels()) expect(isUnlocked(next, l)).toBe(true);
     expect(next.levels[firstLevel.id]).toMatchObject({ bestScore: 900, stars: 2 });

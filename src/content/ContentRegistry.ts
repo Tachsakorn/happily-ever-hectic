@@ -1,7 +1,6 @@
 import type {
   AchievementDef,
   ContentPack,
-  DecorDef,
   DialogueDef,
   DisasterDef,
   GameInfo,
@@ -11,6 +10,7 @@ import type {
   ItemDef,
   LevelDef,
   MomentDef,
+  PlanOptionDef,
   ScoringRules,
   SecretEventDef,
   ServiceDef,
@@ -65,7 +65,7 @@ export class ContentRegistry {
   readonly services = new Catalog<ServiceDef>('service');
   readonly weddings = new Catalog<WeddingDef>('wedding');
   readonly levels = new Catalog<LevelDef>('level');
-  readonly decor = new Catalog<DecorDef>('decor');
+  readonly planOptions = new Catalog<PlanOptionDef>('plan option');
   readonly upgrades = new Catalog<UpgradeDef>('upgrade');
   readonly dialogues = new Catalog<DialogueDef>('dialogue');
   readonly secretEvents = new Catalog<SecretEventDef>('secret event');
@@ -115,7 +115,7 @@ export class ContentRegistry {
     add(this.services, pack.services);
     add(this.weddings, pack.weddings);
     add(this.levels, pack.levels);
-    add(this.decor, pack.decor);
+    add(this.planOptions, pack.planOptions);
     add(this.upgrades, pack.upgrades);
     add(this.dialogues, pack.dialogues);
     add(this.secretEvents, pack.secretEvents);

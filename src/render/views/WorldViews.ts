@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GIFT_ITEM_ID } from '../../content/contracts';
-import type { WeddingDef } from '../../content/types';
+import type { CoupleStateId, WeddingDef } from '../../content/types';
 import type { ReceptionSimulation } from '../../core/sim/ReceptionSimulation';
 import { DisasterPhase } from '../../core/sim/state';
 import type { Mood } from '../../art/people';
@@ -11,8 +11,15 @@ import { Colors, Depth } from '../ui/text';
 import { stationItem } from '../../core/sim/items';
 
 const COUPLE_SCALE = 1.2;
-const COUPLE_HAPPY = 60;
-const COUPLE_UPSET = 30;
+/** Faces per mood band: calm couples show their signature look, stressed ones crumble. */
+const BAND_MOOD: Record<CoupleStateId, Mood | 'signature'> = {
+  blissful: 'signature',
+  happy: 'signature',
+  worried: 'neutral',
+  stressed: 'sad',
+  meltdown: 'angry',
+};
+const STEAM_EVERY = 0.6;
 const COUPLE_BUBBLE_OFFSET = { x: 116, y: -104 };
 
 /** The couple at the sweetheart table and whatever they are asking for. */
@@ -28,6 +35,8 @@ export class CoupleView {
   private shownMood: Mood | 'signature' | null = null;
   private readonly react = { hopA: 0, hopB: 0 };
   private readonly baseY: number;
+  private steamIn = 0;
+  private raging = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -63,13 +72,26 @@ export class CoupleView {
   sync(dt: number): void {
     const { couple } = this.sim.state;
     this.t += dt;
+    if (this.raging) return;
     // Nervous couples fidget; happy ones sway gently towards each other.
-    const nervous = couple.mood < COUPLE_UPSET + 5;
-    const sway = nervous ? Math.sin(this.t * 22) * 1.5 : Math.sin(this.t * 2) * 1.6;
+    const nervous = couple.state === 'stressed' || couple.state === 'meltdown';
+    const sway = nervous ? Math.sin(this.t * (couple.state === 'meltdown' ? 34 : 22)) * (couple.state === 'meltdown' ? 2.6 : 1.5) : Math.sin(this.t * 2) * 1.6;
     this.a.setAngle(sway).setY(this.baseY - this.react.hopA);
     this.b.setAngle(-sway).setY(this.baseY - this.react.hopB);
+    if (nervous) {
+      this.steamIn -= dt;
+      if (this.steamIn <= 0) {
+        this.steamIn = couple.state === 'meltdown' ? STEAM_EVERY / 2 : STEAM_EVERY * 1.5;
+        const { x, y } = this.sim.context.venue.def.couplePos;
+        this.fx.puff({ x: x + (Math.random() - 0.5) * 70, y: y - 120 }, couple.state === 'meltdown' ? 2 : 1, 'steam');
+      }
+    }
+    const redden = couple.state === 'meltdown' ? 0.5 + Math.sin(this.t * 8) * 0.5 : 0;
+    const tint = redden > 0 ? Phaser.Display.Color.GetColor(255, Math.round(255 - redden * 90), Math.round(255 - redden * 90)) : 0xffffff;
+    this.a.setTint(tint);
+    this.b.setTint(tint);
 
-    const mood: Mood | 'signature' = couple.mood >= COUPLE_HAPPY ? 'signature' : couple.mood >= COUPLE_UPSET ? 'neutral' : 'sad';
+    const mood = BAND_MOOD[couple.state];
     if (mood !== this.shownMood) {
       const first = this.shownMood === null;
       this.shownMood = mood;
@@ -110,6 +132,31 @@ export class CoupleView {
       this.timer.arc(cx, cy, 9, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
       this.timer.strokePath();
     }
+  }
+
+  /**
+   * The failure scene: the bride (or whoever wears the dress) grows huge, turns
+   * red and stomps, steam everywhere; their partner shrinks back.
+   */
+  bridezilla(): void {
+    this.raging = true;
+    this.bubble.setVisible(false);
+    this.timer.clear();
+    const brideIsA = this.wedding.partnerA.visual.icon === 'dress' || this.wedding.partnerB.visual.icon !== 'dress';
+    const [bride, partner] = brideIsA ? [this.a, this.b] : [this.b, this.a];
+    const brideDef = brideIsA ? this.wedding.partnerA : this.wedding.partnerB;
+    const partnerDef = brideIsA ? this.wedding.partnerB : this.wedding.partnerA;
+    const s = COUPLE_SCALE / this.tex.scale;
+    bride.setTexture(this.art.partner(brideDef, 'angry')).setTint(0xff9c9c).setDepth(Depth.bubbles + 500);
+    partner.setTexture(this.art.partner(partnerDef, 'sad'));
+    this.scene.tweens.add({ targets: bride, scale: s * 1.9, duration: 700, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: bride, angle: { from: -8, to: 8 }, yoyo: true, repeat: 7, duration: 90, delay: 700 });
+    this.scene.tweens.add({ targets: partner, scale: s * 0.85, x: partner.x + (brideIsA ? 34 : -34), duration: 500, ease: 'Quad.easeOut' });
+    const { x, y } = this.sim.context.venue.def.couplePos;
+    for (let i = 0; i < 6; i++) {
+      this.scene.time.delayedCall(200 + i * 220, () => this.fx.puff({ x: bride.x + (Math.random() - 0.5) * 60, y: y - 190 }, 3, 'steam'));
+    }
+    this.scene.time.delayedCall(700, () => this.fx.puff({ x, y: y + 10 }, 6));
   }
 
   destroy(): void {

@@ -1,5 +1,6 @@
 import type { ContentRegistry } from '../../content/ContentRegistry';
 import type { Id, Modifiers } from '../../content/types';
+import { planMenu, type Plan } from '../progression/plan';
 import { FixedStepRunner } from './FixedStepRunner';
 import type { Cheat } from './cheats';
 import type { DomainEvent } from './events';
@@ -19,11 +20,12 @@ export class ReceptionSession {
   constructor(
     readonly content: ContentRegistry,
     readonly levelId: Id,
-    readonly decorId: Id | null,
+    readonly plan: Plan,
     modifiers: readonly Modifiers[],
     seed: number,
   ) {
-    this.sim = new ReceptionSimulation({ content, levelId, seed, modifiers });
+    const menuItemIds = planMenu(content, content.levels.get(levelId).weddingId, plan);
+    this.sim = new ReceptionSimulation({ content, levelId, seed, modifiers, menuItemIds });
     this.runner = new FixedStepRunner(SIM_STEP_SECONDS, (dt) => {
       this.sim.step(dt);
       for (const e of this.sim.drainEvents()) this.pending.push(e);

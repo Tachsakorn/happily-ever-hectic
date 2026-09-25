@@ -1,4 +1,4 @@
-import type { Id, Vec2 } from '../../content/types';
+import type { CoupleStateId, Id, Vec2 } from '../../content/types';
 import type { DisasterPhaseId, GuestStateId, TargetRef } from './state';
 
 /**
@@ -40,6 +40,8 @@ export type DomainEvent =
   | { type: 'momentCompleted'; momentId: Id }
   | { type: 'momentFailed'; momentId: Id }
   | { type: 'coupleRequested'; itemId: Id; momentId: Id | null }
+  /** The couple moved into another mood band (e.g. happy → worried). */
+  | { type: 'coupleStateChanged'; from: CoupleStateId; to: CoupleStateId }
   | { type: 'coupleRequestExpired'; itemId: Id; momentId: Id | null }
   /** `ongoing`: aggregated drain from something still happening (reported once per second). */
   | { type: 'moodChanged'; delta: number; mood: number; cause: string; pos: Vec2 | null; ongoing: boolean }

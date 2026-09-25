@@ -69,6 +69,10 @@ slow-down, music silence, `stopsKitchen`. `{guest}` in the hint is replaced by t
    (e.g. `{ guestPatienceDrain: 1.15, guestRequestInterval: 0.9 }`). Level ids are save keys —
    never rename a shipped one; change `order` to move it on the map.
 3. Add intro/outro lines to `dialogues` in `meta.ts`.
+   Give the wedding `planHints` — one clue per plan category, in the couple's words — and make sure
+   `lovesTags` contains exactly one tag of the option each clue points to (the content test checks
+   every base wedding has one right answer per category). Add `goals` for bonus challenges, e.g.
+   `[{ kind: 'maxUpset', count: 0 }, { kind: 'minChain', count: 4 }]`.
 4. Run `pnpm vitest run tests/balance.test.ts --silent=false` and copy the printed `suggested`
    thresholds (≈ 55% / 80% / 95% of what the *casual* autoplayer scores) into `starScores`.
    Introduce at most one new mechanic per wedding — players need room to learn it.
@@ -124,11 +128,17 @@ same floor plan is just `{ ...gardenHall, id, name, theme, floorColor }`; themes
 `coupleTable`, `giftTable`, `bin`, plus a station providing every item any guest or moment asks for —
 validation tells you what is missing.
 
-## Decor and shop upgrades
+## Wedding plan options
 
-Decor lives in `data/packs/base/meta.ts` (`decor`). `visual.color` tints tables and flowers in the venue;
-`visual.icon` picks the picture on the preparation screen (`bouquet`, `lantern`, `candles`, `tropical`;
-anything else falls back to the bouquet). Upgrades (`upgrades`) take an optional `icon` from the UI icon
+`planOptions` in `meta.ts`: `{ id, category: 'decor' | 'menu' | 'cake' | 'honeymoon', name,
+description, tags, visual }`. Menu options also list `menuItemIds` (the mains served). Tile pictures
+come from `visual.icon`: decor icons, `dish:<item icon>` or `dish:trio`, `cake`, or `trip:island |
+tower | mountain | city` (`src/art/planTiles.ts`). Keep tags distinct within a category.
+
+## Shop upgrades
+
+Decor is the `decor` category of the wedding plan (above): its `visual.color` tints tables and flowers
+in the venue; its `visual.icon` is `bouquet`, `lantern`, `candles` or `tropical`. Upgrades (`upgrades`) take an optional `icon` from the UI icon
 set (`chair`, `shoe`, `chef`, `walkie`, `violin`, …); unknown names fall back to a heart.
 
 ## How a couple looks

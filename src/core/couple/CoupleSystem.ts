@@ -1,6 +1,28 @@
 import type { SimContext, System } from '../sim/SimContext';
 import { DisasterPhase, GuestState } from '../sim/state';
 import { servedItem } from '../sim/items';
+import { coupleStateFor } from './coupleState';
+
+const STATE_HYSTERESIS = 2;
+
+/** Moves the couple into the mood band their mood is in now, announcing any change. */
+export function syncCoupleState(ctx: SimContext): void {
+  const couple = ctx.state.couple;
+  const next = coupleStateFor(ctx.tuning, couple.mood);
+  if (next.id === couple.state) return;
+  // Climbing back up needs a little margin, so a mood hovering on a boundary doesn't flicker.
+  const bands = ctx.tuning.coupleStates;
+  const better = bands.findIndex((b) => b.id === next.id) < bands.findIndex((b) => b.id === couple.state);
+  if (better && couple.mood < next.minMood + STATE_HYSTERESIS) return;
+  const from = couple.state;
+  couple.state = next.id;
+  ctx.events.emit({ type: 'coupleStateChanged', from, to: next.id });
+}
+
+/** Stressed couples are less patient with their requests. */
+function requestPatience(ctx: SimContext, seconds: number): number {
+  return seconds * coupleStateFor(ctx.tuning, ctx.state.couple.mood).requestPatience;
+}
 
 function scheduleCoupleRequest(ctx: SimContext): void {
   const [min, max] = ctx.wedding.coupleRequestIntervalSeconds;
@@ -72,6 +94,7 @@ export function createCoupleSystem(): System {
             ctx.events.emit({ type: 'momentFailed', momentId });
             ctx.mood.change(-moment.failMood, `${moment.name} missed`, pos);
           } else {
+            ctx.state.stats.coupleRequestsMissed++;
             ctx.mood.change(-ctx.tuning.mood.coupleRequestExpired, 'Couple was ignored', pos);
           }
         }
@@ -80,7 +103,7 @@ export function createCoupleSystem(): System {
         if (couple.nextRequestIn <= 0) {
           const itemId = ctx.rng.pick(ctx.wedding.coupleRequestItemIds);
           if (itemId) {
-            const patience = ctx.tuning.coupleRequestPatienceSeconds;
+            const patience = requestPatience(ctx, ctx.tuning.coupleRequestPatienceSeconds);
             couple.request = { itemId, momentId: null, timeLeft: patience, total: patience };
             ctx.events.emit({ type: 'coupleRequested', itemId, momentId: null });
           }

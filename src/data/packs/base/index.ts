@@ -1,6 +1,6 @@
 import type { ContentPack } from '../../../content/types';
 import { disasters, moments } from './chaos';
-import { decor, dialogues, scoring, tuning, upgrades } from './meta';
+import { dialogues, planOptions, scoring, tuning, upgrades } from './meta';
 import { groups, guestTypes, items, services, traits } from './people';
 import { achievements, secretEvents } from './secrets';
 import { beachDeck, gardenHall, grandBallroom, lanternNight } from './venues';
@@ -26,7 +26,7 @@ export const basePack: ContentPack = {
   services,
   weddings,
   levels,
-  decor,
+  planOptions,
   upgrades,
   dialogues,
   secretEvents,

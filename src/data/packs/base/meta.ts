@@ -1,4 +1,4 @@
-import type { DecorDef, DialogueDef, ScoringRules, TuningDef, UpgradeDef } from '../../../content/types';
+import type { PlanOptionDef, DialogueDef, ScoringRules, TuningDef, UpgradeDef } from '../../../content/types';
 
 export const tuning: TuningDef = {
   plannerSpeed: 400,
@@ -30,7 +30,16 @@ export const tuning: TuningDef = {
   courses: { appetizerPlateSeconds: 1.5, appetizerEatFactor: 0.6, dessertEatFactor: 0.6, pauseSeconds: [1.5, 3.5], extraBetweenCoursesChance: 0.35, lingerSeconds: [2, 4] },
   rescue: { guestHappiness: 45, mood: 4 },
   coupleRequestPatienceSeconds: 35,
-  decorMatchBonus: { startMood: 10, scoreBonus: 0.1 },
+  // Four right picks ≈ the old perfect-decor bonus, doubled.
+  planMatchBonus: { startMood: 4, scoreBonus: 0.04 },
+  goalCoinReward: 40,
+  coupleStates: [
+    { id: 'blissful', label: 'Blissful', minMood: 80, requestPatience: 1.1 },
+    { id: 'happy', label: 'Happy', minMood: 55, requestPatience: 1 },
+    { id: 'worried', label: 'Worried', minMood: 35, requestPatience: 0.9 },
+    { id: 'stressed', label: 'Stressed!', minMood: 15, requestPatience: 0.8 },
+    { id: 'meltdown', label: 'Meltdown!!', minMood: 0, requestPatience: 0.7 },
+  ],
 };
 
 export const scoring: ScoringRules = {
@@ -52,11 +61,31 @@ export const scoring: ScoringRules = {
   rescueUnused: 120,
 };
 
-export const decor: DecorDef[] = [
-  { id: 'pastel-peonies', name: 'Pastel Peonies', description: 'Soft pink peonies on every table.', tags: ['flowers', 'pastel'], visual: { color: 0xf2a7b8, icon: 'bouquet' } },
-  { id: 'fairy-lights', name: 'Fairy Lights', description: 'Warm string lights and lanterns.', tags: ['lights', 'rustic'], visual: { color: 0xf3d46b, icon: 'lantern' } },
-  { id: 'classic-white', name: 'Classic White', description: 'White roses, linen and candles.', tags: ['classic', 'elegant'], visual: { color: 0xf4f0ea, icon: 'candles' } },
-  { id: 'tropical', name: 'Tropical Bloom', description: 'Orchids, palms and bright colours.', tags: ['bright', 'tropical'], visual: { color: 0x5fc49a, icon: 'tropical' } },
+/**
+ * The wedding plan. Tags are matched against each wedding's `lovesTags`; the
+ * invitation's `planHints` are the clues. Keep tags distinct across options in
+ * a category so every clue points at one answer.
+ */
+export const planOptions: PlanOptionDef[] = [
+  { id: 'pastel-peonies', category: 'decor', name: 'Pastel Peonies', description: 'Soft pink peonies on every table.', tags: ['flowers', 'pastel'], visual: { color: 0xf2a7b8, icon: 'bouquet' } },
+  { id: 'fairy-lights', category: 'decor', name: 'Fairy Lights', description: 'Warm string lights and lanterns.', tags: ['lights', 'rustic'], visual: { color: 0xf3d46b, icon: 'lantern' } },
+  { id: 'classic-white', category: 'decor', name: 'Classic White', description: 'White roses, linen and candles.', tags: ['classic', 'elegant'], visual: { color: 0xf4f0ea, icon: 'candles' } },
+  { id: 'tropical', category: 'decor', name: 'Tropical Bloom', description: 'Orchids, palms and bright colours.', tags: ['bright', 'tropical'], visual: { color: 0x5fc49a, icon: 'tropical' } },
+
+  { id: 'garden-feast', category: 'menu', name: 'Garden Feast', description: 'Herb risotto and roast chicken.', tags: ['garden'], menuItemIds: ['risotto', 'roast-chicken'], visual: { color: 0x7fae4f, icon: 'dish:risotto' } },
+  { id: 'from-the-sea', category: 'menu', name: 'From the Sea', description: 'Grilled salmon and garden risotto.', tags: ['seafood'], menuItemIds: ['salmon', 'risotto'], visual: { color: 0xf08a6c, icon: 'dish:fish' } },
+  { id: 'grand-banquet', category: 'menu', name: 'Grand Banquet', description: 'Roast chicken and grilled salmon.', tags: ['banquet'], menuItemIds: ['roast-chicken', 'salmon'], visual: { color: 0xd9a066, icon: 'dish:chicken' } },
+  { id: 'chefs-trio', category: 'menu', name: 'Chef’s Trio', description: 'A little of everything — three mains.', tags: ['foodie'], menuItemIds: ['roast-chicken', 'salmon', 'risotto'], visual: { color: 0xe8b4c4, icon: 'dish:trio' } },
+
+  { id: 'strawberry-cream', category: 'cake', name: 'Strawberry Cream', description: 'Fresh strawberries and pink cream.', tags: ['strawberry', 'pastel'], visual: { color: 0xf7b7c6, accent: 0xe05a7a, icon: 'cake' } },
+  { id: 'chocolate-tower', category: 'cake', name: 'Chocolate Tower', description: 'Three tiers of dark chocolate.', tags: ['chocolate'], visual: { color: 0x8a5a3a, accent: 0x4a2c1a, icon: 'cake' } },
+  { id: 'lemon-chiffon', category: 'cake', name: 'Lemon Chiffon', description: 'Light, zesty and sunny yellow.', tags: ['lemon', 'bright'], visual: { color: 0xf6e27a, accent: 0xe0b83a, icon: 'cake' } },
+  { id: 'vanilla-classic', category: 'cake', name: 'Vanilla Classic', description: 'White fondant and sugar roses.', tags: ['vanilla', 'classic'], visual: { color: 0xfffaf2, accent: 0xe8b4c4, icon: 'cake' } },
+
+  { id: 'island', category: 'honeymoon', name: 'Tropical Island', description: 'White sand and turquoise sea.', tags: ['beach', 'tropical'], visual: { color: 0x5fc4c9, icon: 'trip:island' } },
+  { id: 'paris', category: 'honeymoon', name: 'Paris', description: 'Cafés, bridges and the Eiffel Tower.', tags: ['paris', 'romantic'], visual: { color: 0xb49be0, icon: 'trip:tower' } },
+  { id: 'mountain-cabin', category: 'honeymoon', name: 'Mountain Cabin', description: 'Snowy peaks and a crackling fire.', tags: ['mountains', 'cozy'], visual: { color: 0x7fb08a, icon: 'trip:mountain' } },
+  { id: 'city-lights', category: 'honeymoon', name: 'City Lights', description: 'Skyscrapers, rooftops and late nights.', tags: ['city'], visual: { color: 0x6b8fd6, icon: 'trip:city' } },
 ];
 
 export const upgrades: UpgradeDef[] = [

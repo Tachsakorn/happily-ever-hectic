@@ -143,3 +143,29 @@ describe('new disasters and personalities', () => {
     runUntil(sim, () => sim.state.stats.disastersResolved === 1, 30);
   });
 });
+
+describe('couple mood bands', () => {
+  it('the couple moves through mood bands, announcing each change, with a margin on the way back up', () => {
+    const { sim } = makeSim({ guests: [] });
+    const ctx = sim.context as import('../../src/core/sim/SimContext').SimContext;
+    expect(sim.state.couple.state).toBe('happy');
+    ctx.mood.change(-25, 'test');
+    const events: DomainEvent[] = [];
+    runFor(sim, 0.1, events);
+    expect(sim.state.couple.state).toBe('worried');
+    const changed = events.filter((e) => e.type === 'coupleStateChanged');
+    expect(changed.at(-1)).toMatchObject({ from: 'happy', to: 'worried' });
+    // Just over the boundary is not enough to feel better again.
+    ctx.mood.change(55.5 - sim.state.couple.mood, 'test');
+    runFor(sim, 0.02);
+    expect(sim.state.couple.state).toBe('worried');
+    ctx.mood.change(5, 'test');
+    runFor(sim, 0.02);
+    expect(sim.state.couple.state).toBe('happy');
+  });
+
+  it('ignored couple requests are counted for the failure summary', () => {
+    const { sim } = makeSim({ guests: [] }, { coupleRequests: ['lemonade'] });
+    runUntil(sim, () => sim.state.stats.coupleRequestsMissed === 1, 200);
+  });
+});

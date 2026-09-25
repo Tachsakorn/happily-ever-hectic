@@ -88,6 +88,10 @@ export interface ResultsVM {
   readonly hasNext: boolean;
   readonly firstStarScore: number;
   readonly achievements: readonly { name: string; icon: UiIcon; color: number }[];
+  /** The level's bonus goals: met at some point, and met for the first time just now. */
+  readonly goals: readonly { text: string; done: boolean; isNew: boolean }[];
+  /** For a lost wedding: what went wrong, biggest first, and a tip. */
+  readonly failure: { readonly reasons: readonly string[]; readonly tip: string } | null;
 }
 
 const STAR_START_MS = 700;
@@ -111,7 +115,7 @@ export class ResultsScreen extends DomScreen {
 
   private subheading(): string {
     const vm = this.vm;
-    if (!vm.success) return 'The couple ran out of patience. Try a different plan!';
+    if (!vm.success) return 'Bridezilla! The couple had a meltdown.';
     if (vm.stars === 0) return `The wedding survived, but it needs ${vm.firstStarScore.toLocaleString('en-US')} points for a star.`;
     return vm.levelName;
   }
@@ -160,8 +164,8 @@ export class ResultsScreen extends DomScreen {
           { class: 'panel pop results__main' },
           ribbon(heading.text, heading.tone, 'h1'),
           h('p', { class: 'results__sub', text: this.subheading() }),
-          h('div', { class: 'results__stars' }, ...stars),
-          score,
+          vm.failure ? null : h('div', { class: 'results__stars' }, ...stars),
+          vm.failure ? this.failureBlock(vm.failure) : score,
           h(
             'div',
             { class: 'results__chips' },
@@ -172,6 +176,7 @@ export class ResultsScreen extends DomScreen {
               h('span', { class: 'chip chip--achievement', style: `animation-delay:${afterStars + 600 + i * 160}ms` }, medal(a.icon, a.color, 'unlocked', 30), a.name),
             ),
           ),
+          vm.goals.length ? this.goalsBlock(afterStars) : null,
           h(
             'div',
             { class: 'results__actions' },
@@ -202,6 +207,33 @@ export class ResultsScreen extends DomScreen {
             { class: 'panel pop results__stats', style: 'animation-delay: 240ms' },
             h('ul', { class: 'ledger ledger--stats' }, ...vm.stats.map((s) => h('li', {}, h('span', { text: s.label }), h('b', { text: s.value })))),
           ),
+        ),
+      ),
+    );
+  }
+
+  /** Why the wedding was lost: the reasons in order of damage, then one thing to try next time. */
+  private failureBlock(failure: NonNullable<ResultsVM['failure']>): HTMLElement {
+    return h(
+      'div',
+      { class: 'fail-summary' },
+      h('h3', { class: 'display', text: 'What went wrong' }),
+      h('ul', {}, ...failure.reasons.map((r) => h('li', { text: r }))),
+      h('p', { class: 'fail-summary__tip' }, uiIcon('sparkle', 0xf2b84b, 22), h('span', { text: failure.tip })),
+    );
+  }
+
+  private goalsBlock(delay: number): HTMLElement {
+    return h(
+      'div',
+      { class: 'results__goals' },
+      ...this.vm.goals.map((g, i) =>
+        h(
+          'span',
+          { class: `goal-chip${g.done ? ' is-done' : ''}${g.isNew ? ' is-new' : ''}`, style: `animation-delay:${delay + 300 + i * 140}ms` },
+          uiIcon(g.done ? 'check' : 'star', g.done ? 0x7fb08a : 0xcfc2cc, 20),
+          g.text,
+          g.isNew ? h('b', { text: 'New!' }) : null,
         ),
       ),
     );

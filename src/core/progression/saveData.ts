@@ -8,6 +8,8 @@ export interface LevelProgress {
   readonly bestScore: number;
   readonly stars: 0 | 1 | 2 | 3;
   readonly completed: boolean;
+  /** Keys of the bonus goals ever met here (see core/progression/goals). */
+  readonly goals: readonly string[];
 }
 
 export interface Settings {
@@ -78,7 +80,8 @@ export function migrate(raw: unknown): SaveData {
     for (const [id, value] of Object.entries(raw.levels)) {
       if (!isRecord(value)) continue;
       const stars = Math.max(0, Math.min(3, Math.floor(num(value.stars, 0)))) as LevelProgress['stars'];
-      levels[id] = { bestScore: Math.max(0, num(value.bestScore, 0)), stars, completed: bool(value.completed, false) };
+      const goals = Array.isArray(value.goals) ? [...new Set(value.goals.filter((g): g is string => typeof g === 'string'))] : [];
+      levels[id] = { bestScore: Math.max(0, num(value.bestScore, 0)), stars, completed: bool(value.completed, false), goals };
     }
   }
   const settings = isRecord(raw.settings) ? raw.settings : {};

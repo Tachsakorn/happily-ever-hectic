@@ -1,6 +1,8 @@
 import type { ContentRegistry } from '../content/ContentRegistry';
-import type { Id } from '../content/types';
-import { decorMatches, isUnlocked } from '../core/progression/progression';
+import type { GoalDef, Id, PlanCategory } from '../content/types';
+import { isUnlocked } from '../core/progression/progression';
+import { planCategories, planMatches, planOptions, type Plan } from '../core/progression/plan';
+import { goalKey } from '../core/progression/goals';
 import type { ResultOutcome } from '../core/progression/progression';
 import type { SaveData } from '../core/progression/saveData';
 import type { ReceptionResult } from '../core/scoring/results';
@@ -42,23 +44,44 @@ export function shopItems(content: ContentRegistry, save: SaveData): ShopItemVM[
     .map((u) => ({ id: u.id, name: u.name, description: u.description, cost: u.cost, owned: save.upgrades.includes(u.id), icon: u.icon }));
 }
 
+const PLAN_TITLES: Record<PlanCategory, string> = {
+  decor: 'Pick the flowers',
+  menu: 'Pick the menu',
+  cake: 'Pick the cake',
+  honeymoon: 'Pick the honeymoon',
+};
+
+/** Player-facing wording for a bonus goal. */
+export function describeGoal(goal: GoalDef): string {
+  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+  switch (goal.kind) {
+    case 'maxUpset':
+      return goal.count === 0 ? 'No guest storms off' : `At most ${plural(goal.count, 'guest')} storm off`;
+    case 'minChain':
+      return `Make a ×${goal.count} chain`;
+    case 'minFinalMood':
+      return `Couple’s mood ${goal.value}+ at the end`;
+    case 'noDisasterFailed':
+      return 'No disaster gets out of hand';
+    case 'allMoments':
+      return 'Nail every wedding moment';
+    case 'minSongs':
+      return `Play ${plural(goal.count, 'requested song')}`;
+    case 'noRescue':
+      return 'Win without the champagne';
+    case 'minHappyGoodbyes':
+      return `${plural(goal.count, 'happy goodbye')}`;
+    case 'minGifts':
+      return `Deliver ${plural(goal.count, 'gift')}`;
+  }
+}
+
 export function prepVM(content: ContentRegistry, save: SaveData, levelId: Id): PrepVM {
   const level = content.levels.get(levelId);
   const wedding = content.weddings.get(level.weddingId);
   const mins = Math.floor(level.durationSeconds / 60);
   const secs = level.durationSeconds % 60;
-  const decor = content.decor
-    .all()
-    .map((d) => ({
-      id: d.id,
-      name: d.name,
-      description: d.description,
-      color: d.visual.color,
-      icon: d.visual.icon,
-      loved: decorMatches(content, wedding.id, d.id),
-    }))
-    // Loved decor first, so the better choice is obvious but still a choice.
-    .sort((a, b) => Number(b.loved) - Number(a.loved));
+  const done = save.levels[levelId]?.goals ?? [];
   return {
     levelName: level.name,
     couple: wedding.title,
@@ -66,19 +89,45 @@ export function prepVM(content: ContentRegistry, save: SaveData, levelId: Id): P
     // The reception ends when the guests have gone; this is only an estimate.
     minutes: `about ${mins + (secs >= 30 ? 1 : 0)} min`,
     guestCount: level.guests.length,
-    loves: wedding.lovesTags,
     moments: level.moments.map((m) => content.moments.get(m.momentId).name),
     disasters: level.disasterIds.map((d) => content.disasters.get(d).name),
     upgrades: save.upgrades.filter((u) => content.upgrades.has(u)).map((u) => content.upgrades.get(u).name),
-    decor,
+    // The clue is the puzzle: which pick is right is only revealed once the reception starts.
+    steps: planCategories(content, wedding.id).map((category) => ({
+      category,
+      title: PLAN_TITLES[category],
+      hint: wedding.planHints?.[category] ?? '',
+      options: planOptions(content, category).map((o) => ({
+        id: o.id,
+        name: o.name,
+        description: o.description,
+        color: o.visual.color,
+        accent: o.visual.accent,
+        icon: o.visual.icon,
+      })),
+    })),
+    goals: (level.goals ?? []).map((g) => ({ text: describeGoal(g), done: done.includes(goalKey(g)) })),
     starScores: level.starScores,
   };
 }
 
-export function decorLook(content: ContentRegistry, decorId: Id | null): DecorLook {
-  const decor = decorId && content.decor.has(decorId) ? content.decor.get(decorId) : content.decor.all()[0];
+/** How the room is dressed: the flower colour of the plan's decor pick. */
+export function decorLook(content: ContentRegistry, plan: Plan | null): DecorLook {
+  const decorId = plan?.decor;
+  const decor = decorId && content.planOptions.has(decorId) ? content.planOptions.get(decorId) : planOptions(content, 'decor')[0];
   const flower = decor?.visual.color ?? 0xf2a7b8;
   return { flower, cloth: 0xfffcf8 };
+}
+
+/** The line announced as the reception starts: how many of the couple's wishes the plan got right. */
+export function planNote(content: ContentRegistry, levelId: Id, plan: Plan): string | null {
+  const weddingId = content.levels.get(levelId).weddingId;
+  const total = planCategories(content, weddingId).length;
+  if (!total) return null;
+  const right = planMatches(content, weddingId, plan).length;
+  if (right === total) return `Perfect plan! Every one of the couple’s ${total} wishes came true.`;
+  if (right === 0) return 'The couple hoped for something different… no wishes matched this time.';
+  return `Your plan got ${right} of the couple’s ${total} wishes right!`;
 }
 
 export function nextLevelId(content: ContentRegistry, save: SaveData, levelId: Id): Id | null {
@@ -88,9 +137,41 @@ export function nextLevelId(content: ContentRegistry, save: SaveData, levelId: I
   return next && isUnlocked(save, next) ? next.id : null;
 }
 
-export function resultsVM(content: ContentRegistry, result: ReceptionResult, outcome: ResultOutcome, hasNext: boolean): ResultsVM {
+/** Why a wedding was lost, biggest cause first, and one tip for next time. */
+function failureVM(content: ContentRegistry, result: ReceptionResult): ResultsVM['failure'] {
+  if (result.outcome === 'COMPLETE') return null;
   const s = result.stats;
-  const rescues = content.levels.get(result.levelId).rescues ?? 0;
+  const t = content.tuning.mood;
+  const causes = [
+    { n: s.guestsUpset, weight: t.guestUpset, text: (n: number) => `${n} guest${n === 1 ? '' : 's'} stormed off`, tip: 'Watch for red, shaking bubbles — and pop the champagne when many guests are fuming.' },
+    { n: s.disastersFailed, weight: 12, text: (n: number) => `${n} disaster${n === 1 ? '' : 's'} got out of hand`, tip: 'Fix disasters while they are still warnings: it is quicker and earns a bonus.' },
+    { n: s.momentsFailed, weight: 12, text: (n: number) => `${n} wedding moment${n === 1 ? '' : 's'} missed`, tip: 'Wedding moments come first: drop everything when the couple calls.' },
+    { n: s.coupleRequestsMissed, weight: t.coupleRequestExpired, text: (n: number) => `The couple was ignored ${n === 1 ? 'once' : `${n} times`}`, tip: 'Keep an eye on the sweetheart table: the couple’s own requests matter most.' },
+  ]
+    .filter((c) => c.n > 0)
+    .sort((a, b) => b.n * b.weight - a.n * a.weight);
+  const blow = result.moodBreakdown.find((b) => b.amount < 0);
+  const reasons = causes.map((c) => c.text(c.n));
+  if (blow) reasons.push(`Biggest blow: ${blow.cause} (−${Math.abs(blow.amount)})`);
+  return {
+    reasons: reasons.length ? reasons : ['Stress piled up faster than it was calmed down'],
+    tip: causes[0]?.tip ?? 'Keep the couple calm: a quiet, well-run room slowly lifts their mood.',
+  };
+}
+
+export function resultsVM(
+  content: ContentRegistry,
+  result: ReceptionResult,
+  outcome: ResultOutcome,
+  hasNext: boolean,
+  plan: Plan | null,
+): ResultsVM {
+  const s = result.stats;
+  const level = content.levels.get(result.levelId);
+  const rescues = level.rescues ?? 0;
+  const planTotal = planCategories(content, level.weddingId).length;
+  const planRight = plan ? planMatches(content, level.weddingId, plan).length : 0;
+  const everDone = outcome.save.levels[level.id]?.goals ?? [];
   return {
     levelName: content.levels.get(result.levelId).name,
     success: result.outcome === 'COMPLETE',
@@ -110,7 +191,13 @@ export function resultsVM(content: ContentRegistry, result: ReceptionResult, out
       { label: 'Disasters fixed', value: `${s.disastersResolved} / ${s.disastersResolved + s.disastersFailed}` },
       { label: 'Wedding moments', value: `${s.momentsCompleted} / ${s.momentsCompleted + s.momentsFailed}` },
       { label: 'Guests: happy · upset', value: `${s.guestsLeftHappy} · ${s.guestsUpset}` },
+      ...(planTotal ? [{ label: 'Wedding plan', value: `${planRight} / ${planTotal} wishes` }] : []),
     ],
+    goals: (level.goals ?? []).map((g) => {
+      const key = goalKey(g);
+      return { text: describeGoal(g), done: everDone.includes(key), isNew: outcome.newGoals.includes(key) };
+    }),
+    failure: failureVM(content, result),
     moodBreakdown: result.moodBreakdown,
     unlocked: outcome.newlyUnlocked.map((id) => content.levels.get(id).name),
     hasNext,

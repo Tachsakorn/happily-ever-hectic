@@ -1,4 +1,4 @@
-import type { Id, Vec2 } from '../../content/types';
+import type { CoupleStateId, Id, Vec2 } from '../../content/types';
 import type { ResolvedModifiers } from './modifiers';
 
 /**
@@ -167,6 +167,8 @@ export interface CoupleRequest {
 
 export interface Couple {
   mood: number;
+  /** Mood band (blissful … meltdown), kept in step with mood by the couple system. */
+  state: CoupleStateId;
   request: CoupleRequest | null;
   nextRequestIn: number;
 }
@@ -213,6 +215,8 @@ export interface ReceptionStats {
   /** Service wishes granted (songs played for a guest). */
   servicesGranted: number;
   rescuesUsed: number;
+  /** Small couple requests that ran out of time. */
+  coupleRequestsMissed: number;
 }
 
 export const MAX_MOOD = 100;

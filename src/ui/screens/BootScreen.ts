@@ -1,6 +1,6 @@
 import { paintMenuBackdrop } from '../../art/scenery';
 import { DomScreen } from '../Screen';
-import { h } from '../dom';
+import { h, onTap } from '../dom';
 import { backdrop, petals } from '../paint';
 import { logo } from './common';
 
@@ -26,11 +26,11 @@ export class BootScreen extends DomScreen {
       h('div', { class: 'tap-hint' }, h('span', { class: 'tap-hint__dot' }), 'Tap anywhere to begin'),
     );
     let started = false;
-    this.disposer.listen(el, 'click', () => {
+    onTap(el, () => {
       if (started) return;
       started = true;
       this.onStart();
-    });
+    }, this.disposer);
     return el;
   }
 }

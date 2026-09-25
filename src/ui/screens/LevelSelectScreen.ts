@@ -4,7 +4,7 @@ import { flat, hex, toon } from '../../art/canvas';
 import { isUiIcon } from '../../art/props';
 import { paintMapBackdrop, type Point } from '../../art/scenery';
 import { DomScreen } from '../Screen';
-import { button, h } from '../dom';
+import { button, h, onTap } from '../dom';
 import { backdrop, itemIcon, paintedCanvas, portrait, uiIcon } from '../paint';
 import { achievementsPanel, type AchievementsVM } from './AchievementsPanel';
 import { backButton, coinBadge, ribbon, starRow, type UiCue } from './common';
@@ -147,7 +147,7 @@ export class LevelSelectScreen extends DomScreen {
       l.unlocked ? null : h('span', { class: 'map-node__lock' }, uiIcon('lock', 0xffffff, 40)),
     );
     btn.style.animationDelay = `${120 + index * 70}ms`;
-    this.disposer.listen(btn, 'click', () => {
+    onTap(btn, () => {
       if (!l.unlocked) {
         btn.classList.remove('is-shaking');
         void btn.offsetWidth;
@@ -156,7 +156,7 @@ export class LevelSelectScreen extends DomScreen {
       }
       this.actions.cue?.('pop');
       this.openLevel(l);
-    });
+    }, this.disposer);
     return h(
       'div',
       { class: 'map-stop', style: `left:${at.x * 100}%; top:${at.y * 100}%` },
@@ -170,9 +170,9 @@ export class LevelSelectScreen extends DomScreen {
   private openModal(content: HTMLElement): void {
     this.closeModal();
     const scrim = h('div', { class: 'modal' }, content);
-    this.disposer.listen(scrim, 'click', (e) => {
+    onTap(scrim, (e) => {
       if (e.target === scrim) this.closeModal();
-    });
+    }, this.disposer);
     this.modal = scrim;
     this.root?.append(scrim);
   }

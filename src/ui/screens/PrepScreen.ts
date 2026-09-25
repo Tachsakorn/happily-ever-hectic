@@ -1,7 +1,7 @@
 import type { PersonLook } from '../../art/people';
 import { paintDecorTile, paintMenuBackdrop } from '../../art/scenery';
 import { DomScreen } from '../Screen';
-import { button, h } from '../dom';
+import { button, h, onTap } from '../dom';
 import { backdrop, paintedCanvas, portrait, uiIcon } from '../paint';
 import { backButton, ribbon, starCanvas } from './common';
 
@@ -57,7 +57,7 @@ export class PrepScreen extends DomScreen {
         h('span', { class: 'decor-tile__check' }, uiIcon('check', 0xffffff, 26)),
       );
       el.style.animationDelay = `${160 + i * 70}ms`;
-      this.disposer.listen(el, 'click', () => {
+      onTap(el, () => {
         this.selected = d.id;
         this.actions.cue?.('pop');
         for (const t of tiles) {
@@ -65,7 +65,7 @@ export class PrepScreen extends DomScreen {
           t.el.classList.toggle('is-selected', on);
           t.el.setAttribute('aria-pressed', String(on));
         }
-      });
+      }, this.disposer);
       return { id: d.id, el };
     });
 

@@ -1,7 +1,7 @@
 import type { PersonLook } from '../../art/people';
 import { paintMenuBackdrop } from '../../art/scenery';
 import { DomScreen } from '../Screen';
-import { button, h } from '../dom';
+import { button, h, onTap } from '../dom';
 import { backdrop, figure, petals, uiIcon } from '../paint';
 import { logo, settingsToggles, type SettingsVM } from './common';
 
@@ -46,7 +46,7 @@ export class MainMenuScreen extends DomScreen {
     badge.hidden = !vm.testTools;
     // Hidden switch for playtesting: tap the title five times quickly.
     let taps: number[] = [];
-    this.disposer.listen(title, 'click', () => {
+    onTap(title, () => {
       const now = performance.now();
       taps = [...taps.filter((t) => now - t < SECRET_WINDOW_MS), now];
       if (taps.length < SECRET_TAPS || !this.actions.toggleTestTools) return;
@@ -58,7 +58,7 @@ export class MainMenuScreen extends DomScreen {
         badge.hidden = false;
         this.disposer.timeout(() => (badge.hidden = true), 1400);
       }
-    });
+    }, this.disposer);
     return h(
       'div',
       { class: 'screen menu-screen' },

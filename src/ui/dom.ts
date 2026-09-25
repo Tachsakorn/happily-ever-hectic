@@ -34,9 +34,10 @@ export class Disposer {
     target: HTMLElement,
     type: K,
     handler: (e: HTMLElementEventMap[K]) => void,
+    options?: AddEventListenerOptions,
   ): void {
-    target.addEventListener(type, handler);
-    this.add(() => target.removeEventListener(type, handler));
+    target.addEventListener(type, handler, options);
+    this.add(() => target.removeEventListener(type, handler, options));
   }
 
   timeout(fn: () => void, ms: number): void {
@@ -47,6 +48,69 @@ export class Disposer {
   dispose(): void {
     while (this.items.length) this.items.pop()?.();
   }
+}
+
+/** A finger may wobble this far (CSS px) and still count as a tap rather than a swipe. */
+const TAP_SLOP_PX = 16;
+/** After a handled tap, the browser's own late click is ignored for this long. */
+const GHOST_CLICK_MS = 700;
+
+let lastTapAt = -Infinity;
+let ghostGuardInstalled = false;
+
+/**
+ * Swallows the synthetic click a browser fires after a tap we already
+ * handled. Without it, a tap that opens a panel could land a second time on
+ * whatever appeared under the finger (e.g. a Buy button in the shop).
+ * Keyboard clicks (detail 0) always pass.
+ */
+function installGhostClickGuard(): void {
+  if (ghostGuardInstalled) return;
+  ghostGuardInstalled = true;
+  const guard = (e: MouseEvent) => {
+    if (e.detail !== 0 && performance.now() - lastTapAt < GHOST_CLICK_MS) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  document.addEventListener('click', guard, true);
+}
+
+/**
+ * Calls `handler` when `el` is tapped or clicked.
+ *
+ * It fires when the finger lifts (pointerup) instead of waiting for the
+ * browser's click: iPhone Safari silently drops that click when anything on
+ * the page changes during the touch (a pressed look, an entrance animation),
+ * which made buttons need several taps. A drag longer than a small wobble is
+ * not a tap, so scrolling a list never presses a button in it. Keyboard
+ * activation still arrives as a click and still works.
+ */
+export function onTap(el: HTMLElement, handler: (e: Event) => void, disposer: Disposer): void {
+  installGhostClickGuard();
+  let down: { id: number; x: number; y: number } | null = null;
+  disposer.listen(el, 'pointerdown', (e) => {
+    if (e.button > 0) return;
+    down = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+  disposer.listen(el, 'pointercancel', () => (down = null));
+  disposer.listen(el, 'pointerup', (e) => {
+    const d = down;
+    down = null;
+    if (!d || d.id !== e.pointerId || Math.hypot(e.clientX - d.x, e.clientY - d.y) > TAP_SLOP_PX) return;
+    lastTapAt = performance.now();
+    handler(e);
+  });
+  // Also cancel the touch's own click emulation where the browser allows it.
+  const cancelEmulation = (e: TouchEvent) => {
+    if (performance.now() - lastTapAt < 50 && e.cancelable) e.preventDefault();
+  };
+  disposer.listen(el, 'touchend', cancelEmulation, { passive: false });
+  // Keyboard, or a browser that sends a click without pointer events.
+  disposer.listen(el, 'click', (e) => {
+    if (performance.now() - lastTapAt < GHOST_CLICK_MS) return;
+    handler(e);
+  });
 }
 
 export type ButtonTone = 'rose' | 'go' | 'gold' | 'cream';
@@ -65,7 +129,7 @@ export interface ButtonOptions {
  * The game's chunky button. The pressed look is driven by pointer events so
  * it shows instantly on iPad (Safari's :active needs a touch listener anyway).
  */
-export function button(label: string, onTap: () => void, disposer: Disposer, opts: ButtonOptions = {}): HTMLButtonElement {
+export function button(label: string, onPress: () => void, disposer: Disposer, opts: ButtonOptions = {}): HTMLButtonElement {
   const classes = ['btn'];
   if (opts.tone && opts.tone !== 'rose') classes.push(`btn--${opts.tone}`);
   if (opts.size && opts.size !== 'normal') classes.push(`btn--${opts.size}`);
@@ -76,9 +140,9 @@ export function button(label: string, onTap: () => void, disposer: Disposer, opt
   disposer.listen(el, 'pointerup', release);
   disposer.listen(el, 'pointercancel', release);
   disposer.listen(el, 'pointerleave', release);
-  disposer.listen(el, 'click', () => {
-    if (!el.disabled) onTap();
-  });
+  onTap(el, () => {
+    if (!el.disabled) onPress();
+  }, disposer);
   return el;
 }
 

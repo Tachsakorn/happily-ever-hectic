@@ -1,7 +1,7 @@
 import type { PersonLook } from '../../art/people';
 import { paintMenuBackdrop } from '../../art/scenery';
 import { DomScreen } from '../Screen';
-import { button, h } from '../dom';
+import { button, h, onTap } from '../dom';
 import { backdrop, petals, portrait, uiIcon } from '../paint';
 import { logo } from './common';
 
@@ -80,7 +80,7 @@ export class DialogueScreen extends DomScreen {
       this.type(text, line.text);
     };
 
-    this.disposer.listen(root, 'click', (e) => {
+    onTap(root, (e) => {
       if (e.target instanceof Element && e.target.closest('button')) return;
       if (this.typing) {
         this.stopTyping();
@@ -93,7 +93,7 @@ export class DialogueScreen extends DomScreen {
       } else {
         showFinish();
       }
-    });
+    }, this.disposer);
     this.disposer.add(() => this.stopTyping());
     if (this.lines.length) this.disposer.timeout(show, ending ? 900 : 180);
     else queueMicrotask(showFinish);

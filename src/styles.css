@@ -69,6 +69,19 @@ body {
   inset: 0;
 }
 
+/*
+ * Installed iOS web app: every viewport measure comes up short by the status
+ * bar, and a root element with overflow: hidden clips the app at that short
+ * height — a bare strip along the bottom. When the app is sized past the
+ * reported viewport, the root stops clipping and grows to the real size
+ * (see platform/viewport/viewportSize). Touch scrolling stays blocked in JS.
+ */
+html.is-oversized,
+html.is-oversized body {
+  overflow: visible;
+  height: var(--app-height);
+}
+
 #game-layer {
   position: absolute;
   inset: 0;

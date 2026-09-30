@@ -108,6 +108,7 @@ export function viewportReport(): string {
     `large ${f(r.large)}`,
     `screen ${f(r.screen)}`,
     `dpr ${window.devicePixelRatio}`,
+    document.documentElement.classList.contains('is-oversized') ? 'root grown' : 'root normal',
     r.standalone ? 'home-screen app' : 'browser',
   ].join(' · ');
 }
@@ -135,6 +136,13 @@ export function installViewportSize(box: HTMLElement, onChange: (v: VisibleViewp
     box.style.top = `${v.top}px`;
     box.style.width = `${v.width}px`;
     box.style.height = `${v.height}px`;
+    // Taller than the page thinks it is (installed iOS app): let the root grow instead of clipping.
+    const root = document.documentElement;
+    const oversized = v.height > window.innerHeight + 1;
+    root.classList.toggle('is-oversized', oversized);
+    root.style.setProperty('--app-height', `${v.height}px`);
+    // A taller root could be nudged into scrolling; keep the page pinned at the top.
+    if (oversized && (window.scrollY || window.scrollX)) window.scrollTo(0, 0);
     onChange(v);
   };
   const schedule = () => {

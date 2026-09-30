@@ -10,7 +10,9 @@ export interface SettingsVM {
 }
 
 /** Sounds a screen may ask for; the app maps them onto the audio service. */
-export type UiCue = 'star' | 'coin' | 'pop' | 'whoosh' | 'cheer' | 'achievement';
+export type UiCue = 'star' | 'coin' | 'coinTick' | 'pop' | 'whoosh' | 'cheer' | 'achievement';
+/** Plays a UI sound; `pitch` (semitones) lets a sequence climb, like stars landing one by one. */
+export type CueFn = (cue: UiCue, pitch?: number) => void;
 
 /** The title, two lines, last word in rose, letters dropping in one after another. */
 export function logo(title: string, idle = false): HTMLElement {

@@ -85,8 +85,8 @@ export class GameApp {
     this.deps.screens.show(screen, transition);
   }
 
-  private cue = (cue: UiCue): void => {
-    this.deps.audio.play(cue);
+  private cue = (cue: UiCue, pitch = 0): void => {
+    this.deps.audio.play(cue, { pitch });
   };
 
   private persist(next: SaveData): void {
@@ -313,6 +313,7 @@ export class GameApp {
     const session = new ReceptionSession(content, levelId, plan, receptionModifiers(content, this.save, levelId, plan), Date.now() >>> 0);
     session.paused = true;
     this.session = session;
+    this.audioDirector.beginReception(content.levels.get(levelId).starScores);
     const data: ReceptionSceneData = {
       session,
       renderScale: host.renderScale,
@@ -329,6 +330,7 @@ export class GameApp {
   private endSession(): void {
     if (!this.session) return;
     this.session = null;
+    this.audioDirector.endReception();
     this.deps.host.stopAll();
   }
 }

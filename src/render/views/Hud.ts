@@ -13,6 +13,16 @@ const SCORE_BAR = { x: 1004, y: 76, w: 262, h: 14 };
 const SCORE_POS = { x: 1150, y: 38 };
 const TICKER_LINES = 2;
 const CHAIN_POS = { x: 1136, y: 140 };
+/** Chain counter colour as the chain grows: gold, then rose, then violet. */
+const CHAIN_TIERS: readonly { from: number; color: string; sparkle: number }[] = [
+  { from: 8, color: '#7a5bb5', sparkle: 0xb49be0 },
+  { from: 5, color: '#d2557a', sparkle: 0xf7b7c6 },
+  { from: 2, color: '#c98a22', sparkle: 0xf2b84b },
+];
+/** How fast the mood bar glides to the real mood (per second), and how long a loss lingers as a pale trail. */
+const MOOD_GLIDE = 7;
+const MOOD_TRAIL_HOLD = 0.45;
+const MOOD_TRAIL_SPEED = 30;
 /** Bottom, right of the gift table by the entrance and left of the kitchen. */
 const BANNER = { x: 770, y: 948, w: 700 };
 /** Mood bar colour per mood band. */
@@ -50,6 +60,10 @@ export class Hud {
   private readonly stars: Phaser.GameObjects.Image[] = [];
   private readonly earned: boolean[] = [false, false, false];
   private shownMood = -1;
+  /** The mood the bar shows right now (gliding to the real one), and the pale trail left by a loss. */
+  private barMood = -1;
+  private trailMood = -1;
+  private trailHold = 0;
   private shownScore = -1;
   private displayScore = 0;
   private shownSeconds = -1;
@@ -164,9 +178,9 @@ export class Hud {
   sync(dt: number): void {
     const s = this.sim.state;
     const mood = Math.round(s.couple.mood * 2) / 2;
+    this.glideMood(mood, dt);
     if (mood !== this.shownMood) {
       this.shownMood = mood;
-      this.drawMood(mood);
       this.moodText.setText(String(Math.round(mood)));
       const band = coupleStateFor(this.sim.context.tuning, mood).id;
       const danger = band === 'stressed' || band === 'meltdown';
@@ -198,6 +212,35 @@ export class Hud {
     }
   }
 
+  /**
+   * The bar glides to the real mood instead of jumping; a loss leaves a pale
+   * red trail for a moment, so the player sees how much was just lost.
+   */
+  private glideMood(mood: number, dt: number): void {
+    if (this.barMood < 0) {
+      this.barMood = this.trailMood = mood;
+      this.drawMood(mood, mood);
+      return;
+    }
+    const before = { bar: this.barMood, trail: this.trailMood };
+    if (mood < this.barMood && this.trailMood <= this.barMood) this.trailHold = MOOD_TRAIL_HOLD;
+    const step = (mood - this.barMood) * Math.min(1, dt * MOOD_GLIDE);
+    this.barMood = Math.abs(mood - this.barMood) < 0.2 ? mood : this.barMood + step;
+    if (this.trailMood < this.barMood) this.trailMood = this.barMood;
+    else if (this.trailHold > 0) this.trailHold -= dt;
+    else this.trailMood = Math.max(this.barMood, this.trailMood - MOOD_TRAIL_SPEED * dt);
+    if (before.bar !== this.barMood || before.trail !== this.trailMood) this.drawMood(this.barMood, this.trailMood);
+  }
+
+  /** Coins just landed on the score: the coin and the number give a little bounce. */
+  bumpScore(): void {
+    this.scene.tweens.killTweensOf([this.coin, this.scoreText]);
+    this.coin.setScale(1.05 / this.tex.scale);
+    this.scoreText.setScale(1.18);
+    this.scene.tweens.add({ targets: this.coin, scale: 0.78 / this.tex.scale, duration: 260, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: this.scoreText, scale: 1, duration: 260, ease: 'Back.easeOut' });
+  }
+
   /** The couple's mood band beside their names: why the bar matters, in words. */
   private syncCoupleState(): void {
     const id = this.sim.state.couple.state;
@@ -222,16 +265,36 @@ export class Hud {
   private syncChain(): void {
     const count = this.sim.state.chain.count;
     if (count === this.shownChain) return;
+    const wasShown = this.shownChain >= 2;
     this.shownChain = count;
-    const show = count >= 2;
-    this.chainPanel.setVisible(show);
-    this.chainText.setVisible(show).setText(`Chain ×${count}`);
-    if (!show) return;
-    this.scene.tweens.killTweensOf([this.chainPanel, this.chainText]);
-    this.chainPanel.setScale(1.2 / this.tex.scale);
-    this.chainText.setScale(1.25);
-    this.scene.tweens.add({ targets: this.chainPanel, scale: 1 / this.tex.scale, duration: 280, ease: 'Back.easeOut' });
-    this.scene.tweens.add({ targets: this.chainText, scale: 1, duration: 280, ease: 'Back.easeOut' });
+    const targets = [this.chainPanel, this.chainText];
+    this.scene.tweens.killTweensOf(targets);
+    if (count < 2) {
+      // The chain ended: the counter drops away rather than blinking out.
+      if (!wasShown) return;
+      this.scene.tweens.add({
+        targets,
+        alpha: 0,
+        y: `+=14`,
+        duration: 260,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          for (const t of targets) t.setVisible(false).setAlpha(1);
+          this.chainPanel.setY(CHAIN_POS.y);
+          this.chainText.setY(CHAIN_POS.y - 1);
+        },
+      });
+      return;
+    }
+    const tier = CHAIN_TIERS.find((t) => count >= t.from) ?? CHAIN_TIERS[CHAIN_TIERS.length - 1]!;
+    this.chainPanel.setVisible(true).setAlpha(1).setY(CHAIN_POS.y);
+    this.chainText.setVisible(true).setAlpha(1).setY(CHAIN_POS.y - 1).setText(`Chain ×${count}`).setColor(tier.color);
+    const punch = Math.min(1.5, 1.15 + count * 0.03);
+    this.chainPanel.setScale(punch / this.tex.scale);
+    this.chainText.setScale(punch + 0.05).setAngle(count % 2 ? -5 : 5);
+    this.scene.tweens.add({ targets: this.chainPanel, scale: 1 / this.tex.scale, duration: 320, ease: 'Back.easeOut', easeParams: [2.2] });
+    this.scene.tweens.add({ targets: this.chainText, scale: 1, angle: 0, duration: 320, ease: 'Back.easeOut', easeParams: [2.2] });
+    this.fx.sparkles({ x: CHAIN_POS.x + 80, y: CHAIN_POS.y }, Math.min(8, 2 + count), 30, tier.sparkle);
   }
 
   private syncClock(): void {
@@ -249,12 +312,13 @@ export class Hud {
     }
   }
 
-  private drawMood(mood: number): void {
+  private drawMood(mood: number, trail: number): void {
     const color = BAR_COLOR[coupleStateFor(this.sim.context.tuning, mood).id];
     const b = MOOD_BAR;
     const g = this.moodBar;
     g.clear();
     g.fillStyle(0xecdcc6, 1).fillRoundedRect(b.x, b.y, b.w, b.h, b.h / 2);
+    if (trail > mood + 0.3) g.fillStyle(0xf3a6a0, 1).fillRoundedRect(b.x, b.y, Math.max(b.h, (b.w * trail) / 100), b.h, b.h / 2);
     const w = Math.max(b.h, (b.w * mood) / 100);
     g.fillStyle(color, 1).fillRoundedRect(b.x, b.y, w, b.h, b.h / 2);
     g.fillStyle(0xffffff, 0.35).fillRoundedRect(b.x + 8, b.y + 4, Math.max(0, w - 16), 6, 3);
@@ -277,8 +341,9 @@ export class Hud {
       this.earned[i] = earned;
       star.setTexture(earned ? this.art.icon('star', 0xf2b84b) : this.art.icon('star-empty'));
       if (earned) {
-        this.scene.tweens.add({ targets: star, scale: { from: 1.8 / this.tex.scale, to: 0.8 / this.tex.scale }, angle: { from: -60, to: 0 }, duration: 420, ease: 'Back.easeOut' });
-        this.fx.sparkles({ x: star.x, y: star.y }, 8, 36, 0xfff1c4);
+        this.scene.tweens.add({ targets: star, scale: { from: 2.4 / this.tex.scale, to: 0.85 / this.tex.scale }, angle: { from: -120, to: 0 }, duration: 560, ease: 'Back.easeOut', easeParams: [2.4] });
+        this.fx.sparkles({ x: star.x, y: star.y }, 12, 54, 0xfff1c4);
+        this.fx.confetti({ x: star.x, y: star.y + 10 }, 10, 60);
       } else star.setScale(0.7 / this.tex.scale);
     });
   }

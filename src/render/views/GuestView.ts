@@ -245,6 +245,11 @@ export class GuestView {
         break;
       case 'LEAVING':
         if (g.happiness >= ANGRY_BELOW) this.fx.hearts({ x: g.pos.x, y: g.pos.y - 90 }, g.happyExit ? 5 : 3, 24);
+        // A happy goodbye: a little double hop, like a wave on the way out.
+        if (g.happyExit) {
+          this.hop(16);
+          this.scene.time.delayedCall(320, () => this.hop(10));
+        }
         break;
       case 'DANCING':
         this.hop(18);

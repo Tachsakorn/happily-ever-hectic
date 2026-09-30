@@ -189,6 +189,16 @@ the patch once Phaser ships an equivalent fix.
 (iOS requirement), suspended when the tab is hidden. The DJ disaster's `silencesMusic` effect ducks the
 music via `AudioDirector`.
 
+- Recipes live in `platform/audio/synthRecipes.ts` as data: notes of tones or band-passed noise
+  (whooshes, clinks, sparkle). Frequent small sounds get a slight random detune.
+- Everything runs through a bus: a generated-impulse reverb send, then a compressor, so busy moments
+  stay loud without clipping. The same sound twice within 30 ms plays once.
+- `play(id, { pitch })` shifts by semitones: chain links climb the scale; results stars step up.
+- `setMusicIntensity(0..1)`: `AudioDirector` maps the couple's mood band to it; the waltz speeds up
+  and a hi-hat ticks in as the couple gets stressed. The waltz is 16 bars (A A B A).
+- Chain milestones (`isChainMilestone` in `core/scoring/chain.ts`: 4, 6, 8, …) share one rule for the
+  on-screen shout and the fanfare.
+
 ## Testing
 
 `pnpm test` runs: kernel (RNG, fixed step, nav, events), guest lifecycle, seating, planner, kitchen,

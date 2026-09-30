@@ -27,7 +27,7 @@ export class FloatingTextLayer {
     }
   }
 
-  show(pos: Vec2, message: string, color: string, size = 22): void {
+  show(pos: Vec2, message: string, color: string, size = 22, hold = 900): void {
     const now = this.scene.time.now;
     // Nudge upwards if another popup appeared at the same place very recently.
     let y = pos.y;
@@ -54,11 +54,18 @@ export class FloatingTextLayer {
       targets: text,
       y: y - 46,
       alpha: 0,
-      delay: 900,
+      delay: hold,
       duration: 700,
       ease: 'Cubic.easeIn',
       onComplete: () => text.setVisible(false),
     });
+  }
+
+  /** A big celebratory word (chain milestones): larger, held longer, with a wobble. */
+  shout(pos: Vec2, message: string, color: string): void {
+    this.show(pos, message, color, 40, 1300);
+    const text = this.pool[(this.next + POOL_SIZE - 1) % POOL_SIZE] as Phaser.GameObjects.Text;
+    this.scene.tweens.add({ targets: text, angle: { from: -6, to: 6 }, yoyo: true, repeat: 3, duration: 140, delay: 260, ease: 'Sine.easeInOut' });
   }
 
   mood(pos: Vec2, delta: number, cause: string): void {

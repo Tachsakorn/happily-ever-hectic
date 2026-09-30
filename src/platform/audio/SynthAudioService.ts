@@ -1,126 +1,38 @@
-import type { AudioService, SfxId } from './AudioService';
+import type { AudioService, PlayOptions, SfxId } from './AudioService';
+import { BEAT_RELAXED, BEAT_TENSE, CHORDS, DETUNED, MELODY_A, MELODY_B, SFX } from './synthRecipes';
 
-type Note = { f: number; t: number; d: number; type?: OscillatorType; v?: number; slide?: number };
-
-const N = (name: string): number => {
-  const table: Record<string, number> = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 };
-  const m = /^([A-G])(#?)(\d)$/.exec(name);
-  if (!m) return 440;
-  const semis = (table[m[1] ?? 'A'] ?? 0) + (m[2] ? 1 : 0) + (Number(m[3]) - 4) * 12;
-  return 440 * Math.pow(2, semis / 12);
-};
-
-/** Tiny synthesized sound recipes: no audio files to load, nothing to license. */
-const SFX: Record<SfxId, Note[]> = {
-  tap: [{ f: N('A5'), t: 0, d: 0.05, type: 'triangle', v: 0.12 }],
-  pickup: [
-    { f: N('E5'), t: 0, d: 0.07, type: 'triangle', v: 0.18 },
-    { f: N('A5'), t: 0.05, d: 0.08, type: 'triangle', v: 0.16 },
-  ],
-  serve: [
-    { f: N('C5'), t: 0, d: 0.08, type: 'triangle' },
-    { f: N('E5'), t: 0.06, d: 0.08, type: 'triangle' },
-    { f: N('G5'), t: 0.12, d: 0.14, type: 'triangle' },
-  ],
-  order: [{ f: N('D5'), t: 0, d: 0.1, type: 'sine', v: 0.2 }, { f: N('F#5'), t: 0.07, d: 0.1, type: 'sine', v: 0.18 }],
-  seat: [{ f: N('G4'), t: 0, d: 0.1, type: 'sine', v: 0.22 }],
-  seatGood: [
-    { f: N('G4'), t: 0, d: 0.1, type: 'sine' },
-    { f: N('C5'), t: 0.08, d: 0.16, type: 'sine' },
-  ],
-  seatBad: [{ f: N('E4'), t: 0, d: 0.12, type: 'square', v: 0.07 }, { f: N('C4'), t: 0.1, d: 0.18, type: 'square', v: 0.07 }],
-  gift: [
-    { f: N('C6'), t: 0, d: 0.06, type: 'sine', v: 0.14 },
-    { f: N('E6'), t: 0.05, d: 0.06, type: 'sine', v: 0.14 },
-    { f: N('G6'), t: 0.1, d: 0.1, type: 'sine', v: 0.14 },
-  ],
-  dishReady: [{ f: N('B5'), t: 0, d: 0.12, type: 'sine', v: 0.16 }, { f: N('B5'), t: 0.15, d: 0.12, type: 'sine', v: 0.1 }],
-  warning: [
-    { f: N('A4'), t: 0, d: 0.14, type: 'square', v: 0.08 },
-    { f: N('E4'), t: 0.16, d: 0.14, type: 'square', v: 0.08 },
-    { f: N('A4'), t: 0.32, d: 0.14, type: 'square', v: 0.08 },
-  ],
-  fixed: [
-    { f: N('C5'), t: 0, d: 0.08, type: 'triangle' },
-    { f: N('G5'), t: 0.07, d: 0.08, type: 'triangle' },
-    { f: N('C6'), t: 0.14, d: 0.18, type: 'triangle' },
-  ],
-  failed: [{ f: N('C4'), t: 0, d: 0.35, type: 'sawtooth', v: 0.08, slide: -120 }],
-  upset: [{ f: N('D4'), t: 0, d: 0.25, type: 'square', v: 0.07, slide: -80 }],
-  moment: [
-    { f: N('C5'), t: 0, d: 0.12, type: 'triangle' },
-    { f: N('E5'), t: 0.12, d: 0.12, type: 'triangle' },
-    { f: N('G5'), t: 0.24, d: 0.12, type: 'triangle' },
-    { f: N('C6'), t: 0.36, d: 0.3, type: 'triangle' },
-  ],
-  cheer: [
-    { f: N('G5'), t: 0, d: 0.1, type: 'triangle' },
-    { f: N('C6'), t: 0.1, d: 0.1, type: 'triangle' },
-    { f: N('E6'), t: 0.2, d: 0.3, type: 'triangle' },
-  ],
-  nope: [{ f: N('C4'), t: 0, d: 0.08, type: 'square', v: 0.05 }],
-  win: [
-    { f: N('C5'), t: 0, d: 0.15, type: 'triangle' },
-    { f: N('E5'), t: 0.15, d: 0.15, type: 'triangle' },
-    { f: N('G5'), t: 0.3, d: 0.15, type: 'triangle' },
-    { f: N('C6'), t: 0.45, d: 0.5, type: 'triangle' },
-    { f: N('G5'), t: 0.45, d: 0.5, type: 'sine', v: 0.1 },
-  ],
-  lose: [
-    { f: N('G4'), t: 0, d: 0.3, type: 'triangle' },
-    { f: N('E4'), t: 0.3, d: 0.3, type: 'triangle' },
-    { f: N('C4'), t: 0.6, d: 0.6, type: 'triangle' },
-  ],
-  coin: [{ f: N('B5'), t: 0, d: 0.06, type: 'square', v: 0.07 }, { f: N('E6'), t: 0.06, d: 0.16, type: 'square', v: 0.07 }],
-  star: [
-    { f: N('E6'), t: 0, d: 0.09, type: 'triangle', v: 0.12 },
-    { f: N('B6'), t: 0.07, d: 0.22, type: 'sine', v: 0.1 },
-  ],
-  whoosh: [{ f: N('C5'), t: 0, d: 0.22, type: 'sine', v: 0.05, slide: 500 }],
-  pop: [{ f: N('A5'), t: 0, d: 0.05, type: 'sine', v: 0.09, slide: 300 }],
-  // A twinkly rising arpeggio: something magical just appeared.
-  secret: [
-    { f: N('E6'), t: 0, d: 0.1, type: 'sine', v: 0.09 },
-    { f: N('G6'), t: 0.08, d: 0.1, type: 'sine', v: 0.09 },
-    { f: N('B6'), t: 0.16, d: 0.1, type: 'sine', v: 0.09 },
-    { f: N('E7'), t: 0.24, d: 0.3, type: 'sine', v: 0.08 },
-  ],
-  achievement: [
-    { f: N('G5'), t: 0, d: 0.1, type: 'triangle' },
-    { f: N('C6'), t: 0.1, d: 0.1, type: 'triangle' },
-    { f: N('E6'), t: 0.2, d: 0.1, type: 'triangle' },
-    { f: N('G6'), t: 0.3, d: 0.4, type: 'triangle' },
-    { f: N('C6'), t: 0.3, d: 0.4, type: 'sine', v: 0.1 },
-  ],
-};
-
-/** A gentle waltz (3/4) over I–vi–IV–V: melody on beat one, chord on two and three. */
-const CHORDS = [
-  [N('C4'), N('E4'), N('G4')],
-  [N('A3'), N('C4'), N('E4')],
-  [N('F3'), N('A3'), N('C4')],
-  [N('G3'), N('B3'), N('D4')],
-];
-const MELODY = ['E5', 'G5', 'C6', 'A5', 'C5', 'E5', 'F5', 'A5', 'C6', 'B4', 'D5', 'G5'].map(N);
-const BEAT = 0.42;
 const LOOKAHEAD = 0.6;
+/** The same sound twice within this many seconds plays once (e.g. ten guests cheering in one frame). */
+const REPEAT_GUARD_S = 0.03;
+const DETUNE_SEMITONES = 0.35;
+/** Band-passing white noise throws most of its energy away; this brings noise notes up to the level of tones. */
+const NOISE_MAKEUP = 4;
+const REVERB_SECONDS = 1.5;
+const REVERB_SEND = 0.16;
+/** Phrase order: A, A, B, A — sixteen bars before the waltz repeats. */
+const PHRASES = [MELODY_A, MELODY_A, MELODY_B, MELODY_A];
 
 /**
  * WebAudio synth. One AudioContext for the session, created lazily and
- * resumed on the first user gesture (iOS requirement). The music scheduler
- * is a single interval that exists only while music plays.
+ * resumed on the first user gesture (iOS requirement). Everything goes
+ * through a small bus: a touch of synthetic room reverb, then a compressor so
+ * busy moments stay loud but never clip. The music scheduler is a single
+ * interval that exists only while music plays.
  */
 export class SynthAudioService implements AudioService {
   private ctx: AudioContext | null = null;
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
+  private noise: AudioBuffer | null = null;
   private musicEnabled = true;
   private sfxEnabled = true;
   private musicWanted = false;
   private ducked = false;
+  private intensity = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private nextBeatTime = 0;
   private beat = 0;
+  private readonly lastPlayed = new Map<SfxId, number>();
   private readonly onVisibility = () => {
     if (!this.ctx) return;
     if (document.hidden) void this.ctx.suspend();
@@ -135,22 +47,35 @@ export class SynthAudioService implements AudioService {
     if (!this.ctx) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
-      this.ctx = new Ctor();
-      this.sfxGain = this.ctx.createGain();
+      const ctx = new Ctor();
+      this.ctx = ctx;
+      const bus = this.buildBus(ctx);
+      this.sfxGain = ctx.createGain();
       this.sfxGain.gain.value = this.sfxEnabled ? 0.9 : 0;
-      this.sfxGain.connect(this.ctx.destination);
-      this.musicGain = this.ctx.createGain();
+      this.sfxGain.connect(bus);
+      this.musicGain = ctx.createGain();
       this.musicGain.gain.value = this.targetMusicVolume();
-      this.musicGain.connect(this.ctx.destination);
+      this.musicGain.connect(bus);
+      this.noise = this.makeNoise(ctx, 1);
     }
     if (this.ctx.state !== 'running') void this.ctx.resume();
     this.updateScheduler();
   }
 
-  play(id: SfxId): void {
-    if (!this.ctx || !this.sfxGain || !this.sfxEnabled) return;
-    const now = this.ctx.currentTime;
-    for (const n of SFX[id]) this.tone(n.f, now + n.t, n.d, n.type ?? 'triangle', n.v ?? 0.2, this.sfxGain, n.slide);
+  play(id: SfxId, opts: PlayOptions = {}): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.sfxGain || !this.sfxEnabled) return;
+    const now = ctx.currentTime;
+    if (now - (this.lastPlayed.get(id) ?? -1) < REPEAT_GUARD_S) return;
+    this.lastPlayed.set(id, now);
+    const detune = DETUNED.has(id) ? (Math.random() * 2 - 1) * DETUNE_SEMITONES : 0;
+    const ratio = Math.pow(2, ((opts.pitch ?? 0) + detune) / 12);
+    for (const n of SFX[id]) {
+      const type = n.type ?? 'triangle';
+      const volume = n.v ?? 0.2;
+      if (type === 'noise') this.noiseBurst(n.f * ratio, now + n.t, n.d, volume, n.slide ?? 0, n.q ?? 1);
+      else this.tone(n.f * ratio, now + n.t, n.d, type, volume, this.sfxGain, (n.slide ?? 0) * ratio);
+    }
   }
 
   setMusicPlaying(playing: boolean): void {
@@ -162,6 +87,10 @@ export class SynthAudioService implements AudioService {
     if (ducked === this.ducked) return;
     this.ducked = ducked;
     this.applyMusicVolume();
+  }
+
+  setMusicIntensity(level: number): void {
+    this.intensity = Math.max(0, Math.min(1, level));
   }
 
   setMusicEnabled(enabled: boolean): void {
@@ -181,6 +110,43 @@ export class SynthAudioService implements AudioService {
     this.timer = null;
     void this.ctx?.close();
     this.ctx = null;
+  }
+
+  /** dry + reverb → compressor → speakers. Returns the node sources connect to. */
+  private buildBus(ctx: AudioContext): AudioNode {
+    const input = ctx.createGain();
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 12;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.004;
+    comp.release.value = 0.18;
+    comp.connect(ctx.destination);
+    input.connect(comp);
+    const send = ctx.createGain();
+    send.gain.value = REVERB_SEND;
+    const reverb = ctx.createConvolver();
+    reverb.buffer = this.makeImpulse(ctx, REVERB_SECONDS);
+    input.connect(send).connect(reverb).connect(comp);
+    return input;
+  }
+
+  /** A decaying stereo noise tail: a soft, roomy reverb without loading an impulse file. */
+  private makeImpulse(ctx: AudioContext, seconds: number): AudioBuffer {
+    const length = Math.floor(ctx.sampleRate * seconds);
+    const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const data = buffer.getChannelData(c);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+    }
+    return buffer;
+  }
+
+  private makeNoise(ctx: AudioContext, seconds: number): AudioBuffer {
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    return buffer;
   }
 
   private targetMusicVolume(): number {
@@ -206,22 +172,33 @@ export class SynthAudioService implements AudioService {
     const ctx = this.ctx;
     const out = this.musicGain;
     if (!ctx || !out) return;
+    // If the tab was asleep, skip ahead rather than playing a burst of missed beats.
+    if (this.nextBeatTime < ctx.currentTime) this.nextBeatTime = ctx.currentTime + 0.05;
     while (this.nextBeatTime < ctx.currentTime + LOOKAHEAD) {
+      const beatLength = BEAT_RELAXED + (BEAT_TENSE - BEAT_RELAXED) * this.intensity;
       const bar = Math.floor(this.beat / 3);
       const beatInBar = this.beat % 3;
       const chord = CHORDS[bar % CHORDS.length] ?? CHORDS[0]!;
+      const melody = PHRASES[Math.floor(bar / CHORDS.length) % PHRASES.length] ?? MELODY_A;
+      const at = this.nextBeatTime;
       if (beatInBar === 0) {
-        this.tone((chord[0] ?? 220) / 2, this.nextBeatTime, BEAT * 0.9, 'sine', 0.35, out);
-        const m = MELODY[(bar * 3) % MELODY.length] ?? MELODY[0]!;
-        this.tone(m, this.nextBeatTime, BEAT * 1.6, 'triangle', 0.22, out);
+        this.tone((chord[0] ?? 220) / 2, at, beatLength * 0.9, 'sine', 0.35, out);
+        const m = melody[(bar * 3) % melody.length] ?? melody[0]!;
+        this.tone(m, at, beatLength * 1.6, 'triangle', 0.22, out);
       } else {
-        for (const f of chord) this.tone(f, this.nextBeatTime, BEAT * 0.5, 'sine', 0.08, out);
+        for (const f of chord) this.tone(f, at, beatLength * 0.5, 'sine', 0.08, out);
         if (beatInBar === 2 && bar % 2 === 1) {
-          const m = MELODY[(bar * 3 + 2) % MELODY.length] ?? MELODY[0]!;
-          this.tone(m, this.nextBeatTime, BEAT * 0.8, 'triangle', 0.15, out);
+          const m = melody[(bar * 3 + 2) % melody.length] ?? melody[0]!;
+          this.tone(m, at, beatLength * 0.8, 'triangle', 0.15, out);
         }
       }
-      this.nextBeatTime += BEAT;
+      // Under stress a ticking hi-hat creeps in: the room feels the pressure.
+      if (this.intensity > 0.3) {
+        const v = 0.05 * this.intensity;
+        this.noiseBurst(8000, at, 0.04, v, 0, 3, out);
+        if (this.intensity > 0.7) this.noiseBurst(8000, at + beatLength / 2, 0.03, v * 0.6, 0, 3, out);
+      }
+      this.nextBeatTime += beatLength;
       this.beat++;
     }
   }
@@ -242,6 +219,31 @@ export class SynthAudioService implements AudioService {
     osc.stop(at + dur + 0.02);
     osc.onended = () => {
       osc.disconnect();
+      gain.disconnect();
+    };
+  }
+
+  /** Band-passed noise: whooshes (with a sweep), clinks (narrow) and sparkle (high). */
+  private noiseBurst(freq: number, at: number, dur: number, volume: number, slide: number, q: number, out: AudioNode | null = this.sfxGain): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.noise || !out) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = q;
+    filter.frequency.setValueAtTime(Math.max(40, freq), at);
+    if (slide) filter.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), at + dur);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(volume * NOISE_MAKEUP, at + Math.min(0.03, dur / 3));
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    src.connect(filter).connect(gain).connect(out);
+    // Start somewhere random in the buffer so bursts don't all sound identical.
+    src.start(at, Math.random() * 0.5, dur + 0.02);
+    src.onended = () => {
+      src.disconnect();
+      filter.disconnect();
       gain.disconnect();
     };
   }

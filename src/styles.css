@@ -2101,6 +2101,54 @@ html.is-oversized body {
   }
 }
 
+/* A ring of light that bursts behind each star as it lands. */
+.result-star__burst {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(255, 241, 196, 0) 38%, rgba(255, 241, 196, 0.95) 46%, rgba(242, 184, 75, 0.55) 56%, rgba(242, 184, 75, 0) 68%),
+    repeating-conic-gradient(rgba(255, 236, 170, 0.7) 0deg 10deg, rgba(255, 236, 170, 0) 10deg 30deg);
+  -webkit-mask: radial-gradient(circle, #000 55%, transparent 72%);
+  mask: radial-gradient(circle, #000 55%, transparent 72%);
+  opacity: 0;
+  animation: star-burst 620ms ease-out both;
+}
+
+@keyframes star-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1) rotate(40deg);
+  }
+}
+
+.results__score.is-done {
+  animation: score-pop 360ms cubic-bezier(0.2, 1.8, 0.4, 1);
+}
+
+@keyframes score-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .results__score {
   font-size: clamp(56px, calc(7 * var(--vw)), 84px);
   line-height: 1;

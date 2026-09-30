@@ -54,7 +54,7 @@ const app = new GameApp({
   saves: new LocalStorageSaveService(),
   audio,
   host,
-  screens: new ScreenStack(uiLayer, requireElement('curtain')),
+  screens: new ScreenStack(uiLayer, requireElement('curtain'), () => audio.play('curtain')),
 });
 app.start();
 // Debug handle for automated smoke tests (?debug in the URL). Not used by the game itself.

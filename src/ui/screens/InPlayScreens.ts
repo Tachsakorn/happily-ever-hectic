@@ -4,7 +4,7 @@ import { DomScreen } from '../Screen';
 import { button, countUp, h } from '../dom';
 import { backdrop, itemIcon, medal, uiIcon } from '../paint';
 import type { UiIcon } from '../../art/props';
-import { coinBadge, ribbon, settingsToggles, starCanvas, type SettingsVM, type UiCue } from './common';
+import { coinBadge, ribbon, settingsToggles, starCanvas, type CueFn, type SettingsVM } from './common';
 
 /** In-play overlay: just the pause button (the HUD itself is drawn in the game canvas). */
 export class PlayingScreen extends DomScreen {
@@ -94,15 +94,22 @@ export interface ResultsVM {
   readonly failure: { readonly reasons: readonly string[]; readonly tip: string } | null;
 }
 
-const STAR_START_MS = 700;
-const STAR_STEP_MS = 420;
-const SCORE_COUNT_MS = 1100;
+const SCORE_START_MS = 250;
+const SCORE_COUNT_MS = 950;
+/** Ticks while the score counts up, climbing in pitch. */
+const SCORE_TICKS = 10;
+const SCORE_TICK_CLIMB = 7;
+/** Stars land one by one once the score has finished counting, each a step higher. */
+const STAR_START_MS = SCORE_START_MS + SCORE_COUNT_MS + 100;
+const STAR_STEP_MS = 380;
+const STAR_PITCH_STEP = 3;
+const THUMP_MS = 200;
 
 /** The wedding report: stars, score, and — most importantly — what made the couple happy or stressed. */
 export class ResultsScreen extends DomScreen {
   constructor(
     private readonly vm: ResultsVM,
-    private readonly actions: { retry: () => void; next: () => void; map: () => void; cue?: (cue: UiCue) => void },
+    private readonly actions: { retry: () => void; next: () => void; map: () => void; cue?: CueFn },
   ) {
     super();
   }
@@ -126,20 +133,37 @@ export class ResultsScreen extends DomScreen {
     const heading = this.heading();
     const celebrate = vm.success && vm.stars > 0;
 
+    // The panel gives a little thump each time a star slams down.
+    let mainPanel: HTMLElement | null = null;
+    // Web Animations rather than a class, so the panel's own pop-in animation is never restarted.
+    const thump = () =>
+      mainPanel?.animate?.([{ translate: '0 0' }, { translate: '0 5px', offset: 0.35 }, { translate: '0 0' }], { duration: THUMP_MS, easing: 'ease-out' });
     const stars = [0, 1, 2].map((i) => {
       const slot = h('span', { class: `result-star result-star--${i}` }, starCanvas(false, i === 1 ? 104 : 84));
       if (i < vm.stars) {
+        const at = STAR_START_MS + i * STAR_STEP_MS;
         const on = starCanvas(true, i === 1 ? 104 : 84);
         on.classList.add('result-star__on');
-        on.style.animationDelay = `${STAR_START_MS + i * STAR_STEP_MS}ms`;
-        slot.append(on);
-        this.disposer.timeout(() => cue('star'), STAR_START_MS + i * STAR_STEP_MS + 120);
+        on.style.animationDelay = `${at}ms`;
+        const burst = h('span', { class: 'result-star__burst', 'aria-hidden': 'true' });
+        burst.style.animationDelay = `${at + 200}ms`;
+        slot.append(burst, on);
+        this.disposer.timeout(() => {
+          cue('star', i * STAR_PITCH_STEP);
+          thump();
+        }, at + 200);
       }
       return slot;
     });
 
     const score = h('div', { class: 'results__score display', text: '0' });
-    this.disposer.timeout(() => countUp(score, vm.score, SCORE_COUNT_MS, this.disposer), 250);
+    if (!vm.failure && vm.score > 0) {
+      this.disposer.timeout(() => countUp(score, vm.score, SCORE_COUNT_MS, this.disposer), SCORE_START_MS);
+      for (let i = 0; i < SCORE_TICKS; i++) {
+        this.disposer.timeout(() => cue('coinTick', (i / (SCORE_TICKS - 1)) * SCORE_TICK_CLIMB), SCORE_START_MS + (i * SCORE_COUNT_MS) / SCORE_TICKS);
+      }
+      this.disposer.timeout(() => score.classList.add('is-done'), SCORE_START_MS + SCORE_COUNT_MS);
+    }
     const afterStars = STAR_START_MS + Math.max(1, vm.stars) * STAR_STEP_MS + 200;
     if (vm.coinsEarned) this.disposer.timeout(() => cue('coin'), afterStars);
     if (celebrate) this.disposer.timeout(() => cue('cheer'), afterStars + 250);
@@ -149,7 +173,7 @@ export class ResultsScreen extends DomScreen {
     const moodTone = vm.finalMood > 60 ? 'good' : vm.finalMood > 30 ? 'warn' : 'bad';
 
     const next = vm.hasNext && vm.stars > 0;
-    return h(
+    const root = h(
       'div',
       { class: `screen results-screen${celebrate ? ' is-celebrating' : ''}` },
       backdrop((w, hgt) => paintMenuBackdrop(w, hgt, { archAt: celebrate ? 0.5 : undefined, seed: 41 }), this.disposer),
@@ -210,6 +234,8 @@ export class ResultsScreen extends DomScreen {
         ),
       ),
     );
+    mainPanel = root.querySelector<HTMLElement>('.results__main');
+    return root;
   }
 
   /** Why the wedding was lost: the reasons in order of damage, then one thing to try next time. */

@@ -27,3 +27,11 @@ export function extendChain(ctx: SimContext, key: string, pos: Vec2 | null): voi
   ctx.state.stats.bestChain = Math.max(ctx.state.stats.bestChain, 1);
   ctx.events.emit({ type: 'chainChanged', key, count: 1, bonus: 0, broken, pos });
 }
+
+/** Chain lengths worth a celebration (a word on screen and a fanfare): 4, 6, 8, … */
+export const CHAIN_MILESTONE_FROM = 4;
+export const CHAIN_MILESTONE_EVERY = 2;
+
+export function isChainMilestone(count: number): boolean {
+  return count >= CHAIN_MILESTONE_FROM && (count - CHAIN_MILESTONE_FROM) % CHAIN_MILESTONE_EVERY === 0;
+}

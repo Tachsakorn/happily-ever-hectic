@@ -26,6 +26,7 @@ import { KitchenView } from '../views/KitchenView';
 import { RescueButton } from '../views/RescueButton';
 import { Fx } from '../fx/Fx';
 import { servedItem, stationItem } from '../../core/sim/items';
+import { CHAIN_MILESTONE_EVERY, CHAIN_MILESTONE_FROM, isChainMilestone } from '../../core/scoring/chain';
 
 export interface ReceptionSceneData {
   readonly session: ReceptionSession;
@@ -50,6 +51,13 @@ const STATE_WARNINGS: Partial<Record<CoupleStateId, string>> = {
   meltdown: 'Meltdown incoming! Help the couple, fast!',
 };
 const STATE_RANK: Record<CoupleStateId, number> = { blissful: 0, happy: 1, worried: 2, stressed: 3, meltdown: 4 };
+/** Words for chain milestones, in order; the last one repeats for ever-longer chains. */
+const CHAIN_SHOUTS = ['Nice chain!', 'Great chain!', 'Amazing!', 'Unstoppable!', 'Wedding pro!'];
+const CHAIN_SHOUT_COLORS = ['#c98a22', '#d2557a', '#d2557a', '#7a5bb5', '#7a5bb5'];
+/** A happy ending: the camera eases in towards the couple while the confetti falls. */
+const WIN_PUSH_ZOOM = 1.07;
+const WIN_PUSH_TOWARDS = 0.3;
+const WIN_PUSH_MS = 1500;
 
 /**
  * Presents one reception. Owns only view objects: every rule lives in the
@@ -296,7 +304,8 @@ export class ReceptionScene extends Phaser.Scene {
         break;
       case 'chainChanged':
         if (e.count >= 2 && e.pos) {
-          this.floating.show({ x: e.pos.x, y: e.pos.y - 150 }, `×${e.count} Chain!`, '#c98a22', 20 + Math.min(10, e.count * 2));
+          if (isChainMilestone(e.count)) this.chainMilestone(e.pos, e.count);
+          else this.floating.show({ x: e.pos.x, y: e.pos.y - 150 }, `×${e.count} Chain!`, '#c98a22', 20 + Math.min(10, e.count * 2));
           this.fx.sparkles({ x: e.pos.x, y: e.pos.y - 120 }, 4 + Math.min(6, e.count), 40, 0xf2b84b);
         }
         break;
@@ -375,6 +384,7 @@ export class ReceptionScene extends Phaser.Scene {
           this.banner.show('What a wedding! The reception is over.', 'good', 3, true);
           this.fx.rain(venue.size.width, 80);
           this.couple.celebrate();
+          this.pushInTowards(venue.couplePos);
         } else {
           this.couple.bridezilla();
           this.showBridezilla();
@@ -438,6 +448,26 @@ export class ReceptionScene extends Phaser.Scene {
     this.time.delayedCall(700, () => this.cameras.main.shake(600, 0.012));
   }
 
+  /** A big word, a burst of confetti and hearts: a long chain deserves a moment. */
+  private chainMilestone(pos: Vec2, count: number): void {
+    const index = Math.min(CHAIN_SHOUTS.length - 1, (count - CHAIN_MILESTONE_FROM) / CHAIN_MILESTONE_EVERY);
+    const at = { x: Math.min(1180, Math.max(220, pos.x)), y: Math.max(230, pos.y - 190) };
+    this.floating.shout(at, `${CHAIN_SHOUTS[index]} ×${count}`, CHAIN_SHOUT_COLORS[index] ?? '#c98a22');
+    this.fx.confetti({ x: at.x, y: at.y + 20 }, 18 + index * 4, 120);
+    this.fx.hearts({ x: at.x, y: at.y + 30 }, 3, 90);
+    this.planner.cheer();
+  }
+
+  /** Eases the camera a little way in towards `target`; a resize snaps it back to the fitted view. */
+  private pushInTowards(target: Vec2): void {
+    const cam = this.cameras.main;
+    const { width, height } = this.sceneData.session.sim.context.venue.def.size;
+    const x = width / 2 + (target.x - width / 2) * WIN_PUSH_TOWARDS;
+    const y = height / 2 + (target.y - height / 2) * WIN_PUSH_TOWARDS;
+    cam.pan(x, y, WIN_PUSH_MS, 'Sine.easeInOut');
+    cam.zoomTo(cam.zoom * WIN_PUSH_ZOOM, WIN_PUSH_MS, 'Sine.easeInOut');
+  }
+
   /** A few coins arc from where points were earned to the score counter. */
   private coinsToHud(from: Vec2, points: number): void {
     const count = Math.min(5, Math.max(1, Math.round(points / 40)));
@@ -448,7 +478,10 @@ export class ReceptionScene extends Phaser.Scene {
         scale: 0.6,
         duration: 560,
         delay: i * 70,
-        onArrive: i === count - 1 ? () => this.fx.sparkles(to, 5, 26, 0xfff1c4) : undefined,
+        onArrive: () => {
+          this.hud.bumpScore();
+          if (i === count - 1) this.fx.sparkles(to, 5, 26, 0xfff1c4);
+        },
       });
     }
   }

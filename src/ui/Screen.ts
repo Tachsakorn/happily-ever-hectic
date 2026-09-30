@@ -43,6 +43,8 @@ export class ScreenStack {
   constructor(
     private readonly root: HTMLElement,
     private readonly curtain: HTMLElement | null = null,
+    /** Called as the curtain starts to close (the app plays a soft swish). */
+    private readonly onCurtain: () => void = () => {},
   ) {}
 
   show(screen: Screen | null, transition: ScreenTransition = 'cut'): void {
@@ -59,6 +61,7 @@ export class ScreenStack {
     this.pending = screen;
     this.closing = true;
     curtain.classList.add('is-closed');
+    this.onCurtain();
     setTimeout(() => {
       this.closing = false;
       this.swap(this.pending);

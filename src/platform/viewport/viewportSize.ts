@@ -21,6 +21,8 @@ export interface ViewportReadings {
   readonly client: { width: number; height: number };
   /** The device screen as reported (iPad reports it in portrait whatever the rotation). */
   readonly screen: { width: number; height: number };
+  /** A `100lvw × 100lvh` box: the largest the viewport gets (toolbars hidden), measured by CSS itself. */
+  readonly large: { width: number; height: number } | null;
   /** Running as a home-screen app: no browser toolbars, the whole window is ours. */
   readonly standalone: boolean;
 }
@@ -38,8 +40,8 @@ const FULL_SCREEN_SLACK = 2;
 export function pickViewport(r: ViewportReadings): VisibleViewport {
   const base = r.visual && r.visual.width > 0 && r.visual.height > 0 ? r.visual : { ...r.inner, left: 0, top: 0 };
   if (!r.standalone) return { width: Math.round(base.width), height: Math.round(base.height), left: Math.round(base.left), top: Math.round(base.top) };
-  let width = Math.max(base.width, r.inner.width, r.client.width);
-  let height = Math.max(base.height, r.inner.height, r.client.height);
+  let width = Math.max(base.width, r.inner.width, r.client.width, r.large?.width ?? 0);
+  let height = Math.max(base.height, r.inner.height, r.client.height, r.large?.height ?? 0);
   const long = Math.max(r.screen.width, r.screen.height);
   const short = Math.min(r.screen.width, r.screen.height);
   const [screenW, screenH] = width >= height ? [long, short] : [short, long];
@@ -57,19 +59,63 @@ function isStandalone(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
 }
 
-export function visibleViewport(): VisibleViewport {
+let probe: HTMLElement | null = null;
+
+/** A hidden box sized by CSS to the large viewport; kept in the page so reading it is cheap. */
+function largeViewport(): { width: number; height: number } | null {
+  if (!document.body) return null;
+  if (!probe) {
+    probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;visibility:hidden;pointer-events:none;z-index:-1';
+    // Large-viewport units where supported (iOS 15.4+); the vw/vh above are the fallback.
+    probe.style.width = '100lvw';
+    probe.style.height = '100lvh';
+    document.body.appendChild(probe);
+  }
+  const r = probe.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? { width: r.width, height: r.height } : null;
+}
+
+export function viewportReadings(): ViewportReadings {
   const vv = window.visualViewport;
-  return pickViewport({
+  return {
     visual: vv ? { width: vv.width, height: vv.height, left: vv.offsetLeft, top: vv.offsetTop } : null,
     inner: { width: window.innerWidth, height: window.innerHeight },
     client: { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
     screen: { width: window.screen.width, height: window.screen.height },
+    large: largeViewport(),
     standalone: isStandalone(),
-  });
+  };
+}
+
+export function visibleViewport(): VisibleViewport {
+  return pickViewport(viewportReadings());
+}
+
+/** Everything measured, in one line, for the test-tools panel (diagnosing a device we can't hold). */
+export function viewportReport(): string {
+  const r = viewportReadings();
+  const v = pickViewport(r);
+  const box = document.getElementById('app')?.getBoundingClientRect();
+  const f = (o: { width: number; height: number } | null) => (o ? `${Math.round(o.width)}×${Math.round(o.height)}` : '–');
+  return [
+    `used ${v.width}×${v.height}`,
+    `app ${box ? f(box) : '–'}`,
+    `visual ${f(r.visual)}`,
+    `inner ${f(r.inner)}`,
+    `client ${f(r.client)}`,
+    `large ${f(r.large)}`,
+    `screen ${f(r.screen)}`,
+    `dpr ${window.devicePixelRatio}`,
+    r.standalone ? 'home-screen app' : 'browser',
+  ].join(' · ');
 }
 
 /** iOS settles its new size some time after the resize event; check again at these delays (ms). */
 const SETTLE_CHECKS_MS = [60, 250, 600, 1200];
+/** A light safety net: re-measure (a few property reads) once a second; resize only on change. */
+const POLL_MS = 1000;
 
 /**
  * Keeps `box` exactly covering the visible viewport and calls `onChange`
@@ -97,6 +143,12 @@ export function installViewportSize(box: HTMLElement, onChange: (v: VisibleViewp
     for (const ms of SETTLE_CHECKS_MS) timers.push(window.setTimeout(apply, ms));
   };
   apply();
+  // iOS can also settle its size after launch without any event (seen as a bare strip
+  // along the bottom of the home-screen app), so check again then, and every second after.
+  schedule();
+  const poll = window.setInterval(() => {
+    if (document.visibilityState === 'visible') apply();
+  }, POLL_MS);
   window.addEventListener('resize', schedule);
   window.addEventListener('orientationchange', schedule);
   window.visualViewport?.addEventListener('resize', schedule);
@@ -105,6 +157,7 @@ export function installViewportSize(box: HTMLElement, onChange: (v: VisibleViewp
   document.addEventListener('visibilitychange', schedule);
   return () => {
     for (const t of timers.splice(0)) clearTimeout(t);
+    clearInterval(poll);
     window.removeEventListener('resize', schedule);
     window.removeEventListener('orientationchange', schedule);
     window.visualViewport?.removeEventListener('resize', schedule);

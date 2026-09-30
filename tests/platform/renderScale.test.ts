@@ -46,6 +46,7 @@ describe('visible viewport', () => {
     inner: { width: 1180, height: 796 },
     client: { width: 1180, height: 796 },
     screen: { width: 820, height: 1180 },
+    large: null,
     standalone: false,
     ...over,
   });
@@ -56,6 +57,15 @@ describe('visible viewport', () => {
 
   it('as a home-screen app filling the screen, covers the whole screen (no strip under a translucent status bar)', () => {
     expect(pickViewport(readings({ standalone: true }))).toEqual({ width: 1180, height: 820, left: 0, top: 0 });
+  });
+
+  it('as a home-screen app, a taller large-viewport box wins even if the screen is reported oddly', () => {
+    const odd = readings({ standalone: true, screen: { width: 0, height: 0 }, large: { width: 1194, height: 834 }, visual: { width: 1194, height: 810, left: 0, top: 0 }, inner: { width: 1194, height: 810 }, client: { width: 1194, height: 810 } });
+    expect(pickViewport(odd)).toEqual({ width: 1194, height: 834, left: 0, top: 0 });
+  });
+
+  it('in the browser, the large viewport is ignored (it would reach under the toolbars)', () => {
+    expect(pickViewport(readings({ large: { width: 1180, height: 820 } })).height).toBe(796);
   });
 
   it('as a home-screen app in Split View, keeps the window size', () => {

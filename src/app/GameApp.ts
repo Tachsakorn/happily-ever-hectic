@@ -20,6 +20,7 @@ import { AppFlow, AppState, type AppStateId, type StateChange } from './AppFlow'
 import { AudioDirector } from './AudioDirector';
 import type { SettingsVM, UiCue } from '../ui/screens/common';
 import type { Cheat } from '../core/sim/cheats';
+import { viewportReport } from '../platform/viewport/viewportSize';
 import { achievementsVM, decorLook, dialogueVM, levelCards, menuVM, nextLevelId, planNote, prepVM, resultsVM, shopItems } from './viewModels';
 import { defaultPlan, type Plan } from '../core/progression/plan';
 
@@ -138,6 +139,7 @@ export class GameApp {
         shop: shopItems(content, this.save),
         achievements: achievementsVM(content, this.save),
         testTools: this.save.settings.testTools,
+        screenInfo: viewportReport,
       },
       {
         pick: (levelId) => this.go(AppState.WEDDING_PREPARATION, { levelId }),

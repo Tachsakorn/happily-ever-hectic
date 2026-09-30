@@ -2404,6 +2404,17 @@ body {
   width: 100%;
 }
 
+.test-tools__screen {
+  margin: 4px 0 0;
+  max-width: 400px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  text-align: center;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 .test-row {
   display: flex;
   flex-wrap: wrap;

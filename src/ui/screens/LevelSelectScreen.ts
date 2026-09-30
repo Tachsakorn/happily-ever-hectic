@@ -37,6 +37,8 @@ interface MapVM {
   readonly shop: readonly ShopItemVM[];
   readonly achievements: AchievementsVM;
   readonly testTools?: boolean;
+  /** Test tools: a one-line report of how the screen was measured (for device troubleshooting). */
+  readonly screenInfo?: () => string;
 }
 
 /** What a purchase changes on the map. */
@@ -222,6 +224,7 @@ export class LevelSelectScreen extends DomScreen {
         button('Unlock every wedding', () => test('unlockAll'), this.disposer, { tone: 'go', icon: uiIcon('map', 0xe86f8e, 30) }),
         button('+500 coins', () => test('coins'), this.disposer, { tone: 'gold', icon: itemIcon('coin', 0xf2b84b, 30) }),
         reset,
+        this.vm.screenInfo ? h('p', { class: 'test-tools__screen', text: this.vm.screenInfo() }) : null,
       ),
     );
   }

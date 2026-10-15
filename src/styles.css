@@ -799,8 +799,30 @@ html.is-oversized body {
   margin-top: calc(-3 * var(--vh));
 }
 
-.menu__column .toggles {
+.menu__tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
   margin-top: 8px;
+}
+
+.menu__news {
+  position: relative;
+}
+
+/* A small red dot on "What's new" while there is something unread. */
+.new-dot {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: var(--line) solid var(--ink);
+  background: var(--rose);
+  animation: pop-in 480ms 1.6s cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
 
 .menu__play {
@@ -2512,4 +2534,88 @@ html.is-oversized body {
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
+}
+
+/* ---------- Update log ---------- */
+
+.updates {
+  width: min(680px, calc(94 * var(--vw)));
+  max-height: calc(86 * var(--vh));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 34px 22px 22px;
+}
+
+.update-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px 4px 12px;
+}
+
+.update {
+  padding: 14px 18px 16px;
+  border: 2.5px solid var(--ink);
+  border-radius: 22px;
+  background: #fff;
+}
+
+.update.is-new {
+  background: #fde3ea;
+}
+
+.update__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.update__version {
+  padding: 2px 10px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper-deep);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.update__title {
+  flex: 1;
+  margin: 0;
+  font-size: 24px;
+}
+
+.update__new {
+  padding: 2px 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--rose);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.update__date {
+  display: block;
+  margin: 2px 0 6px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.update__notes {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.update__notes li + li {
+  margin-top: 6px;
 }

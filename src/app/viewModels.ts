@@ -14,6 +14,8 @@ import type { DialogueLineVM } from '../ui/screens/DialogueScreen';
 import type { MainMenuVM } from '../ui/screens/MainMenuScreen';
 import type { LevelCardVM, ShopItemVM } from '../ui/screens/LevelSelectScreen';
 import type { PrepVM } from '../ui/screens/PrepScreen';
+import { CHANGELOG, type ChangelogEntry } from '../data/changelog';
+import type { UpdateVM } from '../ui/screens/UpdatesPanel';
 import type { ResultsVM } from '../ui/screens/InPlayScreens';
 import type { AchievementVM } from '../ui/screens/AchievementsPanel';
 import { achievementProgress } from '../core/progression/achievements';
@@ -210,6 +212,25 @@ export function resultsVM(
 }
 
 /** The couple on the title screen: the final wedding's couple (the players themselves, in a personal pack). */
+/** Update-log entries for the title screen; those newer than what the player last read are flagged. */
+export function updatesVM(save: SaveData, log: readonly ChangelogEntry[] = CHANGELOG): UpdateVM[] {
+  const readUpTo = log.findIndex((e) => e.version === save.lastSeenUpdate);
+  // Never opened (or an unknown version): only the newest entry is flagged, not the whole history.
+  const newCount = readUpTo >= 0 ? readUpTo : Math.min(1, log.length);
+  return log.map((e, i) => ({
+    version: e.version,
+    title: e.title,
+    date: formatLogDate(e.date),
+    notes: e.notes,
+    isNew: i < newCount,
+  }));
+}
+
+function formatLogDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y!, m! - 1, d!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export function menuVM(content: ContentRegistry, save: SaveData): MainMenuVM {
   const finalId = content.info.finalLevelId;
   const level = finalId && content.levels.has(finalId) ? content.levels.get(finalId) : content.orderedLevels()[0];
@@ -221,6 +242,7 @@ export function menuVM(content: ContentRegistry, save: SaveData): MainMenuVM {
     testTools: save.settings.testTools,
     couple: wedding ? [characterLook(wedding.partnerA), characterLook(wedding.partnerB)] : null,
     coupleNames: wedding?.title ?? '',
+    updates: updatesVM(save),
   };
 }
 

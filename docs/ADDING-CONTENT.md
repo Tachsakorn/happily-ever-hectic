@@ -147,3 +147,11 @@ A `CharacterDef` may carry a `look` (skin, hair colour, `hairStyle`, `shirt`, `a
 `signatureMood`). The same look drives the in-game sprite, the dialogue portrait, the title-screen
 couple and the invitation on the preparation screen (`art/characters.ts`). Dialogue speakers who are
 not partners in any wedding get a stable everyday look from their name.
+
+## An update-log entry
+
+The "What's new" screen on the title screen reads `src/data/changelog.ts`. Add an entry at the **top**
+of `CHANGELOG` (newest first) with a `version`, an ISO `date`, a short `title` and a few `notes` written
+for the player, then set the same version in `package.json` (`0.6` there is `0.6.0`). A test fails if
+the two disagree. Players who have not opened the log since see a red dot on the button and a "New" tag
+on every entry newer than the last one they read.

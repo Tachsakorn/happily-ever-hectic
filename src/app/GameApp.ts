@@ -23,6 +23,7 @@ import type { Cheat } from '../core/sim/cheats';
 import { viewportReport } from '../platform/viewport/viewportSize';
 import { achievementsVM, decorLook, dialogueVM, levelCards, menuVM, nextLevelId, planNote, prepVM, resultsVM, shopItems } from './viewModels';
 import { defaultPlan, type Plan } from '../core/progression/plan';
+import { CHANGELOG } from '../data/changelog';
 
 interface FlowContext {
   levelId: string | null;
@@ -103,6 +104,11 @@ export class GameApp {
     const next: Settings = { ...this.save.settings, ...s };
     this.applySettings(next);
     this.persist({ ...this.save, settings: next });
+  };
+
+  private markUpdatesSeen = (): void => {
+    const latest = CHANGELOG[0]?.version ?? null;
+    if (latest && this.save.lastSeenUpdate !== latest) this.persist({ ...this.save, lastSeenUpdate: latest });
   };
 
   /** Hidden switch on the title screen: turns the playtest tools on or off. */
@@ -186,6 +192,7 @@ export class GameApp {
             play: () => this.go(AppState.PROGRESSION),
             settings: this.updateSettings,
             toggleTestTools: this.toggleTestTools,
+            seenUpdates: this.markUpdatesSeen,
           }),
         );
         break;

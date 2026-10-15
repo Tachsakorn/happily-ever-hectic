@@ -47,6 +47,8 @@ export interface SaveData {
   readonly lifetime: LifetimeStats;
   /** Secret event ids ever found. */
   readonly secretsFound: readonly string[];
+  /** The newest update-log version the player has opened; null if they never have. */
+  readonly lastSeenUpdate: string | null;
 }
 
 export function newSave(): SaveData {
@@ -60,6 +62,7 @@ export function newSave(): SaveData {
     achievements: {},
     lifetime: emptyLifetime(),
     secretsFound: [],
+    lastSeenUpdate: null,
   };
 }
 
@@ -107,5 +110,6 @@ export function migrate(raw: unknown): SaveData {
     achievements,
     lifetime,
     secretsFound: Array.isArray(raw.secretsFound) ? [...new Set(raw.secretsFound.filter((u): u is string => typeof u === 'string'))] : [],
+    lastSeenUpdate: typeof raw.lastSeenUpdate === 'string' ? raw.lastSeenUpdate : null,
   };
 }

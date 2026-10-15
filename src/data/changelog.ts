@@ -1,8 +1,9 @@
 /**
- * The in-game update log ("What's new" on the title screen), newest first.
- * Written for the player, not the developer: say what changed in the game.
- * To add an entry, put it at the top and bump `version` in package.json to
- * match (a test keeps the two in step).
+ * The in-game update log (the "มีอะไรใหม่" button on the title screen), newest
+ * first. It is written in Thai, in plain everyday words, for the player: say
+ * what changed in the game, the way you would tell a friend. To add an entry,
+ * put it at the top and bump `version` in package.json to match (a test keeps
+ * the two in step).
  */
 export interface ChangelogEntry {
   /** Shown as "v0.5"; also the id the save remembers as "last read". */
@@ -17,53 +18,53 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
   {
     version: '0.5',
     date: '2026-10-15',
-    title: 'A watercolour storybook',
+    title: 'ภาพสีน้ำ',
     notes: [
-      'The reception is painted like a picture book now: soft pencil outlines, feathered shading and a little paper texture on the venue, the guests and the food.',
-      'At the end of a wedding the camera no longer squashes the score bar and the heart meter; they fade away while it moves in on the couple.',
-      'The wedding plan screen stays still while you pick flowers, menu, cake and honeymoon.',
-      'New: this update log.',
+      'วาดฉากในงานใหม่ให้เหมือนภาพสีน้ำในหนังสือนิทาน เส้นขอบบางลง เงานุ่มขึ้น แล้วมีลายกระดาษจาง ๆ ทั้งพื้น แขก และอาหาร',
+      'ตอนงานแต่งจบ กล้องจะซูมเข้าไปที่คู่บ่าวสาว แต่ก่อนหน้านี้แถบคะแนนกับหัวใจโดนซูมตามจนขอบโดนตัด ตอนนี้ให้มันค่อย ๆ จางหายไปแทน',
+      'หน้าวางแผนงานแต่ง (เลือกดอกไม้ เมนู เค้ก ฮันนีมูน) ไม่ขยับขึ้นลงตอนกด Next แล้ว',
+      'มีหน้าบันทึกอัปเดตนี้เพิ่มเข้ามา',
     ],
   },
   {
     version: '0.4',
     date: '2026-09-30',
-    title: 'Sweeter sounds, happier moments',
+    title: 'เสียงกับจังหวะ',
     notes: [
-      'Richer sound: a touch of reverb, a bell that climbs the scale as your chain grows, and new cheers for milestones, stars and happy goodbyes.',
-      'The music speeds up and a hi-hat ticks in when the couple get stressed; the waltz is longer, too.',
-      'Chain milestones shout a word with confetti, and the chain counter changes colour as it grows.',
-      'The mood bar glides, and leaves a pale trail when it drops.',
-      'Results are a show: the score counts up, then the stars land one by one.',
+      'เพิ่มเสียงสะท้อนนิดหน่อย แล้วทำเสียงกระดิ่งตอนต่อ chain ให้สูงขึ้นเรื่อย ๆ ตามความยาว ได้ดาวกับส่งแขกกลับบ้านแบบมีความสุขก็มีเสียงเชียร์ของมันเอง',
+      'พอคู่บ่าวสาวเริ่มเครียด เพลงจะเร็วขึ้นและมีเสียงไฮแฮทตามมา เพลงวอลทซ์ยาวขึ้นกว่าเดิมด้วย',
+      'chain ที่ถึงจุดสำคัญจะมีคำเด้งขึ้นมาพร้อมกระดาษสี ส่วนตัวเลข chain เปลี่ยนสีไปตามความยาว',
+      'แถบอารมณ์เลื่อนแบบนุ่ม ๆ ถ้าลดลงจะมีเงาจาง ๆ ค้างไว้แป๊บหนึ่ง',
+      'หน้าสรุปคะแนนนับเลขขึ้นไปทีละตัว แล้วดาวค่อยตกลงมาทีละดวง',
     ],
   },
   {
     version: '0.3',
     date: '2026-09-24',
-    title: 'A prettier game',
+    title: 'หน้าตาใหม่',
     notes: [
-      'New look for every screen: the garden title with the couple under the flower arch, a winding wedding map, invitation-style planning and a plaque for pausing.',
-      'The venue has plank floors, hedges, a flower arch, chairs with place settings, a DJ deck and drink carts.',
-      'Guests walk, breathe, hop into their seats and change faces with their mood; the planner and couple react too.',
+      'ทำหน้าตาทุกหน้าใหม่หมด หน้า title มีคู่บ่าวสาวยืนใต้ซุ้มดอกไม้ แผนที่งานแต่งเป็นทางคดเคี้ยว หน้าวางแผนเป็นการ์ดเชิญ และหน้าหยุดเกมเป็นป้าย',
+      'ในงานมีพื้นไม้ รั้วต้นไม้ ซุ้มดอกไม้ เก้าอี้ ชุดจานบนโต๊ะ เครื่องเล่นของดีเจ และรถเข็นเครื่องดื่ม',
+      'แขกเดินแล้วตัวเด้ง หายใจ กระโดดขึ้นเก้าอี้ และเปลี่ยนสีหน้าตามอารมณ์ แพลนเนอร์กับคู่บ่าวสาวก็มีท่าทางตอบสนองด้วย',
     ],
   },
   {
     version: '0.2',
     date: '2026-09-24',
-    title: 'Gentler weddings',
+    title: 'ปรับให้เล่นง่ายขึ้น',
     notes: [
-      'The venue is more compact, like the original wedding rush: tables, kitchen, bar and waiting area sit close together.',
-      'Each wedding teaches one new thing: serving, then gifts, then cake and your first disaster, then who sits with whom.',
-      'Fewer guests, more patience, a faster planner and a faster kitchen. Gifts are easier to tap.',
+      'ทำผังงานให้เล็กลงเหมือน Wedding Dash ตัวจริง โต๊ะ ครัว บาร์ และที่นั่งรออยู่ใกล้กันขึ้น',
+      'แต่ละงานสอนทีละอย่าง งานแรกเสิร์ฟอาหาร งานสองของขวัญ งานสามเค้กกับภัยพิบัติครั้งแรก งานสี่ใครนั่งข้างใคร',
+      'แขกน้อยลง ใจเย็นขึ้น แพลนเนอร์เดินไวขึ้น ครัวทำอาหารไวขึ้น และกดของขวัญติดง่ายขึ้นแล้ว',
     ],
   },
   {
     version: '0.1',
     date: '2026-09-24',
-    title: 'The first reception',
+    title: 'งานแต่งแรก',
     notes: [
-      'Seat guests, serve courses, deliver gifts and keep the couple smiling as five kinds of wedding disaster pop up.',
-      'A wedding map, coins and a shop, stars and bonus goals, achievements, and a save that remembers everything.',
+      'เกมเล่นได้เป็นครั้งแรก จัดที่นั่งแขก เสิร์ฟอาหาร ส่งของขวัญ และคอยดูแลไม่ให้คู่บ่าวสาวเครียดตอนเจอเรื่องวุ่น ๆ ห้าแบบ',
+      'มีแผนที่งานแต่ง เหรียญกับร้านค้า ดาวกับเป้าหมายโบนัส ถ้วยรางวัล และเซฟที่จำความคืบหน้าไว้ให้',
     ],
   },
 ];

@@ -19,6 +19,9 @@ importers:
       '@fontsource/lilita-one':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/mali':
+        specifier: ^5.3.0
+        version: 5.3.0
       phaser:
         specifier: 4.2.1
         version: 4.2.1(patch_hash=163575e79e185809aa39fb9b40a8cc63b633e5a0f03498aaf15225a430f96644)
@@ -88,6 +91,9 @@ packages:
 
   '@fontsource/lilita-one@5.3.0':
     resolution: {integrity: sha512-bNW3tD+m5pOsAQpW/NvtRbFthFe+B73hDJK2DLLCFCtF+1p+UMBgo7ibxdcb9Sftr06LKAVbt080wiMdSqGbOg==}
+
+  '@fontsource/mali@5.3.0':
+    resolution: {integrity: sha512-/H7zdnFcBUdLh7mPUCLWfCoQVgtvnVKrlHjknq90kltPvUcu0nC9ybne4z2rzTghV9ez9N7nRDvRZesODB/YbQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -907,6 +913,8 @@ snapshots:
   '@fontsource/baloo-2@5.3.0': {}
 
   '@fontsource/lilita-one@5.3.0': {}
+
+  '@fontsource/mali@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

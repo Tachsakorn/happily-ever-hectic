@@ -22,8 +22,8 @@
   --good: #3f8f52;
   --bad: #c0392b;
 
-  --font-display: 'Lilita One', 'Baloo 2', system-ui, sans-serif;
-  --font-body: 'Baloo 2', system-ui, sans-serif;
+  --font-display: 'Lilita One', 'Baloo 2', 'Mali', system-ui, sans-serif;
+  --font-body: 'Baloo 2', 'Mali', system-ui, sans-serif;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);

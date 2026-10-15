@@ -48,7 +48,7 @@ describe('updatesVM', () => {
   });
 
   it('formats the date without shifting the day', () => {
-    expect(updatesVM(newSave(), log)[0]!.date).toBe('Mar 1, 2026');
+    expect(updatesVM(newSave(), log)[0]!.date).toBe('1 มี.ค. 2569');
   });
 });
 

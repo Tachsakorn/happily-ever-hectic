@@ -228,7 +228,8 @@ export function updatesVM(save: SaveData, log: readonly ChangelogEntry[] = CHANG
 
 function formatLogDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y!, m! - 1, d!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // Thai calendar year (พ.ศ.), as Thai readers write dates.
+  return new Date(y!, m! - 1, d!).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function menuVM(content: ContentRegistry, save: SaveData): MainMenuVM {

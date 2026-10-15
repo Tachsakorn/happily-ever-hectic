@@ -2,6 +2,8 @@ import lilita from '@fontsource/lilita-one/files/lilita-one-latin-400-normal.wof
 import baloo500 from '@fontsource/baloo-2/files/baloo-2-latin-500-normal.woff2?url';
 import baloo700 from '@fontsource/baloo-2/files/baloo-2-latin-700-normal.woff2?url';
 import baloo800 from '@fontsource/baloo-2/files/baloo-2-latin-800-normal.woff2?url';
+import mali500 from '@fontsource/mali/files/mali-thai-500-normal.woff2?url';
+import mali700 from '@fontsource/mali/files/mali-thai-700-normal.woff2?url';
 
 /**
  * The game's fonts ship inside the build (no CDN), so the game looks the same
@@ -13,6 +15,9 @@ const FACES: readonly { family: string; url: string; weight: string }[] = [
   { family: 'Baloo 2', url: baloo500, weight: '500' },
   { family: 'Baloo 2', url: baloo700, weight: '700' },
   { family: 'Baloo 2', url: baloo800, weight: '800' },
+  // Baloo 2 and Lilita One have no Thai letters; Mali (rounded, hand-lettered) stands in for them.
+  { family: 'Mali', url: mali500, weight: '500' },
+  { family: 'Mali', url: mali700, weight: '700' },
 ];
 
 export async function loadGameFonts(timeoutMs = 3000): Promise<void> {

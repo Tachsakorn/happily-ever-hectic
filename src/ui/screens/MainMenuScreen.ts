@@ -66,13 +66,13 @@ export class MainMenuScreen extends DomScreen {
       }
     }, this.disposer);
     const hasNew = vm.updates.some((u) => u.isNew);
-    const news = button("What's new", () => this.openUpdates(news), this.disposer, {
+    const news = button('มีอะไรใหม่', () => this.openUpdates(news), this.disposer, {
       tone: 'cream',
       size: 'small',
       icon: uiIcon('sparkle', 0xe86f8e, 28),
       className: 'menu__news',
     });
-    if (hasNew) news.append(h('i', { class: 'new-dot', 'aria-label': 'New update' }));
+    if (hasNew) news.append(h('i', { class: 'new-dot', 'aria-label': 'มีอัปเดตใหม่' }));
     this.root = h(
       'div',
       { class: 'screen menu-screen' },

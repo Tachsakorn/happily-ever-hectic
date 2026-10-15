@@ -150,8 +150,9 @@ not partners in any wedding get a stable everyday look from their name.
 
 ## An update-log entry
 
-The "What's new" screen on the title screen reads `src/data/changelog.ts`. Add an entry at the **top**
-of `CHANGELOG` (newest first) with a `version`, an ISO `date`, a short `title` and a few `notes` written
-for the player, then set the same version in `package.json` (`0.6` there is `0.6.0`). A test fails if
+The "มีอะไรใหม่" screen on the title screen reads `src/data/changelog.ts`. Add an entry at the **top**
+of `CHANGELOG` (newest first) with a `version`, an ISO `date`, a short `title` and a few `notes`. The
+log is in Thai, in plain spoken words, written for the player (what changed in the game, not in the
+code). The rest of the game stays English. Then set the same version in `package.json` (`0.6` there is `0.6.0`). A test fails if
 the two disagree. Players who have not opened the log since see a red dot on the button and a "New" tag
 on every entry newer than the last one they read.

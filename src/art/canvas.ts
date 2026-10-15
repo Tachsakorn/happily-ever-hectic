@@ -157,5 +157,5 @@ export function seeded(seed: number): () => number {
   };
 }
 
-export const FONT_DISPLAY = '"Lilita One", "Baloo 2", system-ui, sans-serif';
-export const FONT_BODY = '"Baloo 2", system-ui, sans-serif';
+export const FONT_DISPLAY = '"Lilita One", "Baloo 2", "Mali", system-ui, sans-serif';
+export const FONT_BODY = '"Baloo 2", "Mali", system-ui, sans-serif';

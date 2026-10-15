@@ -176,7 +176,7 @@ export class PrepScreen extends DomScreen {
         this.step > 0 ? button('Back', () => go(-1), d, { tone: 'cream', size: 'small', icon: uiIcon('back', 0xe86f8e, 24) }) : null,
         last
           ? button('Start!', start, d, { tone: 'go', size: 'big', icon: uiIcon('play', 0xffffff, 38), className: 'prep__start' })
-          : button('Next', () => go(1), d, { tone: 'go', icon: uiIcon('next', 0xffffff, 30), className: 'prep__start' }),
+          : button('Next', () => go(1), d, { tone: 'go', size: 'big', icon: uiIcon('next', 0xffffff, 38), className: 'prep__start' }),
       ),
     );
     panel.replaceChildren(...children);

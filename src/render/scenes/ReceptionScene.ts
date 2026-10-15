@@ -466,6 +466,7 @@ export class ReceptionScene extends Phaser.Scene {
     const y = height / 2 + (target.y - height / 2) * WIN_PUSH_TOWARDS;
     cam.pan(x, y, WIN_PUSH_MS, 'Sine.easeInOut');
     cam.zoomTo(cam.zoom * WIN_PUSH_ZOOM, WIN_PUSH_MS, 'Sine.easeInOut');
+    this.hud.fadeOut(WIN_PUSH_MS / 2);
   }
 
   /** A few coins arc from where points were earned to the score counter. */

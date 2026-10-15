@@ -1706,6 +1706,9 @@ html.is-oversized body {
   font-size: 17px;
   font-style: italic;
   line-height: 1.25;
+  /* Two lines tall for every clue, so the panel does not change height between steps. */
+  min-height: calc(2 * 1.25em + 16px + 5px);
+  box-sizing: border-box;
 }
 
 .plan-hint canvas {

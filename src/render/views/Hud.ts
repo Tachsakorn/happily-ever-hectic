@@ -75,6 +75,8 @@ export class Hud {
   private readonly chainPanel: Phaser.GameObjects.Image;
   /** 'guestsGone' levels show how many guests are still to go instead of a clock. */
   private readonly countsGuests: boolean;
+  /** Every game object the HUD created, so it can be faded as one. */
+  private readonly owned: Phaser.GameObjects.GameObject[];
   private heartbeat: Phaser.Tweens.Tween | null = null;
   private clockShake: Phaser.Tweens.Tween | null = null;
 
@@ -89,6 +91,7 @@ export class Hud {
     private readonly fx: Fx,
   ) {
     const d = Depth.hud;
+    const firstOwned = scene.children.list.length;
     tex.image(scene, 16 + 230, 58, tex.ensure('panel:mood', 460, 116, paintPanel(460, 116))).setDepth(d);
     // Right panel stops short of the corner: the DOM pause button lives there.
     tex.image(scene, 1136, 58, tex.ensure('panel:score', 316, 116, paintPanel(316, 116))).setDepth(d);
@@ -135,7 +138,16 @@ export class Hud {
           .setDepth(d),
       );
     }
+    this.owned = scene.children.list.slice(firstOwned);
     this.sync(0);
+  }
+
+  /**
+   * Fades the whole HUD out. Used when the camera pushes in on the couple: the
+   * HUD sits in screen space but a camera zoom would scale it and clip its edges.
+   */
+  fadeOut(duration: number): void {
+    this.scene.tweens.add({ targets: this.owned, alpha: 0, duration, ease: 'Sine.easeInOut' });
   }
 
   /** Where coins fly to when points are earned. */

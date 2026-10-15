@@ -42,7 +42,7 @@ export class ArtKit {
 
   person(look: PersonLook): string {
     const key = `person:${look.style}:${look.skin}:${look.hair}:${look.outfit}:${look.hairStyle ?? '-'}:${look.mood ?? 'neutral'}`;
-    return this.tex.ensure(key, PERSON_W, PERSON_H, paintPerson(look));
+    return this.tex.ensure(key, PERSON_W, PERSON_H, paintPerson(look), this.tex.scale, 'figure');
   }
 
   guestLook(g: Pick<Guest, 'key' | 'typeId' | 'groupId'>, mood: Mood = 'neutral'): PersonLook {
@@ -78,13 +78,14 @@ export class ArtKit {
   partner(def: CharacterDef, mood?: Mood): string {
     const look = characterLook(def, mood);
     const key = `partner:${def.id}:${look.mood}:${look.skin}:${look.hair}:${look.hairStyle ?? '-'}:${look.outfit}`;
-    return this.tex.ensure(key, PERSON_W, PERSON_H, paintPerson(look));
+    return this.tex.ensure(key, PERSON_W, PERSON_H, paintPerson(look), this.tex.scale, 'figure');
   }
 
   item(itemId: Id): string {
     const item = this.content.items.get(itemId);
     const icon = (item.visual.icon ?? 'plate') as ItemIcon;
-    return this.icon(icon, item.visual.color, item.visual.accent);
+    const { color, accent } = item.visual;
+    return this.tex.ensure(`item:${icon}:${color}:${accent ?? ''}`, ICON_SIZE, ICON_SIZE, paintIcon(icon, color, accent), this.tex.scale, 'figure');
   }
 
   icon(icon: ItemIcon, color = 0xe86f8e, accent?: number): string {

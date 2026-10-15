@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { Painter } from '../../art/painters';
+import { finishWatercolor, useWatercolorBrush, type Finish } from '../../art/watercolor';
 
 /**
  * Bakes painters into textures at the render scale. Textures are cached by key
@@ -11,7 +12,11 @@ export class TextureFactory {
     readonly scale: number,
   ) {}
 
-  ensure(key: string, width: number, height: number, paint: Painter, scale = this.scale): string {
+  /**
+   * `finish` opts a texture into the watercolour look; omit it for interface
+   * art, which keeps the bold cartoon outline.
+   */
+  ensure(key: string, width: number, height: number, paint: Painter, scale = this.scale, finish?: Finish): string {
     if (this.textures.exists(key)) return key;
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(width * scale);
@@ -19,7 +24,9 @@ export class TextureFactory {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D unavailable');
     ctx.scale(scale, scale);
+    if (finish) useWatercolorBrush(ctx);
     paint(ctx);
+    if (finish) finishWatercolor(canvas, scale, finish);
     this.textures.addCanvas(key, canvas);
     return key;
   }

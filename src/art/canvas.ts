@@ -5,6 +5,15 @@
 
 export type Painter = (c: CanvasRenderingContext2D) => void;
 
+/**
+ * Contexts that paint in the soft watercolour style (see watercolor.ts). Shared
+ * helpers such as `toon` check this so shading feathers out instead of ending
+ * in a hard edge, without every painter having to know about the style.
+ */
+const softContexts = new WeakSet<CanvasRenderingContext2D>();
+export const markSoft = (c: CanvasRenderingContext2D): void => void softContexts.add(c);
+export const isSoft = (c: CanvasRenderingContext2D): boolean => softContexts.has(c);
+
 /** The game's ink: every outline, every line of text on the canvas. */
 export const INK = 0x3b2640;
 export const LINE = 2.6;
@@ -76,6 +85,13 @@ export function toon(c: CanvasRenderingContext2D, path: Path2D, color: number, b
   c.fillStyle = hex(color);
   c.fill(path);
   c.clip(path);
+  if (isSoft(c)) {
+    feather(c, box.x + box.w * 1.02, box.y + box.h * 0.66, box.w * 0.5, box.h * 0.8, -0.25, shade(color, opts.shadeAmount ?? -0.17), 0.95);
+    feather(c, box.x + box.w * 0.3, box.y + box.h * 0.22, box.w * 0.2, box.h * 0.13, -0.5, 0xffffff, 0.34);
+    c.restore();
+    outline(c, path, opts.line ?? LINE);
+    return;
+  }
   c.fillStyle = hex(shade(color, opts.shadeAmount ?? -0.17));
   c.beginPath();
   c.ellipse(box.x + box.w * 1.02, box.y + box.h * 0.66, box.w * 0.5, box.h * 0.8, -0.25, 0, Math.PI * 2);
@@ -86,6 +102,22 @@ export function toon(c: CanvasRenderingContext2D, path: Path2D, color: number, b
   c.fill();
   c.restore();
   outline(c, path, opts.line ?? LINE);
+}
+
+/** An ellipse of colour that fades to nothing at its rim, like a wash of pigment. */
+function feather(c: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, rot: number, color: number, alpha: number): void {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rot);
+  c.scale(1, ry / rx);
+  const g = c.createRadialGradient(0, 0, rx * 0.35, 0, 0, rx);
+  g.addColorStop(0, hex(color, alpha));
+  g.addColorStop(1, hex(color, 0));
+  c.fillStyle = g;
+  c.beginPath();
+  c.arc(0, 0, rx, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
 }
 
 export function outline(c: CanvasRenderingContext2D, path: Path2D, line = LINE, color = INK): void {
@@ -105,6 +137,10 @@ export function flat(c: CanvasRenderingContext2D, path: Path2D, color: number, l
 }
 
 export function groundShadow(c: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, alpha = 0.18): void {
+  if (isSoft(c)) {
+    feather(c, x, y, rx * 1.15, ry * 1.15, 0, INK, alpha * 1.6);
+    return;
+  }
   c.fillStyle = hex(INK, alpha);
   c.fill(oval(x, y, rx, ry));
 }

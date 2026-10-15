@@ -115,7 +115,7 @@ export class ReceptionScene extends Phaser.Scene {
           return served && served !== s.providesItemId ? session.content.items.get(served).name : null;
         },
         dancing,
-      }), bgScale);
+      }), bgScale, 'scene');
     this.tex.image(this, venue.size.width / 2, venue.size.height / 2, bgKey, bgScale).setDepth(0);
     this.paintSurround(venue);
 
@@ -405,7 +405,7 @@ export class ReceptionScene extends Phaser.Scene {
     const key = `surround:${theme}`;
     // Baked at the render scale and tiled back down to design units, so it stays crisp.
     const scale = this.tex.scale;
-    this.tex.ensure(key, SURROUND_TILE, SURROUND_TILE, paintSurroundTile(theme));
+    this.tex.ensure(key, SURROUND_TILE, SURROUND_TILE, paintSurroundTile(theme), scale, 'scene');
     const m = PhaserHost.SURROUND_MARGIN;
     const { width, height } = venue.size;
     this.add

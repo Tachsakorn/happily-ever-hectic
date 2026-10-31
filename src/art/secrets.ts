@@ -186,6 +186,39 @@ function discoBall(c: CanvasRenderingContext2D, color: number): void {
   c.fill(oval(C - 10, C - 10, 7, 4, -0.6));
 }
 
+function goldBag(c: CanvasRenderingContext2D, color: number): void {
+  // A fat sack tied at the neck, with a few coins spilling out of the top.
+  for (const [dx, dy] of [
+    [-10, -26],
+    [2, -30],
+    [12, -24],
+  ] as const) {
+    toon(c, oval(C + dx, C + dy, 8, 8), 0xf7d56a, { x: C + dx - 8, y: C + dy - 8, w: 16, h: 16 }, { line: 2 });
+  }
+  const sack = new Path2D();
+  sack.moveTo(C - 9, C - 18);
+  sack.quadraticCurveTo(C - 34, C - 2, C - 30, C + 20);
+  sack.quadraticCurveTo(C - 28, C + 34, C - 10, C + 34);
+  sack.lineTo(C + 10, C + 34);
+  sack.quadraticCurveTo(C + 28, C + 34, C + 30, C + 20);
+  sack.quadraticCurveTo(C + 34, C - 2, C + 9, C - 18);
+  sack.closePath();
+  toon(c, sack, color, { x: C - 32, y: C - 18, w: 64, h: 52 }, { line: 3 });
+  flat(c, rrect(C - 13, C - 20, 26, 8, 4), 0xe86f8e, 2.4);
+  // A coin mark on the front.
+  c.fillStyle = hex(0xfff3c4);
+  c.fill(disc(C, C + 14, 11));
+  c.lineWidth = 2.4;
+  c.strokeStyle = hex(INK);
+  c.stroke(disc(C, C + 14, 11));
+  c.beginPath();
+  c.moveTo(C, C + 8);
+  c.lineTo(C, C + 20);
+  c.stroke();
+  c.fillStyle = hex(0xffffff, 0.6);
+  c.fill(oval(C - 17, C + 2, 5, 9, -0.4));
+}
+
 export function paintSecretIcon(icon: SecretIcon, color: number): Painter {
   return (c) => {
     c.lineJoin = 'round';
@@ -207,6 +240,9 @@ export function paintSecretIcon(icon: SecretIcon, color: number): Painter {
         break;
       case 'disco':
         discoBall(c, color);
+        break;
+      case 'gold-bag':
+        goldBag(c, color);
         break;
     }
   };

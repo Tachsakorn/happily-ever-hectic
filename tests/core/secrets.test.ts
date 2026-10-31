@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DomainEvent } from '../../src/core/sim/events';
+import { loadContent } from '../../src/data';
 import { makeSim, runFor, runUntil } from '../support/fixtures';
 
 describe('secret events', () => {
@@ -66,5 +67,16 @@ describe('secret events', () => {
       return sim.state.guests.map((g) => `${g.key}:${g.state}:${g.wantsItemId}`).join('|');
     };
     expect(play(true)).toBe(play(false));
+  });
+});
+
+describe('the generous relative (personal secret)', () => {
+  it('is registered and its achievement unlocks only through finding it', () => {
+    const content = loadContent();
+    const def = content.secretEvents.get('generous-relative');
+    expect(def.visual.icon).toBe('gold-bag');
+    const ach = content.achievements.get('family-gift');
+    expect(ach.secret).toBe(true);
+    expect(ach.condition).toEqual({ kind: 'secretFound', secretId: 'generous-relative' });
   });
 });

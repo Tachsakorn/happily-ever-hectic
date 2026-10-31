@@ -540,7 +540,7 @@ export interface ServiceDef {
 
 // ---------------------------------------------------------------- secrets
 
-export type SecretIcon = 'golden-bouquet' | 'shooting-star' | 'bottle' | 'clover' | 'cat' | 'disco';
+export type SecretIcon = 'golden-bouquet' | 'shooting-star' | 'bottle' | 'clover' | 'cat' | 'disco' | 'gold-bag';
 
 /** Extra conditions a secret event waits for (all must hold) once it is armed. */
 export type SecretRequirement =

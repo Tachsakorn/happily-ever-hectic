@@ -5,7 +5,7 @@ import type { AchievementDef, SecretEventDef, Vec2 } from '../../../content/type
  * are on walkable floor of the shared venue layout (aisle crossings, the
  * free strip left of the waiting area) so the planner can always reach them.
  */
-const AISLE_SPOTS: Vec2[] = [
+export const AISLE_SPOTS: Vec2[] = [
   { x: 675, y: 570 },
   { x: 985, y: 570 },
   { x: 330, y: 570 },

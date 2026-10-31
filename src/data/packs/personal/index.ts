@@ -1,4 +1,5 @@
 import type { ContentPack, ItemDef } from '../../../content/types';
+import { AISLE_SPOTS } from '../base/secrets';
 import { guest } from '../base/weddings';
 import { personal } from './profile';
 
@@ -27,6 +28,33 @@ export const personalPack: ContentPack = {
     endingDialogueId: 'ending',
     finalLevelId: 'our-wedding',
   },
+  secretEvents: [
+    {
+      id: 'generous-relative',
+      name: 'A Generous Relative',
+      chance: 0.3,
+      window: [40, 200],
+      requires: [],
+      spots: AISLE_SPOTS,
+      staySeconds: 12,
+      appearText: 'A relative just walked in out of nowhere with a HUGE bag of gold!',
+      foundText: '“For the happy couple!” The gold goes straight to the gift table.',
+      reward: { score: 300, mood: 8 },
+      visual: { icon: 'gold-bag', color: 0xc9a14a },
+    },
+  ],
+  achievements: [
+    {
+      id: 'family-gift',
+      name: 'Family Gift',
+      description: 'Welcomed a relative with a very big bag of gold.',
+      secret: true,
+      hint: 'Some relatives always arrive with a gift.',
+      icon: 'gift',
+      color: 0xc9a14a,
+      condition: { kind: 'secretFound', secretId: 'generous-relative' },
+    },
+  ],
   weddings: [
     {
       id: 'our-wedding',

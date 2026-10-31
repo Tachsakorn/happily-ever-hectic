@@ -6,7 +6,7 @@
  * the two in step).
  */
 export interface ChangelogEntry {
-  /** Shown as "v0.5"; also the id the save remembers as "last read". */
+  /** Shown as "v0.6"; also the id the save remembers as "last read". */
   readonly version: string;
   /** ISO date, YYYY-MM-DD. */
   readonly date: string;
@@ -16,11 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.6',
+    date: '2026-10-31',
+    title: 'กลับมาเป็นภาพแบบเดิม',
+    notes: [
+      'เอาลุคสีน้ำออกแล้ว ฉาก แขก และอาหารกลับมาเป็นภาพแบบเดิมที่เส้นขอบชัดกว่า',
+    ],
+  },
+  {
     version: '0.5',
     date: '2026-10-15',
-    title: 'ภาพสีน้ำ',
+    title: 'แก้จุดเล็ก ๆ',
     notes: [
-      'วาดฉากในงานใหม่ให้เหมือนภาพสีน้ำในหนังสือนิทาน เส้นขอบบางลง เงานุ่มขึ้น แล้วมีลายกระดาษจาง ๆ ทั้งพื้น แขก และอาหาร',
       'ตอนงานแต่งจบ กล้องจะซูมเข้าไปที่คู่บ่าวสาว แต่ก่อนหน้านี้แถบคะแนนกับหัวใจโดนซูมตามจนขอบโดนตัด ตอนนี้ให้มันค่อย ๆ จางหายไปแทน',
       'หน้าวางแผนงานแต่ง (เลือกดอกไม้ เมนู เค้ก ฮันนีมูน) ไม่ขยับขึ้นลงตอนกด Next แล้ว',
       'มีหน้าบันทึกอัปเดตนี้เพิ่มเข้ามา',
